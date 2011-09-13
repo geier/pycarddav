@@ -33,8 +33,7 @@ that holds together <a class="reference external" href="http://vobject.skyhousec
 <li><em>pyCardDAV</em> only stores email addresses for now</li>
 <li><em>pyCardDAV</em> is read-only for now</li>
 <li><em>pyCardDAV</em> is only tested against davical</li>
-<li>your password is stored in cleartext in the pycardsyncer file</li>
-<li>the configurion is stored in pycardsyncer, so no global installation for now</li>
+<li>your password is stored in cleartext in the configfile file</li>
 </ul>
 </div>
 <div class="section" id="installation">
@@ -42,8 +41,9 @@ that holds together <a class="reference external" href="http://vobject.skyhousec
 <p>Move pc-query and pycardsyncer to your ~/bin or somewhere other users on
 your machine have no access to it, since your password is stored in
 pycardsyncer file (make sure you set the access rights properly).</p>
-<p>Edit the configuration sections at the top of pycardsyncer and pc-query.
-Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.</p>
+<p>Copy and edit the supplied pycard.conf.sample file (default location is
+~/.pycard/pycard.conf).</p>
+<p>Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.</p>
 </div>
 <div class="section" id="usage">
 <h1>Usage</h1>
@@ -62,12 +62,13 @@ set query_command=&quot;/home/username/bin/pc-query '%s'&quot;
 <div class="section" id="feedback">
 <h1>Feedback</h1>
 <p>Please do provide feedback if <em>pyCardDAV</em> works for you or even more importantly
-if it doesn't. You can reach me by email at <a class="reference external" href="mailto:pycarddav&#64;lostpackets.de">pycarddav&#64;lostpackets.de</a> or by
-jabber/XMPP at <a class="reference external" href="mailto:geier&#64;jabber.ccc.de">geier&#64;jabber.ccc.de</a></p>
+if it doesn't. You can reach me by email at <a class="reference external" href="mailto:pycarddav&#64;lostpackets.de">pycarddav&#64;lostpackets.de</a> , by
+jabber/XMPP at <a class="reference external" href="mailto:geier&#64;jabber.ccc.de">geier&#64;jabber.ccc.de</a> or via <a class="reference external" href="https://github.com/geier/pycarddav/">github</a></p>
 </div>
 <div class="section" id="download">
 <h1>Download</h1>
-<p>Get the latest version of pyCardDAV from <a class="reference external" href="http://pyCardDAV.lostpackets.de/download/latest.tgz">http://pyCardDAV.lostpackets.de/download/latest.tgz</a></p>
+<p>Get the latest version of pyCardDAV from <a class="reference external" href="http://pyCardDAV.lostpackets.de/download/latest.tgz">http://pyCardDAV.lostpackets.de/download/latest.tgz</a>
+or check out it out at <a class="reference external" href="https://github.com/geier/pycarddav">https://github.com/geier/pycarddav</a> .</p>
 </div>
 <div class="section" id="license">
 <h1>License</h1>

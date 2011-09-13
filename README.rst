@@ -31,8 +31,7 @@ Features
 - *pyCardDAV* only stores email addresses for now
 - *pyCardDAV* is read-only for now
 - *pyCardDAV* is only tested against davical
-- your password is stored in cleartext in the pycardsyncer file
-- the configurion is stored in pycardsyncer, so no global installation for now
+- your password is stored in cleartext in the configfile file
 
 Installation
 ------------
@@ -40,7 +39,9 @@ Move pc-query and pycardsyncer to your ~/bin or somewhere other users on
 your machine have no access to it, since your password is stored in
 pycardsyncer file (make sure you set the access rights properly).
 
-Edit the configuration sections at the top of pycardsyncer and pc-query.
+Copy and edit the supplied pycard.conf.sample file (default location is
+~/.pycard/pycard.conf).
+
 Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
 
 Usage
@@ -61,12 +62,16 @@ Example from .muttrc::
 Feedback
 --------
 Please do provide feedback if *pyCardDAV* works for you or even more importantly
-if it doesn't. You can reach me by email at pycarddav@lostpackets.de or by
-jabber/XMPP at geier@jabber.ccc.de
+if it doesn't. You can reach me by email at pycarddav@lostpackets.de , by
+jabber/XMPP at geier@jabber.ccc.de or via github_
+
+.. _github: https://github.com/geier/pycarddav/
 
 Download
 --------
 Get the latest version of pyCardDAV from http://pyCardDAV.lostpackets.de/download/latest.tgz
+or check out it out at https://github.com/geier/pycarddav .
+
 
 License
 -------

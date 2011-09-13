@@ -7,19 +7,14 @@
 # this stuff is worth it, you can buy me a beer in return Christian Geier
 # ----------------------------------------------------------------------------
 
-##############################
-# CONFIG
-# Change this according to your change in pycardsyncer
-dbPath="/home/username/.pycard/abook.db"
-##############################
-
-
 
 import StringIO
 import sys
 import getopt
 import signal
+from os import path
 
+from ConfigParser import SafeConfigParser
 
 try:
     import sqlite3
@@ -28,19 +23,19 @@ except:
     sys.exit(1)
 
 def usage():
-    print """usage: pc-query query_string
-       pc-query --help/-h
-       pc-query --version/-v
+    print """usage: pc-query [options] query_string
 options: 
-  --help\tprint this help text
-  --version -v\tprint pc-query version"""
+  --help\tprints this help text and exits
+  --version -v\tprints pc-query version and exits
+  --config -c\tpath to config file
+                default: ~/.pycard/pycard.config"""
 
 
 def version():
-    print "pyCardDAV Version 0.1"
+    print "pyCardDAV Version 0.2"
 
 
-def searchFor(sString): 
+def searchFor(sString, dbPath): 
     encoding='utf-8'
     errors='strict'
     conn = sqlite3.connect(dbPath)
@@ -90,8 +85,12 @@ def signal_handler(signal, frame):
 # MAIN
 # config not yet implemented #TODO
 def main(argv):
+    configfile="~/.pycard/pycard.conf"
+    global dbPath
+    dbPath="~/.pycard/pycard.conf"
+
     try:
-        opts, args = getopt.getopt(argv, "hc:v1", ["help", "config=","version"])
+        opts, args = getopt.getopt(argv, "hc:v", ["help", "config=","version"])
     except getopt.GetoptError:
         print "unknown options"
         usage()
@@ -103,6 +102,8 @@ def main(argv):
         elif opt in ("-v","--version"):
             version()
             sys.exit()
+        elif opt in ("-c","--config"):
+            configfile=arg
 
     # no ugly python code when pressing Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
@@ -111,9 +112,13 @@ def main(argv):
     except:
         usage()
         sys.exit()
+    configfile = path.expanduser(configfile)
+
+    parser = SafeConfigParser()
+    parser.read(configfile)
+    dbPath = path.expanduser(parser.get('default', 'dbPath'))
     print "searching for ", name, "..."
-    
-    searchFor(name)
+    searchFor(name, dbPath)
 
 
 

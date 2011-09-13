@@ -7,22 +7,6 @@
 # this stuff is worth it, you can buy me a beer in return Christian Geier
 # ----------------------------------------------------------------------------
 
-##############################
-# CONFIG
-# user name on the CardDAV server
-user="username"
-# password
-passwd="password"
-# url to your CaardDAV collection
-resource="https://carddav.server.tld/davical/caldav.php/username/addressbook/"
-baseUrl="https://carddav.serer.tld"
-# if you don't have a valid SSL certificate set this to 1
-insecureSSL=1
-# path to the local adress book database
-dbPath="/home/username/.pycard/abook.db"
-# set to 1 for debugging output, overridden by command line arguments
-DEBUG=0
-##############################
 
 ##############################
 # imports {{{
@@ -31,6 +15,10 @@ import StringIO
 import sys
 import getopt
 import signal
+from os import path
+
+from ConfigParser import SafeConfigParser
+
 
 try:
     import vobject
@@ -108,20 +96,19 @@ def makeTables():
 
 
 def usage():
-    print """usage: pycardsyncer
-       pycardsyncer --help/-h
-       pycardsyncer --version/-v
-       pycardsyncer --debug
+    print """usage: pycardsyncer [options]
+       pycardsyncer --help/-h       show this help text
+       pycardsyncer --version/-v    show version
 options: 
-  --help\tprint this help text
-  --version -v\tprint pc-query version
+  -c <file>/--config=<file> location of config file
+                            default: ~/.pycard/pycard.config
   --debug show some debugging output"""
 
 
 
 
 def version():
-    print "pyCardDAV Version 0.1"
+    print "pyCardDAV Version 0.2"
     print "PycURL Version %s" % (pycurl.version)
 
 
@@ -133,7 +120,7 @@ def getXMLProps():
     c.setopt(pycurl.HEADERFUNCTION, header.write)
     c.setopt(pycurl.USERPWD, user+":"+passwd)
     c.setopt(pycurl.URL, resource)
-    if (insecureSSL == 1):
+    if (insecureSSL == "1"):
         c.setopt(pycurl.SSL_VERIFYPEER, 0)
     c.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
     c.perform()
@@ -256,7 +243,7 @@ def getVcard(vRef):
     c.setopt(pycurl.HEADERFUNCTION, header.write)
     c.setopt(pycurl.USERPWD, user+":"+passwd)
     c.setopt(pycurl.URL, baseUrl+vRef)
-    if (insecureSSL == 1):
+    if (insecureSSL == "1"):
         c.setopt(pycurl.SSL_VERIFYPEER, 0)
     c.perform()
     c.close
@@ -271,7 +258,6 @@ def getVcard(vRef):
         print "URL is not a CardDAV resource"
         sys.exit(1)
 
-
     return vCard
 
 
@@ -281,6 +267,10 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 def main(argv):
+    configfile="~/.pycard/pycard.conf"
+    global user, passwd, resource, baseUrl, insecureSSL, dbPath, DEBUG
+    DEBUG=0
+    dbPath="~/.pycard/pycard.conf"
     try:
         opts, args = getopt.getopt(argv, "hc:v", ["help", "config=","version","debug"])
     except getopt.GetoptError:
@@ -295,15 +285,36 @@ def main(argv):
             version()
             sys.exit()
         elif opt == "--debug":
-            global DEBUG
             DEBUG=1
+        elif opt in ("-c","--config"):
+            configfile=arg
 
 
     # no ugly python code when pressing Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
 
-
-
+    #config file foo 
+    configfile = path.expanduser(configfile)
+    if DEBUG:
+        print "reading config from ", configfile
+    parser = SafeConfigParser()
+    parser.read(configfile)
+    user = parser.get('default', 'user')
+    passwd = parser.get('default', 'passwd')
+    resource = parser.get('default', 'resource')
+    baseUrl = parser.get('default', 'baseUrl')
+    insecureSSL = parser.get('default', 'insecureSSL')
+    dbPath = path.expanduser(parser.get('default', 'dbPath'))
+    DEBUG = parser.get('default', 'DEBUG')
+    if DEBUG:
+        print "using config:"
+        print "user: ", user
+        print "passwd: ", passwd
+        print "resource: ", resource
+        print "baseUrl: ", baseUrl
+        print "insecureSSL: ", insecureSSL
+        print "dbPath: ", dbPath
+        print "\n"
 
     makeTables()
 

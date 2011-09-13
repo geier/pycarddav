@@ -1,0 +1,8 @@
+[default]
+user: username
+passwd: yourpassword
+resource: https://carddav.server.tld/davical/caldav.php/username/addressbook/
+baseUrl: https://carddav.serer.tld
+insecureSSL: 0
+dbPath: /home/localuser/.pycard/pycard.conf
+DEBUG: 0
