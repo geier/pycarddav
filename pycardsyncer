@@ -1,0 +1,351 @@
+#!/usr/bin/env python
+# vim: set ts=4 sw=4 expandtab sts=4:
+# ----------------------------------------------------------------------------
+# "THE BEER-WARE LICENSE" (Revision 42):
+# <geier@lostpackets.de> wrote this file. As long as you retain this notice you
+# can do whatever you want with this stuff. If we meet some day, and you think
+# this stuff is worth it, you can buy me a beer in return Christian Geier
+# ----------------------------------------------------------------------------
+
+##############################
+# CONFIG
+# user name on the CardDAV server
+user="username"
+# password
+passwd="password"
+# url to your CaardDAV collection
+resource="https://carddav.server.tld/davical/caldav.php/username/addressbook/"
+baseUrl="https://carddav.serer.tld"
+# if you don't have a valid SSL certificate set this to 1
+insecureSSL=1
+# path to the local adress book database
+dbPath="/home/username/.pycard/abook.db"
+# set to 1 for debugging output, overridden by command line arguments
+DEBUG=0
+##############################
+
+##############################
+# imports {{{
+
+import StringIO
+import sys
+import getopt
+import signal
+
+try:
+    import vobject
+except:
+    print "py-vobject not installed"
+    sys.exit(1)
+
+try:
+    import lxml.etree as ET
+except:
+    print "py-lxml not installad"
+    sys.exit(1)
+
+try:
+    import pycurl
+except:
+    print "pycurl not installed"
+    sys.exit(1)
+
+
+try:
+    import sqlite3
+except:
+    print "pysqlite3 not installed"
+    sys.exit(1)
+
+# /imports
+###########################}}}
+
+##############################################
+# database creation foo {{{
+
+def makeTables():
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    try:
+            c.execute('''CREATE TABLE vcardtable        (
+                    href TEXT PRIMARY KEY NOT NULL,
+                    etag TEXT,
+                    name TEXT
+                    )''')
+            if DEBUG:
+                    print "created vcards table"
+    except sqlite3.OperationalError as detail:
+        if DEBUG:
+            print detail
+    except:
+            sys.stderr.write('Failed to connect to database, Unknown Error')
+    
+    conn.commit()
+
+
+    try:
+            c.execute('''CREATE TABLE email(
+            address TEXT NOT NULL,
+            type TEXT,
+            pref INTEGER,
+            href TEXT,
+            FOREIGN KEY(href) REFERENCES vcardtable(href)
+            )''')
+            if DEBUG:
+                    print "created email table"
+    except sqlite3.OperationalError as detail:
+            if DEBUG:
+                    print detail
+    except:
+            sys.stderr.write('Failed to connect to database, Unknown Error')
+    conn.commit()
+
+
+    c.close()
+
+# /database foo }}}
+##############################################
+
+
+def usage():
+    print """usage: pycardsyncer
+       pycardsyncer --help/-h
+       pycardsyncer --version/-v
+       pycardsyncer --debug
+options: 
+  --help\tprint this help text
+  --version -v\tprint pc-query version
+  --debug show some debugging output"""
+
+
+
+
+def version():
+    print "pyCardDAV Version 0.1"
+    print "PycURL Version %s" % (pycurl.version)
+
+
+def getXMLProps():
+    response=StringIO.StringIO()
+    header=StringIO.StringIO()
+    c = pycurl.Curl()
+    c.setopt(pycurl.WRITEFUNCTION, response.write)
+    c.setopt(pycurl.HEADERFUNCTION, header.write)
+    c.setopt(pycurl.USERPWD, user+":"+passwd)
+    c.setopt(pycurl.URL, resource)
+    if (insecureSSL == 1):
+        c.setopt(pycurl.SSL_VERIFYPEER, 0)
+    c.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
+    c.perform()
+    c.close
+
+    #print "HTTP Code:", c.getinfo(pycurl.HTTP_CODE)
+    #print "HEADER:"
+    header =  header.getvalue()
+    #print header
+    #print "#############################"
+    xml = response.getvalue()
+    if (header.find("addressbook") == -1):
+        print "URL is not a CardDAV resource"
+        sys.exit(1)
+
+    return xml
+
+
+
+def processXMLProps(xml):
+    namespace="{DAV:}"
+    element = ET.XML(xml)
+    abook = dict()
+    for response in element.iterchildren():
+        if (response.tag == namespace+"response"):
+            href = ""
+            etag = ""
+            insert = False
+            for refprop in response.iterchildren():
+                if (refprop.tag == namespace+"href"):
+                    href = refprop.text
+                for prop in refprop.iterchildren():
+                    for props in prop.iterchildren():
+                        if (props.tag == namespace+"getcontenttype" and props.text == "text/vcard"):
+                            insert = True
+                        if (props.tag == namespace+"getetag"):
+                            etag = props.text
+                        #print("%s - %s" % (props.tag, props.text))
+                    if insert:
+                        abook[href] = etag
+    return abook
+
+
+def checkNewEtag(vRef, vEtag): 
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    t = (vRef,)
+    c.execute('SELECT etag FROM vcardtable WHERE href=(?);',t)
+    if vEtag==c.fetchall()[0][0]:
+        returnCode=False
+    else:
+        returnCode=True
+    conn.commit()
+    c.close()
+    return returnCode
+
+def checkVRefExists(vRef): 
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    t=(vRef,)
+    c.execute('SELECT count(*) FROM vcardtable WHERE href=(?);',t)
+    if c.fetchall()==[(1,)]:
+        returnCode=False
+    else:
+        returnCode=True
+    
+    conn.commit()
+    c.close()
+    return returnCode
+
+def insertVRef(vRef): #TODO
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    t =(vRef,)
+    c.execute('INSERT INTO vcardtable (href) VALUES (?);', t)
+    conn.commit()
+    c.close()
+
+
+def updateEtag(vRef, vEtag): #TODO
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    t =(vEtag,vRef,)
+    c.execute('UPDATE vcardtable SET etag=(?) WHERE href=(?);',t)
+    conn.commit()
+    c.close()
+    
+    return True
+
+def insertName(vRef,name):
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    t =(name, vRef)
+    c.execute('UPDATE vcardtable SET name=(?) WHERE href=(?)',t) 
+    conn.commit()
+    c.close()
+
+
+def insertEmail(href, email, eType, pref):
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    t =(email, eType, pref,href,)
+    c.execute('INSERT INTO email (address, type, pref, href) VALUES (?,?,?,?)',t) 
+    conn.commit()
+    c.close()
+
+def deleteEmail(vRef):
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    t =(vRef,)
+    c.execute('DELETE from email WHERE href=(?)',t) 
+    conn.commit()
+    c.close()
+
+def getVcard(vRef):
+    response=StringIO.StringIO()
+    header=StringIO.StringIO()
+    c = pycurl.Curl()
+    c.setopt(pycurl.WRITEFUNCTION, response.write)
+    c.setopt(pycurl.HEADERFUNCTION, header.write)
+    c.setopt(pycurl.USERPWD, user+":"+passwd)
+    c.setopt(pycurl.URL, baseUrl+vRef)
+    if (insecureSSL == 1):
+        c.setopt(pycurl.SSL_VERIFYPEER, 0)
+    c.perform()
+    c.close
+
+    #print "HTTP Code:", c.getinfo(pycurl.HTTP_CODE)
+    #print "HEADER:"
+    header =  header.getvalue()
+    #print header
+    #print "#############################"
+    vCard = response.getvalue()
+    if (header.find("addressbook") == -1):
+        print "URL is not a CardDAV resource"
+        sys.exit(1)
+
+
+    return vCard
+
+
+
+
+def signal_handler(signal, frame):
+    sys.exit(0)
+
+def main(argv):
+    try:
+        opts, args = getopt.getopt(argv, "hc:v", ["help", "config=","version","debug"])
+    except getopt.GetoptError:
+        usage()
+        sys.exit(1)
+
+    for opt, arg in opts:
+        if opt in ("-h","--help"):
+            usage()
+            sys.exit()
+        elif opt in ("-v","--version"):
+            version()
+            sys.exit()
+        elif opt == "--debug":
+            global DEBUG
+            DEBUG=1
+
+
+    # no ugly python code when pressing Ctrl-C
+    signal.signal(signal.SIGINT, signal_handler)
+
+
+
+
+    makeTables()
+
+    # primitive XML processing
+    xml = getXMLProps()
+
+    abook = processXMLProps(xml)
+
+    for vRef,vEtag  in abook.iteritems():
+        if checkVRefExists(vRef):
+            insertVRef(vRef)
+        
+        if checkNewEtag(vRef,vEtag):
+            deleteEmail(vRef)
+            if DEBUG:
+                print "getting ", vRef, " etag: ", vEtag
+
+            vcard = getVcard(vRef)
+            #print vcard
+            v = vobject.readOne(vcard)
+            name = v.fn.value
+            if DEBUG:
+                print "Name: " + v.fn.value
+            insertName(vRef,v.fn.value)
+            if hasattr(v, 'email_list'):
+                for set in v.email_list:
+                    email = set.value
+                    if "TYPE" in set.params.keys():
+                        for emailType in set.params["TYPE"]:
+                            pref = 0
+                            if emailType != "INTERNET":
+                                if emailType == "pref":
+                                    pref = 1
+                                else:
+                                    eType = emailType
+                    insertEmail(vRef, email, eType, pref)
+            updateEtag(vRef, vEtag)
+
+
+
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+

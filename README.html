@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.7: http://docutils.sourceforge.net/" />
+<title>pyCardDAV</title>
+<link rel="stylesheet" href="http://pycarddav.lostpackets.de/css/main.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="pycarddav">
+<h1 class="title">pyCardDAV</h1>
+
+<p><a class="reference internal" href="#news">News</a> <a class="reference internal" href="#about">About</a> <a class="reference internal" href="#features">Features</a> <a class="reference internal" href="#installation">Installation</a> <a class="reference internal" href="#usage">Usage</a> <a class="reference internal" href="#feedback">Feedback</a> <a class="reference internal" href="#download">Download</a> <a class="reference internal" href="#license">License</a></p>
+<div class="section" id="news">
+<h1>News</h1>
+<p><strong>12.08.2011:</strong> pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav01.tgz">v0.1</a> released</p>
+</div>
+<div class="section" id="about">
+<h1>About</h1>
+<p><em>pyCardDAV</em> is supposed to provide a simple way of accessing a <a class="reference external" href="http://en.wikipedia.org/wiki/CardDAV">CardDAV</a>
+resource, mainly for use with mutt's query_command, but it might be of some use
+solo.  <em>pyCardDAV</em> consists of <em>pycardsyncer</em>, a program
+for syncing your CarDAV resource into a local database and of <em>pc-query</em>, a
+program for querying the local database. <em>pyCardDAV</em> is some ugly python code
+that holds together <a class="reference external" href="http://vobject.skyhouseconsulting.com/">vobject</a>, <a class="reference external" href="http://lxml.de/">lxml</a>, <a class="reference external" href="http://pycurl.sourceforge.net/">PyCurl</a> and <a class="reference external" href="http://code.google.com/p/pysqlite/">pysqlite</a>.</p>
+</div>
+<div class="section" id="features">
+<h1>Features</h1>
+<p>(or rather: limitations)</p>
+<ul class="simple">
+<li><em>pyCardDAV</em> can only use one addressbook resource at the moment</li>
+<li><em>pyCardDAV</em> only stores email addresses for now</li>
+<li><em>pyCardDAV</em> is read-only for now</li>
+<li><em>pyCardDAV</em> is only tested against davical</li>
+<li>your password is stored in cleartext in the pycardsyncer file</li>
+<li>the configurion is stored in pycardsyncer, so no global installation for now</li>
+</ul>
+</div>
+<div class="section" id="installation">
+<h1>Installation</h1>
+<p>Move pc-query and pycardsyncer to your ~/bin or somewhere other users on
+your machine have no access to it, since your password is stored in
+pycardsyncer file (make sure you set the access rights properly).</p>
+<p>Edit the configuration sections at the top of pycardsyncer and pc-query.
+Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.</p>
+</div>
+<div class="section" id="usage">
+<h1>Usage</h1>
+<p>Execute pycardsyncer to sync your addresses to the local database (I am
+doing this every 60 minutes via cronjob). You can test pc-query with:</p>
+<pre class="literal-block">
+% pc-query searchstring
+</pre>
+<p>Edit your mutt configuration so that query_command uses pc-query.</p>
+<p>Example from .muttrc:</p>
+<pre class="literal-block">
+set query_command=&quot;/home/username/bin/pc-query '%s'&quot;
+</pre>
+<p><em>pyCardDAV</em> has so far been tested on recent versions of FreeBSD and Ubuntu.</p>
+</div>
+<div class="section" id="feedback">
+<h1>Feedback</h1>
+<p>Please do provide feedback if <em>pyCardDAV</em> works for you or even more importantly
+if it doesn't. You can reach me by email at <a class="reference external" href="mailto:pycarddav&#64;lostpackets.de">pycarddav&#64;lostpackets.de</a> or by
+jabber/XMPP at <a class="reference external" href="mailto:geier&#64;jabber.ccc.de">geier&#64;jabber.ccc.de</a></p>
+</div>
+<div class="section" id="download">
+<h1>Download</h1>
+<p>Get the latest version of pyCardDAV from <a class="reference external" href="http://pyCardDAV.lostpackets.de/download/latest.tgz">http://pyCardDAV.lostpackets.de/download/latest.tgz</a></p>
+</div>
+<div class="section" id="license">
+<h1>License</h1>
+<p><em>pyCardDAV</em> is released as beer-ware</p>
+<p>&quot;THE BEER-WARE LICENSE&quot; (Revision 42):
+Christian Geier wrote this file. As long as you retain this notice you
+can do whatever you want with this stuff. If we meet some day, and you think
+this stuff is worth it, you can buy me a beer in return Christian Geier</p>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,128 @@
+#!/usr/bin/env python
+# vim: set ts=4 sw=4 expandtab sts=4:
+# ----------------------------------------------------------------------------
+# "THE BEER-WARE LICENSE" (Revision 42):
+# <geier@lostpackets.de> wrote this file. As long as you retain this notice you
+# can do whatever you want with this stuff. If we meet some day, and you think
+# this stuff is worth it, you can buy me a beer in return Christian Geier
+# ----------------------------------------------------------------------------
+
+##############################
+# CONFIG
+# Change this according to your change in pycardsyncer
+dbPath="/home/username/.pycard/abook.db"
+##############################
+
+
+
+import StringIO
+import sys
+import getopt
+import signal
+
+
+try:
+    import sqlite3
+except:
+    print "pysqlite3 not installed"
+    sys.exit(1)
+
+def usage():
+    print """usage: pc-query query_string
+       pc-query --help/-h
+       pc-query --version/-v
+options: 
+  --help\tprint this help text
+  --version -v\tprint pc-query version"""
+
+
+def version():
+    print "pyCardDAV Version 0.1"
+
+
+def searchFor(sString): 
+    encoding='utf-8'
+    errors='strict'
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    t = ('%'+ sString +'%',)
+    
+    # look for matches in address table
+    c.execute('SELECT * FROM email WHERE address LIKE (?);',t)
+    result = c.fetchall()
+    resultList = list()
+    for i in result:
+        t=(i[3],)
+        c.execute('SELECT name FROM vcardtable WHERE href=(?);',t)
+        name = c.fetchall()
+        resultList.append((i[0],name[0][0],i[1]))
+    
+    # look for matches in names in vcardtable 
+    t = ('%'+ sString +'%',)
+    c.execute('SELECT * FROM vcardtable WHERE name LIKE (?);',t)
+    result = c.fetchall()
+    for i in result:
+        name = i[2]
+        t = (i[0],)
+        c.execute('SELECT * FROM email WHERE href=(?);',t)
+        emailList = c.fetchall()
+        for emailLine in emailList:
+            # email = emailLine[0]
+            # type = emailLine[1]
+            # pref = emailLine[2]
+            # href = emailLine[3]
+            resultList.append((emailLine[0], name, emailLine[1]))    
+    resultList = list(set(resultList)) # eliminate duplicates
+    resultList = sorted(resultList, key=lambda result: result[1]) # sorts by name 
+    for i in resultList:
+        print unicode(i[0] + u"\t" + i[1] + u"\t" + i[2]).encode(encoding, errors)
+    conn.commit()
+    c.close()
+
+
+
+
+
+def signal_handler(signal, frame):
+    sys.exit(0)
+
+
+# MAIN
+# config not yet implemented #TODO
+def main(argv):
+    try:
+        opts, args = getopt.getopt(argv, "hc:v1", ["help", "config=","version"])
+    except getopt.GetoptError:
+        print "unknown options"
+        usage()
+        sys.exit(1)
+    for opt, arg in opts:
+        if opt in ("-h","--help"):
+            usage()
+            sys.exit()
+        elif opt in ("-v","--version"):
+            version()
+            sys.exit()
+
+    # no ugly python code when pressing Ctrl-C
+    signal.signal(signal.SIGINT, signal_handler)
+    try:
+        name = unicode(args[0])
+    except:
+        usage()
+        sys.exit()
+    print "searching for ", name, "..."
+    
+    searchFor(name)
+
+
+
+
+
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+
+
+
