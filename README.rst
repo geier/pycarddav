@@ -5,7 +5,9 @@ News_ About_ Features_ Installation_ Usage_ Feedback_ Download_ License_
 News
 ----
 **14.09.2011:** pyCardDAV v0.2_ released
+
 **13.09.2011:** pyCardDAV moved to github_, feel free to fork etc.
+
 **12.08.2011:** pyCardDAV v0.1_ released
 
 .. _v0.2: http://pycarddav.lostpackets.de/download/pycarddav02.tgz
