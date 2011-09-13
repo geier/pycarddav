@@ -10,7 +10,7 @@ News
 
 **12.08.2011:** pyCardDAV v0.1_ released
 
-.. _v0.2: http://pycarddav.lostpackets.de/download/pycarddav02.tgz
+.. _v0.2: http://pycarddav.lostpackets.de/download/pycarddav0.2.tgz
 .. _github: https://github.com/geier/pycarddav/
 .. _v0.1: http://pycarddav.lostpackets.de/download/pycarddav01.tgz
 
