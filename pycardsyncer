@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# vim: set ts=4 sw=4 expandtab sts=4:
+# vim: set t
 # ----------------------------------------------------------------------------
 # "THE BEER-WARE LICENSE" (Revision 42):
 # <geier@lostpackets.de> wrote this file. As long as you retain this notice you
@@ -11,6 +11,7 @@
 ##############################
 # imports {{{
 
+from IPython.Debugger import Tracer; debug_here = Tracer()
 import StringIO
 import sys
 import getopt
@@ -19,7 +20,7 @@ from os import path
 
 from ConfigParser import SafeConfigParser
 
-
+from  util import *
 try:
     import vobject
 except:
@@ -67,7 +68,6 @@ def makeTables():
             print detail
     except:
             sys.stderr.write('Failed to connect to database, Unknown Error')
-    
     conn.commit()
 
 
@@ -88,6 +88,44 @@ def makeTables():
             sys.stderr.write('Failed to connect to database, Unknown Error')
     conn.commit()
 
+    # properties table
+    try:
+            c.execute('''CREATE TABLE properties(
+            id INTEGER PRIMARY KEY NOT NULL,
+            property TEXT NOT NULL,
+            value TEXT,
+            href TEXT NOT NULL,
+            FOREIGN KEY(href) REFERENCES vcardtable(href)
+            )''')
+            if DEBUG:
+                    print "created properties table"
+    except sqlite3.OperationalError as detail:
+            if DEBUG:
+                    print detail
+    except:
+            sys.stderr.write('Failed to connect to database, Unknown Error')
+    conn.commit()
+
+    # parameter table
+    try:
+            c.execute('''CREATE TABLE parameters(
+            parameter TEXT NOT NULL,
+            value TEXT,
+            href TEXT NOT NULL,
+            property_id INTEGER NOT NULL,
+            FOREIGN KEY(href) REFERENCES vcardtable(href),
+            FOREIGN KEY(property_id) REFERENCES properties(id)
+            )''')
+            if DEBUG:
+                    print "created parameters table"
+    except sqlite3.OperationalError as detail:
+            if DEBUG:
+                    print detail
+    except:
+            sys.stderr.write('Failed to connect to database, Unknown Error')
+    conn.commit()
+
+    c.close()
 
     c.close()
 
@@ -165,6 +203,7 @@ def processXMLProps(xml):
 
 
 def checkNewEtag(vRef, vEtag): 
+    """returns True when the etag has been updated, otherwise False"""
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
     t = (vRef,)
@@ -192,6 +231,7 @@ def checkVRefExists(vRef):
     return returnCode
 
 def insertVRef(vRef): #TODO
+    """inserts vRef into the vcardtable"""
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
     t =(vRef,)
@@ -200,7 +240,7 @@ def insertVRef(vRef): #TODO
     c.close()
 
 
-def updateEtag(vRef, vEtag): #TODO
+def updateEtag(vRef, vEtag): 
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
     t =(vEtag,vRef,)
@@ -248,11 +288,7 @@ def getVcard(vRef):
     c.perform()
     c.close
 
-    #print "HTTP Code:", c.getinfo(pycurl.HTTP_CODE)
-    #print "HEADER:"
     header =  header.getvalue()
-    #print header
-    #print "#############################"
     vCard = response.getvalue()
     if (header.find("addressbook") == -1):
         print "URL is not a CardDAV resource"
@@ -262,6 +298,31 @@ def getVcard(vRef):
 
 
 
+def insertVcardInDb(vRef,v):
+    if v.name == "VCARD":
+        v.prettyPrint()
+        for line in v.getChildren():
+            propertyName = line.name
+            propertyValue = line.valueRepr()
+            conn = sqlite3.connect(dbPath)
+            c = conn.cursor()
+            t =(propertyName, propertyValue,vRef,)
+            c.execute('INSERT INTO properties (property, value, href) VALUES (?,?,?);', t)
+            lastrowid = c.lastrowid
+            if line.params:
+                for key in line.params.keys():
+                    for keyValue in line.params[key]:
+                        t =(key, keyValue,vRef,lastrowid)
+                        c.execute('INSERT INTO parameters (parameter, value, href,property_id) VALUES (?,?,?,?);', t)
+                        #print key + ": " + i
+            conn.commit()
+            c.close()
+            
+
+    else:
+        return -1 # this is not a vcard
+
+    
 
 def signal_handler(signal, frame):
     sys.exit(0)
@@ -333,11 +394,21 @@ def main(argv):
                 print "getting ", vRef, " etag: ", vEtag
 
             vcard = getVcard(vRef)
-            #print vcard
             v = vobject.readOne(vcard)
+
+            # DEBUG
+            #print v.prettyPrint()
+            #print v.contents
+            # /DEBUG
+            
+
+            # this is the important part
+            insertVcardInDb(vRef,v)
+
+            # everything below is deprecated
             name = v.fn.value
             if DEBUG:
-                print "Name: " + v.fn.value
+                print "Name: " + smartEncode(v.fn.value)
             insertName(vRef,v.fn.value)
             if hasattr(v, 'email_list'):
                 for set in v.email_list:
@@ -351,8 +422,10 @@ def main(argv):
                                 else:
                                     eType = emailType
                     insertEmail(vRef, email, eType, pref)
+            
+            # this will still be needed
             updateEtag(vRef, vEtag)
-
+            
 
 
 
