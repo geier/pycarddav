@@ -28,7 +28,8 @@ options:
   --help\tprints this help text and exits
   --version -v\tprints pc-query version and exits
   --config -c\tpath to config file
-                default: ~/.pycard/pycard.config"""
+                default: ~/.pycard/pycard.config
+  --mutt -m \t output only email adresses"""
 
 
 def version():
@@ -83,14 +84,13 @@ def signal_handler(signal, frame):
 
 
 # MAIN
-# config not yet implemented #TODO
 def main(argv):
     configfile="~/.pycard/pycard.conf"
     global dbPath
     dbPath="~/.pycard/pycard.conf"
 
     try:
-        opts, args = getopt.getopt(argv, "hc:v", ["help", "config=","version"])
+        opts, args = getopt.getopt(argv, "hc:vm", ["help", "config=","version","mutt"])
     except getopt.GetoptError:
         print "unknown options"
         usage()
@@ -105,6 +105,7 @@ def main(argv):
         elif opt in ("-c","--config"):
             configfile=arg
 
+
     # no ugly python code when pressing Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
     try:
@@ -117,8 +118,11 @@ def main(argv):
     parser = SafeConfigParser()
     parser.read(configfile)
     dbPath = path.expanduser(parser.get('default', 'dbPath'))
-    print "searching for ", name, "..."
-    searchFor(name, dbPath)
+    
+    for opt, arg in opts:
+        if opt in ("-m","--mutt"):
+            print "searching for ", name, "..."
+            searchFor(name, dbPath)
 
 
 
