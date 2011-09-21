@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# vim: set t
+# vim: set ts=4 sw=4 expandtab sts=4:
 # ----------------------------------------------------------------------------
 # "THE BEER-WARE LICENSE" (Revision 42):
 # <geier@lostpackets.de> wrote this file. As long as you retain this notice you
@@ -202,7 +202,7 @@ def processXMLProps(xml):
     return abook
 
 
-def checkNewEtag(vRef, vEtag): 
+def checkNewEtag(vRef, vEtag):
     """returns True when the etag has been updated, otherwise False"""
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
@@ -230,7 +230,7 @@ def checkVRefExists(vRef):
     c.close()
     return returnCode
 
-def insertVRef(vRef): #TODO
+def insertVRef(vRef):
     """inserts vRef into the vcardtable"""
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
@@ -240,7 +240,7 @@ def insertVRef(vRef): #TODO
     c.close()
 
 
-def updateEtag(vRef, vEtag): 
+def updateEtag(vRef, vEtag):
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
     t =(vEtag,vRef,)
