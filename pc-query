@@ -123,7 +123,21 @@ def main(argv):
         if opt in ("-m","--mutt"):
             print "searching for ", name, "..."
             searchFor(name, dbPath)
-
+            return 0
+    
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    t = ('%'+ sString +'%',)
+    
+    # look for matches in address table
+    c.execute('SELECT * FROM email WHERE address LIKE (?);',t)
+    result = c.fetchall()
+    resultList = list()
+    for i in result:
+        t=(i[3],)
+        c.execute('SELECT name FROM vcardtable WHERE href=(?);',t)
+        name = c.fetchall()
+        resultList.append((i[0],name[0][0],i[1]))
 
 
 
