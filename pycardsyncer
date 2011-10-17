@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding: utf-8
 # vim: set ts=4 sw=4 expandtab sts=4:
 # ----------------------------------------------------------------------------
 # "THE BEER-WARE LICENSE" (Revision 42):
@@ -132,6 +133,8 @@ def makeTables():
 # /database foo }}}
 ##############################################
 
+def smartencode(s):
+    unicode(s).encode("utf-8", "strict")
 
 def usage():
     print """usage: pycardsyncer [options]
@@ -142,13 +145,9 @@ options:
                             default: ~/.pycard/pycard.config
   --debug show some debugging output"""
 
-
-
-
 def version():
     print "pyCardDAV Version 0.2"
     print "PycURL Version %s" % (pycurl.version)
-
 
 def getXMLProps():
     response=StringIO.StringIO()
@@ -163,20 +162,12 @@ def getXMLProps():
     c.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
     c.perform()
     c.close
-
-    #print "HTTP Code:", c.getinfo(pycurl.HTTP_CODE)
-    #print "HEADER:"
     header =  header.getvalue()
-    #print header
-    #print "#############################"
     xml = response.getvalue()
     if (header.find("addressbook") == -1):
         print "URL is not a CardDAV resource"
         sys.exit(1)
-
     return xml
-
-
 
 def processXMLProps(xml):
     namespace="{DAV:}"
@@ -201,7 +192,6 @@ def processXMLProps(xml):
                         abook[href] = etag
     return abook
 
-
 def checkNewEtag(vRef, vEtag):
     """returns True when the etag has been updated, otherwise False"""
     conn = sqlite3.connect(dbPath)
@@ -216,7 +206,7 @@ def checkNewEtag(vRef, vEtag):
     c.close()
     return returnCode
 
-def checkVRefExists(vRef): 
+def checkVRefExists(vRef):
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
     t=(vRef,)
@@ -225,7 +215,6 @@ def checkVRefExists(vRef):
         returnCode=False
     else:
         returnCode=True
-    
     conn.commit()
     c.close()
     return returnCode
@@ -239,7 +228,6 @@ def insertVRef(vRef):
     conn.commit()
     c.close()
 
-
 def updateEtag(vRef, vEtag):
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
@@ -247,7 +235,6 @@ def updateEtag(vRef, vEtag):
     c.execute('UPDATE vcardtable SET etag=(?) WHERE href=(?);',t)
     conn.commit()
     c.close()
-    
     return True
 
 def insertName(vRef,name):
@@ -257,7 +244,6 @@ def insertName(vRef,name):
     c.execute('UPDATE vcardtable SET name=(?) WHERE href=(?)',t) 
     conn.commit()
     c.close()
-
 
 def insertEmail(href, email, eType, pref):
     conn = sqlite3.connect(dbPath)
@@ -296,33 +282,38 @@ def getVcard(vRef):
 
     return vCard
 
-
-
 def insertVcardInDb(vRef,v):
     if v.name == "VCARD":
         v.prettyPrint()
         for line in v.getChildren():
-            propertyName = line.name
-            propertyValue = line.valueRepr()
-            conn = sqlite3.connect(dbPath)
-            c = conn.cursor()
-            t =(propertyName, propertyValue,vRef,)
-            c.execute('INSERT INTO properties (property, value, href) VALUES (?,?,?);', t)
-            lastrowid = c.lastrowid
-            if line.params:
-                for key in line.params.keys():
-                    for keyValue in line.params[key]:
-                        t =(key, keyValue,vRef,lastrowid)
-                        c.execute('INSERT INTO parameters (parameter, value, href,property_id) VALUES (?,?,?,?);', t)
-                        #print key + ": " + i
-            conn.commit()
-            c.close()
-            
+            try:
+                line.transformFromNative()
+            except:
+                pass
 
+            propertyName = line.name
+            propertyValue = line.value
+            if (propertyName == "PHOTO"): # for now, we cannot handle photos
+                pass
+            else:
+                conn = sqlite3.connect(dbPath)
+                c = conn.cursor()
+                t =(propertyName, propertyValue,vRef,)
+                print propertyName, type(propertyName), propertyValue, type(propertyValue),type(vRef)
+
+                c.execute('INSERT INTO properties (property, value, href) VALUES (?,?,?);', t)
+                lastrowid = c.lastrowid
+                if line.params:
+                    for key in line.params.keys():
+                        for keyValue in line.params[key]:
+                            t =(key, keyValue,vRef,lastrowid)
+                            c.execute('INSERT INTO parameters (parameter, value, href,property_id) VALUES (?,?,?,?);', t)
+                            #print key + ": " + i
+                conn.commit()
+                c.close()
     else:
         return -1 # this is not a vcard
 
-    
 
 def signal_handler(signal, frame):
     sys.exit(0)
@@ -351,7 +342,7 @@ def main(argv):
             configfile=arg
 
 
-    # no ugly python code when pressing Ctrl-C
+    # trying to hide some ugly python code on pressing Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
 
     #config file foo 
@@ -425,7 +416,6 @@ def main(argv):
             
             # this will still be needed
             updateEtag(vRef, vEtag)
-            
 
 
 
