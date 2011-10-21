@@ -100,13 +100,14 @@ def main(argv):
     dbPath="~/.pycard/pycard.conf"
 
     try:
-        opts, args = getopt.getopt(argv, "hc:vm", ["help", "config=","version","mutt"])
+        opts, args = getopt.getopt(argv, "hc:vm:", ["help", "config=","version","mutt="])
     except getopt.GetoptError:
         print "unknown options"
         usage()
         sys.exit(1)
     for opt, arg in opts:
         if opt in ("-h","--help"):
+            print "help"
             usage()
             sys.exit()
         elif opt in ("-v","--version"):
@@ -118,11 +119,6 @@ def main(argv):
 
     # no ugly python code when pressing Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
-    try:
-        name = unicode(args[0])
-    except:
-        usage()
-        sys.exit()
     configfile = path.expanduser(configfile)
 
     parser = SafeConfigParser()
@@ -130,11 +126,12 @@ def main(argv):
     dbPath = path.expanduser(parser.get('default', 'dbPath'))
     for opt, arg in opts:
         if opt in ("-m","--mutt"):
+            name=arg.decode("utf-8", "strict")
             print "searching for ", name, "..."
             searchFor(name, dbPath)
             return 0
-    contactId = getContactIdFromString(name)
-    printContactInfo(contactId)
+    #contactId = getContactIdFromString(name)
+    #printContactInfo(contactId)
 
 
 
