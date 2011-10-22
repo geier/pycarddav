@@ -83,8 +83,24 @@ def printContactInfo(vRef):
     t = (vRef,)
     c.execute('SELECT * FROM properties WHERE href=(?)',t)
     result = c.fetchall()
+    card = dict()
+    tels = list()
     for i in result:
+            if i[1]=="FN":
+                card["FN"]=i[2]
+            if i[1]=="TEL":
+                t = (i[0],)
+                c.execute('SELECT parameter,value FROM parameters where property_id=(?)',t)
+                parameters = c.fetchall()
+                parameterString = str()
+                for parameter in parameters:
+                    parameterString = parameterString + " " + parameter[1]
+                tels.append((i[2],parameterString))
+            card["TEL"]=tels
             print i[1], ":\t", i[2]
+    print "card:"
+    print card
+    c.close()
 
 def getContactIdFromString(searchString):
     return "/davical/caldav.php/cgeier/abook/402F5848-0B697647-203E9882.vcf"
@@ -129,10 +145,11 @@ def main(argv):
             name=arg.decode("utf-8", "strict")
             print "searching for ", name, "..."
             searchFor(name, dbPath)
-            return 0
-    #contactId = getContactIdFromString(name)
-    #printContactInfo(contactId)
+    print "\n\n"
+    contactId = getContactIdFromString(name)
+    printContactInfo(contactId)
 
+    return 0
 
 
 
