@@ -146,8 +146,7 @@ options:
   --debug show some debugging output"""
 
 def version():
-    print "pyCardDAV Version 0.2"
-    print "PycURL Version %s" % (pycurl.version)
+    print "0.2.1"
 
 def getXMLProps():
     response=StringIO.StringIO()
@@ -399,7 +398,7 @@ def main(argv):
             # everything below is deprecated
             name = v.fn.value
             if DEBUG:
-                print "Name: " + smartEncode(v.fn.value)
+                print "Name: " + unicode(v.fn.value).encode('utf-8', 'strict')
             insertName(vRef,v.fn.value)
             if hasattr(v, 'email_list'):
                 for set in v.email_list:
