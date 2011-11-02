@@ -33,7 +33,6 @@ that holds together <a class="reference external" href="http://vobject.skyhousec
 <p>(or rather: limitations)</p>
 <ul class="simple">
 <li><em>pyCardDAV</em> can only use one addressbook resource at the moment</li>
-<li><em>pyCardDAV</em> only stores email addresses for now</li>
 <li><em>pyCardDAV</em> is read-only for now</li>
 <li><em>pyCardDAV</em> is only tested against davical</li>
 <li>your password is stored in cleartext in the configfile file</li>
@@ -41,11 +40,11 @@ that holds together <a class="reference external" href="http://vobject.skyhousec
 </div>
 <div class="section" id="installation">
 <h1>Installation</h1>
-<p>Move pc-query and pycardsyncer to your ~/bin or somewhere other users on
-your machine have no access to it, since your password is stored in
-pycardsyncer file (make sure you set the access rights properly).</p>
-<p>Copy and edit the supplied pycard.conf.sample file (default location is
-~/.pycard/pycard.conf).</p>
+<p>Move pc-query and pycardsyncer to some folder in your PATH.
+Copy and edit the supplied pycard.conf.sample file (default location is
+~/.pycard/pycard.conf). Beware that it only you can access this file if you
+have untrusted users on your machine, since the password is stored in
+cleartext.</p>
 <p>Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.</p>
 </div>
 <div class="section" id="usage">
@@ -55,10 +54,15 @@ doing this every 60 minutes via cronjob). You can test pc-query with:</p>
 <pre class="literal-block">
 % pc-query searchstring
 </pre>
-<p>Edit your mutt configuration so that query_command uses pc-query.</p>
+<p>By default <em>pyCardDAV</em> only print the names, email addresses and telephone
+numbers of contacts matching the search string, to see all vCard properties use
+the &quot;-a&quot; option.</p>
+<p>For usage with mutt etc., <em>pyCardDAV</em> can also print only email addresses in a
+mutt friendly format (with the &quot;-m&quot; option. Edit your mutt configuration so
+that query_command uses pc-query:</p>
 <p>Example from .muttrc:</p>
 <pre class="literal-block">
-set query_command=&quot;/home/username/bin/pc-query '%s'&quot;
+set query_command=&quot;/home/username/bin/pc-query -m '%s'&quot;
 </pre>
 <p><em>pyCardDAV</em> has so far been tested on recent versions of FreeBSD and Ubuntu.</p>
 </div>

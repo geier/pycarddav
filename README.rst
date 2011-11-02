@@ -37,19 +37,17 @@ Features
 (or rather: limitations)
 
 - *pyCardDAV* can only use one addressbook resource at the moment
-- *pyCardDAV* only stores email addresses for now
 - *pyCardDAV* is read-only for now
 - *pyCardDAV* is only tested against davical
 - your password is stored in cleartext in the configfile file
 
 Installation
 ------------
-Move pc-query and pycardsyncer to your ~/bin or somewhere other users on
-your machine have no access to it, since your password is stored in
-pycardsyncer file (make sure you set the access rights properly).
-
+Move pc-query and pycardsyncer to some folder in your PATH.
 Copy and edit the supplied pycard.conf.sample file (default location is
-~/.pycard/pycard.conf).
+~/.pycard/pycard.conf). Beware that it only you can access this file if you
+have untrusted users on your machine, since the password is stored in
+cleartext.
 
 Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
 
@@ -60,11 +58,18 @@ doing this every 60 minutes via cronjob). You can test pc-query with::
 
         % pc-query searchstring
 
-Edit your mutt configuration so that query_command uses pc-query.
+By default *pyCardDAV* only print the names, email addresses and telephone
+numbers of contacts matching the search string, to see all vCard properties use
+the "-a" option.
+
+
+For usage with mutt etc., *pyCardDAV* can also print only email addresses in a
+mutt friendly format (with the "-m" option. Edit your mutt configuration so
+that query_command uses pc-query:
 
 Example from .muttrc::
 
-        set query_command="/home/username/bin/pc-query '%s'"
+        set query_command="/home/username/bin/pc-query -m '%s'"
 
 *pyCardDAV* has so far been tested on recent versions of FreeBSD and Ubuntu.
 
