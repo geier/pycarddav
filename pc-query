@@ -13,7 +13,7 @@ import sys
 import getopt
 import signal
 from os import path
-
+import argparse
 from ConfigParser import SafeConfigParser
 
 try:
@@ -22,21 +22,9 @@ except:
     print "pysqlite3 not installed"
     sys.exit(1)
 
-def usage():
-    print """usage: pc-query [options] query_string
-options: 
-  --help\tprints this help text and exits
-  --version -v\tprints pc-query version and exits
-  --config -c\tpath to config file
-                default: ~/.pycard/pycard.config
-  --mutt -m \toutput only email adresses
-  -a\t\tdisplays all information for a contact"""
 
 encoding='utf-8'
 errors='strict'
-
-def version():
-    print "0.2.1"
 
 
 def searchFor(sString, dbPath): 
@@ -77,7 +65,7 @@ def searchFor(sString, dbPath):
     c.close()
 
 
-def printContactInfo(vRef):
+def printContactInfo(vRef,displayAll):
     """this is a more or less a clone of vobjects prettyPrint()"""
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
@@ -144,49 +132,32 @@ def signal_handler(signal, frame):
 def main(argv):
     configfile="~/.pycard/pycard.conf"
     global dbPath
-    global displayAll
-    displayAll = False
-    dbPath="~/.pycard/pycard.conf"
+    dbPath="~/.pycard/abook.db"
 
-    try:
-        opts, args = getopt.getopt(argv, "hac:vm:", ["help", "config=","version","mutt="])
-    except getopt.GetoptError:
-        print "unknown options"
-        usage()
-        sys.exit(1)
-    for opt, arg in opts:
-        if opt in ("-h","--help"):
-            print "help"
-            usage()
-            sys.exit()
-        elif opt in ("-v","--version"):
-            version()
-            sys.exit()
-        elif opt in ("-c","--config"):
-            configfile=arg
-        if opt in ("-a"):
-            displayAll = True
-
+    parser = argparse.ArgumentParser(description='prints contacts cards matching a search string')
+    parser.add_argument("-c", "--config", action="store", dest="configfile", help="defaults to ~/.pycard/pycard.conf")
+    parser.add_argument("-v", "--version", action="version", version="0.3")
+    parser.add_argument("-a", action="store_true", dest="displayAll", default="False", help="prints the whole card, not only name, telephone numbers and email addresses")
+    parser.add_argument("-m", action="store_true", dest="mutt", default="False", help="only prints email addresses, in a mutt friendly format")
+    parser.add_argument("searchString", metavar="SEARCHSTRING", help="the string to search for")
+    args = parser.parse_args()
 
     # let's try to hide some ugly python code, at least when hitting Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
-    configfile = path.expanduser(configfile)
+    configfile = path.expanduser(args.configfile)
 
     parser = SafeConfigParser()
     parser.read(configfile)
     dbPath = path.expanduser(parser.get('default', 'dbPath'))
-    for opt, arg in opts:
-        if opt in ("-m","--mutt"):
-            name=arg.decode("utf-8", "strict")
-            print "searching for ", name, "..."
-            searchFor(name, dbPath)
+    if args.mutt == True:
+            print "searching for ", args.searchString, "..."
+            searchFor(args.searchString.decode("utf-8","strict"), dbPath)
             return 0
-    name = sys.argv[-1]
-    contactIds = getContactIdFromString(name)
+    contactIds = getContactIdFromString(args.searchString.decode("utf-8","strict"))
     for contactId in contactIds:
-        printContactInfo(contactId[0])
+        printContactInfo(contactId[0],args.displayAll)
         if len(contactIds) > 1:
-            print "\n"
+            print ""
 
     return 0
 
