@@ -26,6 +26,12 @@ except:
 encoding='utf-8'
 errors='strict'
 
+def unknownError(string):
+    s = "An unknown Error occured"
+    if DEBUG == True:
+        s += ": " + str(string)
+    print s
+    sys.exit(5)
 
 def searchFor(sString, dbPath): 
     conn = sqlite3.connect(dbPath)
@@ -119,6 +125,7 @@ def getContactIdFromString(searchString):
     c = conn.cursor()
     t = ('%'+ searchString +'%',)
     c.execute('SELECT href FROM properties WHERE value LIKE (?)',t)
+
     result = c.fetchall()
     result = list(set(result))
     return result
@@ -131,31 +138,46 @@ def signal_handler(signal, frame):
 # MAIN
 def main(argv):
     configfile="~/.pycard/pycard.conf"
-    global dbPath
+    global dbPath, DEBUG
     dbPath="~/.pycard/abook.db"
 
     parser = argparse.ArgumentParser(description='prints contacts cards matching a search string')
-    parser.add_argument("-c", "--config", action="store", dest="configfile", help="defaults to ~/.pycard/pycard.conf")
+    parser.add_argument("-c", "--config", action="store", dest="configfile", default="~/.pycard/pycard.conf", help="defaults to ~/.pycard/pycard.conf")
     parser.add_argument("-v", "--version", action="version", version="0.3")
     parser.add_argument("-a", action="store_true", dest="displayAll", default="False", help="prints the whole card, not only name, telephone numbers and email addresses")
     parser.add_argument("-m", action="store_true", dest="mutt", default="False", help="only prints email addresses, in a mutt friendly format")
+    parser.add_argument("--debug", action="store_true", dest="debug", default="False", help="enable debugging")
     parser.add_argument("searchString", metavar="SEARCHSTRING", help="the string to search for")
     args = parser.parse_args()
+    DEBUG =  args.debug
 
     # let's try to hide some ugly python code, at least when hitting Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
     configfile = path.expanduser(args.configfile)
 
     parser = SafeConfigParser()
-    parser.read(configfile)
-    dbPath = path.expanduser(parser.get('default', 'dbPath'))
+    try:
+        parser.read(configfile)
+        dbPath = path.expanduser(parser.get('default', 'dbPath'))
+    except:
+        unknownError(sys.exc_info())
+
     if args.mutt == True:
-            print "searching for ", args.searchString, "..."
+        print "searching for ", args.searchString, "..."
+        try:
             searchFor(args.searchString.decode("utf-8","strict"), dbPath)
-            return 0
-    contactIds = getContactIdFromString(args.searchString.decode("utf-8","strict"))
+        except:
+            unknownError(sys.exc_info())
+        return 0
+    try:
+        contactIds = getContactIdFromString(args.searchString.decode("utf-8","strict"))
+    except:
+        unknownError(sys.exc_info())
     for contactId in contactIds:
-        printContactInfo(contactId[0],args.displayAll)
+        try:
+            printContactInfo(contactId[0],args.displayAll)
+        except:
+            unknownError(sys.exc_info())
         if len(contactIds) > 1:
             print ""
 
@@ -166,7 +188,7 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+        main(sys.argv[1:0])
 
 
 
