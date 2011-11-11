@@ -71,7 +71,7 @@ def searchFor(sString, dbPath):
     c.close()
 
 
-def printContactInfo(vRef,displayAll):
+def printContactInfo(vRef,displayAll,moreThanOne):
     """this is a more or less a clone of vobjects prettyPrint()"""
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
@@ -117,15 +117,55 @@ def printContactInfo(vRef,displayAll):
             s += ": "
             s += card[paramType][0][0]
             print s
+    if moreThanOne:
+        print "\n"
 
     c.close()
+
+def printEmail(vRef,ignore,ignore1):
+    """maimed print contact info"""
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    t = (vRef,)
+    c.execute('SELECT * FROM properties WHERE href=(?)',t)
+    result = c.fetchall()
+    card = dict()
+    for i in result:
+        if not card.has_key(i[1]):
+            card[i[1]]=list()
+        t = (i[0],)
+        c.execute('SELECT parameter,value FROM parameters where property_id=(?)',t)
+        parameters = c.fetchall()
+        parameterString = str()
+        if not parameters == list():
+            for parameter in parameters:
+                if parameter[0]=="TYPE":
+                    if not parameterString == str():
+                        parameterString += ", "
+                    parameterString += parameter[1]
+        card[i[1]].append((i[2],parameterString))
+    name = card["FN"][0][0]
+    del(card["FN"])
+    for parameterList in ("EMAIL",):
+        if card.has_key(parameterList):
+            for parameter in card[parameterList]:
+                s = name + " "
+
+                if not parameter[1] == list():
+                    s += " ("
+                    types = parameter[1].title()
+                    s += ")"
+                email = parameter[0]
+                print email + "\t" + name +"\t(" + types + ")"
+            del(card[parameterList])
+    c.close()
+
 
 def getContactIdFromString(searchString):
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
     t = ('%'+ searchString +'%',)
     c.execute('SELECT href FROM properties WHERE value LIKE (?)',t)
-
     result = c.fetchall()
     result = list(set(result))
     return result
@@ -145,7 +185,7 @@ def main(argv):
     parser.add_argument("-c", "--config", action="store", dest="configfile", default="~/.pycard/pycard.conf", help="defaults to ~/.pycard/pycard.conf")
     parser.add_argument("-v", "--version", action="version", version="0.3")
     parser.add_argument("-a", action="store_true", dest="displayAll", default="False", help="prints the whole card, not only name, telephone numbers and email addresses")
-    parser.add_argument("-m", action="store_true", dest="mutt", default="False", help="only prints email addresses, in a mutt friendly format")
+    parser.add_argument("-m", dest="printFunction", action="store_const", const=printEmail, default=printContactInfo, help="only prints email addresses, in a mutt friendly format")
     parser.add_argument("--debug", action="store_true", dest="debug", default="False", help="enable debugging")
     parser.add_argument("searchString", metavar="SEARCHSTRING", help="the string to search for")
     args = parser.parse_args()
@@ -156,30 +196,21 @@ def main(argv):
     configfile = path.expanduser(args.configfile)
 
     parser = SafeConfigParser()
-    try:
-        parser.read(configfile)
-        dbPath = path.expanduser(parser.get('default', 'dbPath'))
-    except:
-        unknownError(sys.exc_info())
+    #try:
+    parser.read(configfile)
+    dbPath = path.expanduser(parser.get('default', 'dbPath'))
 
-    if args.mutt == True:
-        print "searching for ", args.searchString, "..."
-        try:
-            searchFor(args.searchString.decode("utf-8","strict"), dbPath)
-        except:
-            unknownError(sys.exc_info())
-        return 0
-    try:
-        contactIds = getContactIdFromString(args.searchString.decode("utf-8","strict"))
-    except:
-        unknownError(sys.exc_info())
+    print "searching for ", args.searchString, "..."
+    contactIds = getContactIdFromString(args.searchString.decode("utf-8","strict"))
     for contactId in contactIds:
-        try:
-            printContactInfo(contactId[0],args.displayAll)
-        except:
-            unknownError(sys.exc_info())
         if len(contactIds) > 1:
-            print ""
+            moreThanOne = True
+        else:
+            moreThanOne = False
+        args.printFunction(contactId[0],args.displayAll,moreThanOne)
+        #printContactInfo(contactId[0],args.displayAll)
+    #except:
+    #    unknownError(sys.exc_info())
 
     return 0
 

@@ -72,22 +72,6 @@ def makeTables():
     conn.commit()
 
 
-    try:
-            c.execute('''CREATE TABLE email(
-            address TEXT NOT NULL,
-            type TEXT,
-            pref INTEGER,
-            href TEXT,
-            FOREIGN KEY(href) REFERENCES vcardtable(href)
-            )''')
-            if DEBUG:
-                    print "created email table"
-    except sqlite3.OperationalError as detail:
-            if DEBUG:
-                    print detail
-    except:
-            sys.stderr.write('Failed to connect to database, Unknown Error')
-    conn.commit()
 
     # properties table
     try:
@@ -244,19 +228,12 @@ def insertName(vRef,name):
     conn.commit()
     c.close()
 
-def insertEmail(href, email, eType, pref):
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    t =(email, eType, pref,href,)
-    c.execute('INSERT INTO email (address, type, pref, href) VALUES (?,?,?,?)',t) 
-    conn.commit()
-    c.close()
-
-def deleteEmail(vRef):
+def deleteVcardFromDb(vRef):
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
     t =(vRef,)
-    c.execute('DELETE from email WHERE href=(?)',t) 
+    c.execute('DELETE from properties WHERE href=(?)',t) 
+    c.execute('DELETE from parameters WHERE href=(?)',t) 
     conn.commit()
     c.close()
 
@@ -298,7 +275,6 @@ def insertVcardInDb(vRef,v):
                 conn = sqlite3.connect(dbPath)
                 c = conn.cursor()
                 t =(propertyName, propertyValue,vRef,)
-                print propertyName, type(propertyName), propertyValue, type(propertyValue),type(vRef)
 
                 c.execute('INSERT INTO properties (property, value, href) VALUES (?,?,?);', t)
                 lastrowid = c.lastrowid
@@ -379,7 +355,7 @@ def main(argv):
             insertVRef(vRef)
         
         if checkNewEtag(vRef,vEtag):
-            deleteEmail(vRef)
+            deleteVcardFromDb(vRef)
             if DEBUG:
                 print "getting ", vRef, " etag: ", vEtag
 
@@ -394,26 +370,6 @@ def main(argv):
 
             # this is the important part
             insertVcardInDb(vRef,v)
-
-            # everything below is deprecated
-            name = v.fn.value
-            if DEBUG:
-                print "Name: " + unicode(v.fn.value).encode('utf-8', 'strict')
-            insertName(vRef,v.fn.value)
-            if hasattr(v, 'email_list'):
-                for set in v.email_list:
-                    email = set.value
-                    if "TYPE" in set.params.keys():
-                        for emailType in set.params["TYPE"]:
-                            pref = 0
-                            if emailType != "INTERNET":
-                                if emailType == "pref":
-                                    pref = 1
-                                else:
-                                    eType = emailType
-                    insertEmail(vRef, email, eType, pref)
-            
-            # this will still be needed
             updateEtag(vRef, vEtag)
 
 
