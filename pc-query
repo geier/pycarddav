@@ -26,149 +26,185 @@ except:
 encoding='utf-8'
 errors='strict'
 
-def unknownError(string):
-    s = "An unknown Error occured"
-    if DEBUG == True:
-        s += ": " + str(string)
-    print s
-    sys.exit(5)
-
-def searchFor(sString, dbPath): 
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    t = ('%'+ sString +'%',)
-    
-    # look for matches in address table
-    c.execute('SELECT * FROM email WHERE address LIKE (?);',t)
-    result = c.fetchall()
-    resultList = list()
-    for i in result:
-        t=(i[3],)
-        c.execute('SELECT name FROM vcardtable WHERE href=(?);',t)
-        name = c.fetchall()
-        resultList.append((i[0],name[0][0],i[1]))
-   
-    # look for matches in names in vcardtable 
-    t = ('%'+ sString +'%',)
-    c.execute('SELECT * FROM vcardtable WHERE name LIKE (?);',t)
-    result = c.fetchall()
-    for i in result:
-        name = i[2]
-        t = (i[0],)
-        c.execute('SELECT * FROM email WHERE href=(?);',t)
-        emailList = c.fetchall()
-        for emailLine in emailList:
-            # email = emailLine[0]
-            # type = emailLine[1]
-            # pref = emailLine[2]
-            # href = emailLine[3]
-            resultList.append((emailLine[0], name, emailLine[1]))
-    resultList = list(set(resultList)) # eliminate duplicates
-    resultList = sorted(resultList, key=lambda result: result[1]) # sorts by name
-    for i in resultList:
-        print unicode(i[0] + u"\t" + i[1] + u"\t" + i[2]).encode(encoding, errors)
-    conn.commit()
-    c.close()
 
 
-def printContactInfo(vRef,displayAll,moreThanOne):
-    """this is a more or less a clone of vobjects prettyPrint()"""
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    t = (vRef,)
-    c.execute('SELECT * FROM properties WHERE href=(?)',t)
-    result = c.fetchall()
-    card = dict()
-    for i in result:
-        if not card.has_key(i[1]):
-            card[i[1]]=list()
-        t = (i[0],)
-        c.execute('SELECT parameter,value FROM parameters where property_id=(?)',t)
-        parameters = c.fetchall()
-        parameterString = str()
-        if not parameters == list():
-            for parameter in parameters:
-                if parameter[0]=="TYPE":
-                    if not parameterString == str():
-                        parameterString += ", "
-                    parameterString += parameter[1]
-        card[i[1]].append((i[2],parameterString))
-    print "Name: " + card["FN"][0][0]
-    del(card["FN"])
-    for parameterList in ("EMAIL","TEL"):
-        if card.has_key(parameterList):
-            for parameter in card[parameterList]:
+class pc_query:
+    def __init__(self, dbPath="~/.pycacard/abook.db", encoding="utf-8", errors="strict", debug=False):
+        self.dbPath = path.expanduser(dbPath)
+        self.encoding = encoding
+        self.errors = errors
+        self.debug = debug
+        self.displayAll = False
+
+    def setEncoding(self, encoding, errors="strict"):
+        self.encoding = encoding
+
+    def setDbPath(self, dbPath):
+        self.dbPath = path.expanduser(dbPath)
+
+    def setSearchString(self, searchString):
+        self.searchString = searchString
+
+    def setPrintFunction(self, printFunction):
+        self.printFunction = printFunction
+
+    def setDisplayAll(self, displayAll):
+        self.displayAll = displayAll
+
+    def search(self):
+        contactIds = self.getContactIdFromString(self.searchString)
+        for contactId in contactIds:
+            if self.printFunction == "printEmail":
+                self.printEmail(contactId[0],True,1)
+            else:
+                self.printContactInfo(contactId[0],self.displayAll,1)
+
+    def unknownError(self, string):
+        s = "An unknown Error occured"
+        if self.debug == True:
+            s += ": " + str(string)
+        print s
+        sys.exit(5)
+
+    def setDebug(self, debug):
+        self.debug = debug
+
+    def searchFor(self, sString):
+        conn = sqlite3.connect(self.dbPath)
+        c = conn.cursor()
+        t = ('%'+ sString +'%',)
+        
+        # look for matches in address table
+        c.execute('SELECT * FROM email WHERE address LIKE (?);',t)
+        result = c.fetchall()
+        resultList = list()
+        for i in result:
+            t=(i[3],)
+            c.execute('SELECT name FROM vcardtable WHERE href=(?);',t)
+            name = c.fetchall()
+            resultList.append((i[0],name[0][0],i[1]))
+       
+        # look for matches in names in vcardtable 
+        t = ('%'+ sString +'%',)
+        c.execute('SELECT * FROM vcardtable WHERE name LIKE (?);',t)
+        result = c.fetchall()
+        for i in result:
+            name = i[2]
+            t = (i[0],)
+            c.execute('SELECT * FROM email WHERE href=(?);',t)
+            emailList = c.fetchall()
+            for emailLine in emailList:
+                # email = emailLine[0]
+                # type = emailLine[1]
+                # pref = emailLine[2]
+                # href = emailLine[3]
+                resultList.append((emailLine[0], name, emailLine[1]))
+        resultList = list(set(resultList)) # eliminate duplicates
+        resultList = sorted(resultList, key=lambda result: result[1]) # sorts by name
+        for i in resultList:
+            print unicode(i[0] + u"\t" + i[1] + u"\t" + i[2]).encode("utf-8", "strict")
+        conn.commit()
+        c.close()
+
+
+    def getContactIdFromString(self,searchString):
+        conn = sqlite3.connect(self.dbPath)
+        c = conn.cursor()
+        t = ('%'+ self.searchString +'%',)
+        c.execute('SELECT href FROM properties WHERE value LIKE (?)',t)
+        result = c.fetchall()
+        result = list(set(result))
+        return result
+
+    def printContactInfo(self, vRef,displayAll,moreThanOne):
+        """this is a more or less a clone of vobjects prettyPrint()"""
+        conn = sqlite3.connect(self.dbPath)
+        c = conn.cursor()
+        t = (vRef,)
+        c.execute('SELECT * FROM properties WHERE href=(?)',t)
+        result = c.fetchall()
+        card = dict()
+        for i in result:
+            if not card.has_key(i[1]):
+                card[i[1]]=list()
+            t = (i[0],)
+            c.execute('SELECT parameter,value FROM parameters where property_id=(?)',t)
+            parameters = c.fetchall()
+            parameterString = str()
+            if not parameters == list():
+                for parameter in parameters:
+                    if parameter[0]=="TYPE":
+                        if not parameterString == str():
+                            parameterString += ", "
+                        parameterString += parameter[1]
+            card[i[1]].append((i[2],parameterString))
+        print "Name: " + card["FN"][0][0]
+        del(card["FN"])
+        for parameterList in ("EMAIL","TEL"):
+            if card.has_key(parameterList):
+                for parameter in card[parameterList]:
+                    s = ""
+                    s += parameterList.title()
+
+                    if not parameter[1] == list():
+                        s += " ("
+                        s += parameter[1].title()
+                        s += ")"
+                    s += ": " +  parameter[0]
+                    print s
+                del(card[parameterList])
+        if displayAll == True:
+            for paramType in card:
                 s = ""
-                s += parameterList.title()
-
-                if not parameter[1] == list():
-                    s += " ("
-                    s += parameter[1].title()
-                    s += ")"
-                s += ": " +  parameter[0]
+                s += paramType
+                if not card[paramType][0][1] == str():
+                    s += " (" + card[paramType][0][1] + ")"
+                s += ": "
+                s += card[paramType][0][0]
                 print s
-            del(card[parameterList])
-    if displayAll == True:
-        for paramType in card:
-            s = ""
-            s += paramType
-            if not card[paramType][0][1] == str():
-                s += " (" + card[paramType][0][1] + ")"
-            s += ": "
-            s += card[paramType][0][0]
-            print s
-    if moreThanOne:
-        print "\n"
+        if moreThanOne:
+            print "\n"
 
-    c.close()
+        c.close()
 
-def printEmail(vRef,ignore,ignore1):
-    """maimed print contact info"""
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    t = (vRef,)
-    c.execute('SELECT * FROM properties WHERE href=(?)',t)
-    result = c.fetchall()
-    card = dict()
-    for i in result:
-        if not card.has_key(i[1]):
-            card[i[1]]=list()
-        t = (i[0],)
-        c.execute('SELECT parameter,value FROM parameters where property_id=(?)',t)
-        parameters = c.fetchall()
-        parameterString = str()
-        if not parameters == list():
-            for parameter in parameters:
-                if parameter[0]=="TYPE":
-                    if not parameterString == str():
-                        parameterString += ", "
-                    parameterString += parameter[1]
-        card[i[1]].append((i[2],parameterString))
-    name = card["FN"][0][0]
-    del(card["FN"])
-    for parameterList in ("EMAIL",):
-        if card.has_key(parameterList):
-            for parameter in card[parameterList]:
-                s = name + " "
+    def printEmail(self,vRef,ignore,ignore1):
+        """maimed print contact info"""
+        conn = sqlite3.connect(self.dbPath)
+        c = conn.cursor()
+        t = (vRef,)
+        c.execute('SELECT * FROM properties WHERE href=(?)',t)
+        result = c.fetchall()
+        card = dict()
+        for i in result:
+            if not card.has_key(i[1]):
+                card[i[1]]=list()
+            t = (i[0],)
+            c.execute('SELECT parameter,value FROM parameters where property_id=(?)',t)
+            parameters = c.fetchall()
+            parameterString = str()
+            if not parameters == list():
+                for parameter in parameters:
+                    if parameter[0]=="TYPE":
+                        if not parameterString == str():
+                            parameterString += ", "
+                        parameterString += parameter[1]
+            card[i[1]].append((i[2],parameterString))
+        name = card["FN"][0][0]
+        del(card["FN"])
+        for parameterList in ("EMAIL",):
+            if card.has_key(parameterList):
+                for parameter in card[parameterList]:
+                    s = name + " "
 
-                if not parameter[1] == list():
-                    s += " ("
-                    types = parameter[1].title()
-                    s += ")"
-                email = parameter[0]
-                print email + "\t" + name +"\t(" + types + ")"
-            del(card[parameterList])
-    c.close()
+                    if not parameter[1] == list():
+                        s += " ("
+                        types = parameter[1].title()
+                        s += ")"
+                    email = parameter[0]
+                    print email + "\t" + name +"\t(" + types + ")"
+                del(card[parameterList])
+        c.close()
 
-
-def getContactIdFromString(searchString):
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    t = ('%'+ searchString +'%',)
-    c.execute('SELECT href FROM properties WHERE value LIKE (?)',t)
-    result = c.fetchall()
-    result = list(set(result))
-    return result
 
 
 def signal_handler(signal, frame):
@@ -178,48 +214,40 @@ def signal_handler(signal, frame):
 # MAIN
 def main(argv):
     configfile="~/.pycard/pycard.conf"
-    global dbPath, DEBUG
-    dbPath="~/.pycard/abook.db"
+    global DEBUG
 
     parser = argparse.ArgumentParser(description='prints contacts cards matching a search string')
     parser.add_argument("-c", "--config", action="store", dest="configfile", default="~/.pycard/pycard.conf", help="defaults to ~/.pycard/pycard.conf")
     parser.add_argument("-v", "--version", action="version", version="0.3")
     parser.add_argument("-a", action="store_true", dest="displayAll", default="False", help="prints the whole card, not only name, telephone numbers and email addresses")
-    parser.add_argument("-m", dest="printFunction", action="store_const", const=printEmail, default=printContactInfo, help="only prints email addresses, in a mutt friendly format")
+    parser.add_argument("-m", dest="printFunction", action="store_const", const="printEmail", default="printContactInfo", help="only prints email addresses, in a mutt friendly format")
     parser.add_argument("--debug", action="store_true", dest="debug", default="False", help="enable debugging")
     parser.add_argument("searchString", metavar="SEARCHSTRING", help="the string to search for")
     args = parser.parse_args()
-    DEBUG =  args.debug
 
     # let's try to hide some ugly python code, at least when hitting Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
     configfile = path.expanduser(args.configfile)
 
     parser = SafeConfigParser()
-    #try:
     parser.read(configfile)
     dbPath = path.expanduser(parser.get('default', 'dbPath'))
 
     print "searching for ", args.searchString, "..."
-    contactIds = getContactIdFromString(args.searchString.decode("utf-8","strict"))
-    for contactId in contactIds:
-        if len(contactIds) > 1:
-            moreThanOne = True
-        else:
-            moreThanOne = False
-        args.printFunction(contactId[0],args.displayAll,moreThanOne)
-        #printContactInfo(contactId[0],args.displayAll)
-    #except:
-    #    unknownError(sys.exc_info())
 
+    myQuery = pc_query()
+    myQuery.setEncoding("utf-8", "strict")
+    myQuery.setDbPath(dbPath)
+    myQuery.setSearchString(args.searchString)
+    myQuery.setDebug(args.debug)
+    myQuery.setPrintFunction(args.printFunction)
+    myQuery.setDisplayAll(args.displayAll)
+
+    myQuery.search()
+
+
+    #args.printFunction(contactId[0],args.displayAll,moreThanOne)
     return 0
-
-
-
-
 
 if __name__ == "__main__":
         main(sys.argv[1:0])
-
-
-
