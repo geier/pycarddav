@@ -24,7 +24,7 @@ from ConfigParser import SafeConfigParser
 from  util import *
 try:
     import vobject
-except:
+except ImportError:
     print "py-vobject not installed"
     sys.exit(1)
 

@@ -7,6 +7,9 @@
 # this stuff is worth it, you can buy me a beer in return Christian Geier
 # ----------------------------------------------------------------------------
 
+"""
+utility for querying the database
+"""
 
 import sys
 import signal
@@ -16,7 +19,7 @@ from ConfigParser import SafeConfigParser
 
 try:
     import sqlite3
-except:
+except ImportError:
     print "pysqlite3 not installed"
     sys.exit(1)
 
@@ -26,104 +29,114 @@ except:
 
 
 
-class pc_query:
+class PcQuery:
     """Querying the addressbook database"""
-    def __init__(self, dbPath = "~/.pycacard/abook.db",
+    def __init__(self, db_path = "~/.pycacard/abook.db",
                  encoding = "utf-8", errors = "strict", debug = False):
-        self.dbPath = path.expanduser(dbPath)
+        self.db_path = path.expanduser(db_path)
         self.encoding = encoding
         self.errors = errors
         self.debug = debug
-        self.displayAll = False
+        self.display_all = False
 
-    def setEncoding(self, encoding, errors = "strict"):
+    def set_encoding(self, encoding, errors = "strict"):
+        """does what it says"""
         self.encoding = encoding
         self.errors = errors
 
-    def setDbPath(self, dbPath):
-        self.dbPath = path.expanduser(dbPath)
+    def set_db_path(self, db_path):
+        """does what it says"""
+        self.db_path = path.expanduser(db_path)
 
-    def setSearchString(self, searchString):
-        self.searchString = searchString.decode(self.encoding,self.errors)
+    def set_search_string(self, search_string):
+        """does what it says"""
+        self.search_string = search_string.decode(self.encoding, self.errors)
 
-    def setPrintFunction(self, printFunction):
-        self.printFunction = printFunction
+    def set_print_function(self, print_function):
+        """does what it says"""
+        self.print_function = print_function
 
-    def setDisplayAll(self, displayAll):
-        self.displayAll = displayAll
+    def set_display_all(self, display_all):
+        """does what it says"""
+        self.display_all = display_all
 
     def search(self):
-        contactIds = self.getContactIdFromString(self.searchString)
-        for contactId in contactIds:
-            if self.printFunction == "printEmail":
-                self.printEmail(contactId[0], True, 1)
+        """does what it says"""
+        contact_ids = self.get_contact_id_from_string()
+        for contact_id in contact_ids:
+            if self.print_function == "print_email":
+                self.print_email(contact_id[0], True, 1)
             else:
-                self.printContactInfo(contactId[0], self.displayAll, 1)
+                self.print_contact_info(contact_id[0], self.display_all, 1)
 
     def unknownError(self, string):
+        """does what it says"""
         s = "An unknown Error occured"
         if self.debug == True:
             s += ": " + str(string)
         print s
         sys.exit(5)
 
-    def setDebug(self, debug):
+    def set_debug(self, debug):
+        """does what it says"""
         self.debug = debug
 
-    def searchFor(self, sString):
-        conn = sqlite3.connect(self.dbPath)
+    def search_for(self, search_string):
+        """does what it says"""
+        conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
-        t = ('%'+ sString +'%',)
+        t = ('%'+ search_string +'%',)
         
         # look for matches in address table
         c.execute('SELECT * FROM email WHERE address LIKE (?);', t)
         result = c.fetchall()
-        resultList = list()
+        result_list = list()
         for i in result:
             t = (i[3], )
             c.execute('SELECT name FROM vcardtable WHERE href=(?);', t)
             name = c.fetchall()
-            resultList.append((i[0], name[0][0], i[1]))
+            result_list.append((i[0], name[0][0], i[1]))
        
         # look for matches in names in vcardtable 
-        t = ('%'+ sString +'%',)
+        t = ('%'+ search_string +'%',)
         c.execute('SELECT * FROM vcardtable WHERE name LIKE (?);', t)
         result = c.fetchall()
         for i in result:
             name = i[2]
             t = (i[0],)
             c.execute('SELECT * FROM email WHERE href=(?);', t)
-            emailList = c.fetchall()
-            for emailLine in emailList:
-                # email = emailLine[0]
-                # type = emailLine[1]
-                # pref = emailLine[2]
-                # href = emailLine[3]
-                resultList.append((emailLine[0], name, emailLine[1]))
-        resultList = list(set(resultList)) # eliminate duplicates
+            email_list = c.fetchall()
+            for email_line in email_list:
+                # email = email_line[0]
+                # type = email_line[1]
+                # pref = email_line[2]
+                # href = email_line[3]
+                result_list.append((email_line[0], name, email_line[1]))
+        result_list = list(set(result_list)) # eliminate duplicates
         # sorting by name:
-        resultList = sorted(resultList, key = lambda result: result[1])
-        for i in resultList:
+        result_list = sorted(result_list, key = lambda result: result[1])
+        for i in result_list:
             print unicode(i[0] + u"\t" + i[1] + u"\t" + i[2]).encode(
                     "utf-8", "strict")
         conn.commit()
         c.close()
 
 
-    def getContactIdFromString(self, searchString):
-        conn = sqlite3.connect(self.dbPath)
+    def get_contact_id_from_string(self):
+        """does what it says"""
+        conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
-        t = ('%'+ self.searchString +'%',)
+        t = ('%'+ self.search_string +'%',)
         c.execute('SELECT href FROM properties WHERE value LIKE (?)', t)
         result = c.fetchall()
         result = list(set(result))
         return result
 
-    def printContactInfo(self, vRef, displayAll, moreThanOne):
+    def print_contact_info(self, v_ref, display_all, more_than_one):
         """this is a more or less a clone of vobjects prettyPrint()"""
-        conn = sqlite3.connect(self.dbPath)
+        conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
-        t = (vRef,)
+        t = (v_ref,)
         c.execute('SELECT * FROM properties WHERE href=(?)', t)
         result = c.fetchall()
         card = dict()
@@ -134,21 +147,21 @@ class pc_query:
             c.execute('SELECT parameter,value FROM parameters WHERE '
             'property_id=(?)', t )
             parameters = c.fetchall()
-            parameterString = str()
+            parameter_string = str()
             if not parameters == list():
                 for parameter in parameters:
                     if parameter[0] == "TYPE":
-                        if not parameterString == str():
-                            parameterString += ", "
-                        parameterString += parameter[1]
-            card[i[1]].append((i[2], parameterString))
+                        if not parameter_string == str():
+                            parameter_string += ", "
+                        parameter_string += parameter[1]
+            card[i[1]].append((i[2], parameter_string))
         print "Name: " + card["FN"][0][0]
         del(card["FN"])
-        for parameterList in ("EMAIL","TEL"):
-            if card.has_key(parameterList):
-                for parameter in card[parameterList]:
+        for parameter_list in ("EMAIL","TEL"):
+            if card.has_key(parameter_list):
+                for parameter in card[parameter_list]:
                     s = ""
-                    s += parameterList.title()
+                    s += parameter_list.title()
 
                     if not parameter[1] == list():
                         s += " ("
@@ -156,26 +169,26 @@ class pc_query:
                         s += ")"
                     s += ": " +  parameter[0]
                     print s
-                del(card[parameterList])
-        if displayAll == True:
-            for paramType in card:
+                del(card[parameter_list])
+        if display_all == True:
+            for param_type in card:
                 s = ""
-                s += paramType
-                if not card[paramType][0][1] == str():
-                    s += " (" + card[paramType][0][1] + ")"
+                s += param_type
+                if not card[param_type][0][1] == str():
+                    s += " (" + card[param_type][0][1] + ")"
                 s += ": "
-                s += card[paramType][0][0]
+                s += card[param_type][0][0]
                 print s
-        if moreThanOne:
+        if more_than_one:
             print "\n"
 
         c.close()
 
-    def printEmail(self, vRef, ignore, ignore1):
+    def print_email(self, v_ref, ignore, ignore1):
         """maimed print contact info"""
-        conn = sqlite3.connect(self.dbPath)
+        conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
-        t = (vRef,)
+        t = (v_ref,)
         c.execute('SELECT * FROM properties WHERE href=(?)', t)
         result = c.fetchall()
         card = dict()
@@ -186,19 +199,19 @@ class pc_query:
             c.execute('SELECT parameter,value FROM parameters WHERE '
                       'property_id=(?)', t)
             parameters = c.fetchall()
-            parameterString = str()
+            parameter_string = str()
             if not parameters == list():
                 for parameter in parameters:
                     if parameter[0] == "TYPE":
-                        if not parameterString == str():
-                            parameterString += ", "
-                        parameterString += parameter[1]
-            card[i[1]].append((i[2], parameterString))
+                        if not parameter_string == str():
+                            parameter_string += ", "
+                        parameter_string += parameter[1]
+            card[i[1]].append((i[2], parameter_string))
         name = card["FN"][0][0]
         del(card["FN"])
-        for parameterList in ("EMAIL",):
-            if card.has_key(parameterList):
-                for parameter in card[parameterList]:
+        for parameter_list in ("EMAIL",):
+            if card.has_key(parameter_list):
+                for parameter in card[parameter_list]:
                     s = name + " "
 
                     if not parameter[1] == list():
@@ -207,19 +220,20 @@ class pc_query:
                         s += ")"
                     email = parameter[0]
                     print email + "\t" + name +"\t(" + types + ")"
-                del(card[parameterList])
+                del(card[parameter_list])
         c.close()
 
 
 
 def signal_handler(signal, frame):
+    """does what it says"""
     sys.exit(0)
 
 
 # MAIN
 def main(argv):
+    """main function, it starts all here"""
     configfile = "~/.pycard/pycard.conf"
-    global DEBUG
 
     parser = argparse.ArgumentParser(
         description = 'prints contacts cards matching a search string')
@@ -228,15 +242,15 @@ def main(argv):
         default = "~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
     parser.add_argument("-v", "--version", action = "version", version = "0.3")
-    parser.add_argument("-a", action = "store_true", dest = "displayAll",
+    parser.add_argument("-a", action = "store_true", dest = "display_all",
             default = "False", help = "prints the whole card, not only name, "
             "telephone numbers and email addresses")
-    parser.add_argument("-m", dest = "printFunction", action = "store_const",
-            const = "printEmail", default = "printContactInfo",
+    parser.add_argument("-m", dest = "print_function", action = "store_const",
+            const = "print_email", default = "print_contact_info",
             help = "only prints email addresses, in a mutt friendly format")
     parser.add_argument("--debug", action = "store_true", dest = "debug",
             default = "False", help = "enable debugging")
-    parser.add_argument("searchString", metavar = "SEARCHSTRING",
+    parser.add_argument("search_string", metavar = "SEARCHSTRING",
             help = "the string to search for")
     args = parser.parse_args()
 
@@ -246,19 +260,19 @@ def main(argv):
 
     parser = SafeConfigParser()
     parser.read(configfile)
-    dbPath = path.expanduser(parser.get('default', 'dbPath'))
+    db_path = path.expanduser(parser.get('default', 'db_path'))
 
-    print "searching for ", args.searchString, "..."
+    print "searching for ", args.search_string, "..."
 
-    myQuery = pc_query()
-    myQuery.setEncoding("utf-8", "strict")
-    myQuery.setDbPath(dbPath)
-    myQuery.setSearchString(args.searchString)
-    myQuery.setDebug(args.debug)
-    myQuery.setPrintFunction(args.printFunction)
-    myQuery.setDisplayAll(args.displayAll)
+    my_query = PcQuery()
+    my_query.set_encoding("utf-8", "strict")
+    my_query.set_db_path(db_path)
+    my_query.set_search_string(args.search_string)
+    my_query.set_debug(args.debug)
+    my_query.set_print_function(args.print_function)
+    my_query.set_display_all(args.display_all)
 
-    myQuery.search()
+    my_query.search()
 
 
     return 0
