@@ -332,9 +332,9 @@ def main(argv):
     passwd = parser.get('default', 'passwd')
     resource = parser.get('default', 'resource')
     baseUrl = parser.get('default', 'baseUrl')
-    insecureSSL = parser.get('default', 'insecureSSL')
+    insecureSSL = parser.getint('default', 'insecureSSL')
     dbPath = path.expanduser(parser.get('default', 'dbPath'))
-    DEBUG = parser.get('default', 'DEBUG')
+    DEBUG = parser.getint('default', 'DEBUG')
     if DEBUG:
         print "using config:"
         print "user: ", user
