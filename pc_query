@@ -219,7 +219,7 @@ class PcQuery:
                         types = parameter[1].title()
                         s += ")"
                     email = parameter[0]
-                    print email + "\t" + name +"\t(" + types + ")"
+                    print email + "\t" + name +"\t" + types
                 del(card[parameter_list])
         c.close()
 
