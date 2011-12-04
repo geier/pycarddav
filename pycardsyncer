@@ -140,7 +140,7 @@ def getXMLProps():
     c.setopt(pycurl.HEADERFUNCTION, header.write)
     c.setopt(pycurl.USERPWD, user+":"+passwd)
     c.setopt(pycurl.URL, resource)
-    if (insecureSSL == "1"):
+    if (insecureSSL == 1):
         c.setopt(pycurl.SSL_VERIFYPEER, 0)
     c.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_SSLv3)
     c.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
@@ -247,7 +247,7 @@ def getVcard(vRef):
     c.setopt(pycurl.HEADERFUNCTION, header.write)
     c.setopt(pycurl.USERPWD, user+":"+passwd)
     c.setopt(pycurl.URL, baseUrl+vRef)
-    if (insecureSSL == "1"):
+    if (insecureSSL == 1):
         c.setopt(pycurl.SSL_VERIFYPEER, 0)
     c.perform()
     c.close
