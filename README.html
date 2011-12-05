@@ -24,7 +24,7 @@
 <p><em>pyCardDAV</em> is supposed to provide a simple way of accessing a <a class="reference external" href="http://en.wikipedia.org/wiki/CardDAV">CardDAV</a>
 resource, mainly for use with mutt's query_command, but it might be of some use
 solo.  <em>pyCardDAV</em> consists of <em>pycardsyncer</em>, a program
-for syncing your CarDAV resource into a local database and of <em>pc-query</em>, a
+for syncing your CardDAV resource into a local database and of <em>pc-query</em>, a
 program for querying the local database. <em>pyCardDAV</em> is some ugly python code
 that holds together <a class="reference external" href="http://vobject.skyhouseconsulting.com/">vobject</a>, <a class="reference external" href="http://lxml.de/">lxml</a>, <a class="reference external" href="http://pycurl.sourceforge.net/">PyCurl</a> and <a class="reference external" href="http://code.google.com/p/pysqlite/">pysqlite</a>.</p>
 </div>
@@ -35,14 +35,14 @@ that holds together <a class="reference external" href="http://vobject.skyhousec
 <li><em>pyCardDAV</em> can only use one addressbook resource at the moment</li>
 <li><em>pyCardDAV</em> is read-only for now</li>
 <li><em>pyCardDAV</em> is only tested against davical</li>
-<li>your password is stored in cleartext in the configfile file</li>
+<li>your password is stored in cleartext in the config file</li>
 </ul>
 </div>
 <div class="section" id="installation">
 <h1>Installation</h1>
 <p>Move pc-query and pycardsyncer to some folder in your PATH.
 Copy and edit the supplied pycard.conf.sample file (default location is
-~/.pycard/pycard.conf). Beware that it only you can access this file if you
+~/.pycard/pycard.conf). Beware that only you can access this file, if you
 have untrusted users on your machine, since the password is stored in
 cleartext.</p>
 <p>Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.</p>
@@ -54,7 +54,7 @@ doing this every 60 minutes via cronjob). You can test pc-query with:</p>
 <pre class="literal-block">
 % pc-query searchstring
 </pre>
-<p>By default <em>pyCardDAV</em> only print the names, email addresses and telephone
+<p>By default <em>pyCardDAV</em> only prints the names, email addresses and telephone
 numbers of contacts matching the search string, to see all vCard properties use
 the &quot;-a&quot; option.</p>
 <p>For usage with mutt etc., <em>pyCardDAV</em> can also print only email addresses in a

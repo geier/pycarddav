@@ -22,7 +22,7 @@ About
 *pyCardDAV* is supposed to provide a simple way of accessing a CardDAV_
 resource, mainly for use with mutt's query_command, but it might be of some use
 solo.  *pyCardDAV* consists of *pycardsyncer*, a program
-for syncing your CarDAV resource into a local database and of *pc-query*, a
+for syncing your CardDAV resource into a local database and of *pc-query*, a
 program for querying the local database. *pyCardDAV* is some ugly python code
 that holds together vobject_, lxml_, PyCurl_ and pysqlite_.
 
@@ -39,13 +39,13 @@ Features
 - *pyCardDAV* can only use one addressbook resource at the moment
 - *pyCardDAV* is read-only for now
 - *pyCardDAV* is only tested against davical
-- your password is stored in cleartext in the configfile file
+- your password is stored in cleartext in the config file
 
 Installation
 ------------
 Move pc-query and pycardsyncer to some folder in your PATH.
 Copy and edit the supplied pycard.conf.sample file (default location is
-~/.pycard/pycard.conf). Beware that it only you can access this file if you
+~/.pycard/pycard.conf). Beware that only you can access this file, if you
 have untrusted users on your machine, since the password is stored in
 cleartext.
 
@@ -58,7 +58,7 @@ doing this every 60 minutes via cronjob). You can test pc-query with::
 
         % pc-query searchstring
 
-By default *pyCardDAV* only print the names, email addresses and telephone
+By default *pyCardDAV* only prints the names, email addresses and telephone
 numbers of contacts matching the search string, to see all vCard properties use
 the "-a" option.
 
