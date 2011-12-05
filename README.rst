@@ -71,7 +71,7 @@ Example from .muttrc::
 
         set query_command="/home/username/bin/pc-query -m '%s'"
 
-*pyCardDAV* has so far been tested on recent versions of FreeBSD and Ubuntu.
+*pyCardDAV* has so far been tested on recent versions of FreeBSD, Debian and Ubuntu.
 
 Feedback
 --------
