@@ -38,30 +38,15 @@ class PcQuery:
         self.errors = errors
         self.debug = debug
         self.display_all = False
-
-    def set_encoding(self, encoding, errors = "strict"):
-        """does what it says"""
-        self.encoding = encoding
-        self.errors = errors
-
-    def set_db_path(self, db_path):
-        """does what it says"""
-        self.db_path = path.expanduser(db_path)
-
-    def set_search_string(self, search_string):
-        """does what it says"""
-        self.search_string = search_string.decode(self.encoding, self.errors)
-
-    def set_print_function(self, print_function):
-        """does what it says"""
-        self.print_function = print_function
-
-    def set_display_all(self, display_all):
-        """does what it says"""
-        self.display_all = display_all
+        self.search_string = ""
+        self.print_function = "print_contact_info"
 
     def search(self):
-        """does what it says"""
+        """
+        this is the main method
+        first we get the list of contact_ids matching the search string
+        then these are printed using the different print functions
+        """
         contact_ids = self.get_contact_id_from_string()
         for contact_id in contact_ids:
             if self.print_function == "print_email":
@@ -69,61 +54,8 @@ class PcQuery:
             else:
                 self.print_contact_info(contact_id[0], self.display_all, 1)
 
-    def unknownError(self, string):
-        """does what it says"""
-        s = "An unknown Error occured"
-        if self.debug == True:
-            s += ": " + str(string)
-        print s
-        sys.exit(5)
-
-    def set_debug(self, debug):
-        """does what it says"""
-        self.debug = debug
-
-    def search_for(self, search_string):
-        """does what it says"""
-        conn = sqlite3.connect(self.db_path)
-        c = conn.cursor()
-        t = ('%'+ search_string +'%',)
-        
-        # look for matches in address table
-        c.execute('SELECT * FROM email WHERE address LIKE (?);', t)
-        result = c.fetchall()
-        result_list = list()
-        for i in result:
-            t = (i[3], )
-            c.execute('SELECT name FROM vcardtable WHERE href=(?);', t)
-            name = c.fetchall()
-            result_list.append((i[0], name[0][0], i[1]))
-       
-        # look for matches in names in vcardtable 
-        t = ('%'+ search_string +'%',)
-        c.execute('SELECT * FROM vcardtable WHERE name LIKE (?);', t)
-        result = c.fetchall()
-        for i in result:
-            name = i[2]
-            t = (i[0],)
-            c.execute('SELECT * FROM email WHERE href=(?);', t)
-            email_list = c.fetchall()
-            for email_line in email_list:
-                # email = email_line[0]
-                # type = email_line[1]
-                # pref = email_line[2]
-                # href = email_line[3]
-                result_list.append((email_line[0], name, email_line[1]))
-        result_list = list(set(result_list)) # eliminate duplicates
-        # sorting by name:
-        result_list = sorted(result_list, key = lambda result: result[1])
-        for i in result_list:
-            print unicode(i[0] + u"\t" + i[1] + u"\t" + i[2]).encode(
-                    "utf-8", "strict")
-        conn.commit()
-        c.close()
-
-
     def get_contact_id_from_string(self):
-        """does what it says"""
+        """returns list of ids from db matching search_string"""
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         t = ('%'+ self.search_string +'%',)
@@ -133,7 +65,11 @@ class PcQuery:
         return result
 
     def print_contact_info(self, v_ref, display_all, more_than_one):
-        """this is a more or less a clone of vobjects prettyPrint()"""
+        """
+        this is a more or less a clone of vobjects prettyPrint()
+        all the ugly stuff happens here, the disgusting internals should
+        probably be hidden in another class
+        """
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         t = (v_ref,)
@@ -185,7 +121,10 @@ class PcQuery:
         c.close()
 
     def print_email(self, v_ref, ignore, ignore1):
-        """maimed print contact info"""
+        """
+        maimed print contact info, for use with mutt
+        hardly any prettier
+        """
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         t = (v_ref,)
@@ -223,16 +162,16 @@ class PcQuery:
                 del(card[parameter_list])
         c.close()
 
-
-
 def signal_handler(signal, frame):
-    """does what it says"""
+    """
+    tries to hide some ugly python backtraces from the user after
+    pressing ctrl-c
+    """
     sys.exit(0)
-
 
 # MAIN
 def main(argv):
-    """main function, it starts all here"""
+    """main function, everything starts  here"""
     configfile = "~/.pycard/pycard.conf"
 
     parser = argparse.ArgumentParser(
@@ -265,12 +204,11 @@ def main(argv):
     print "searching for ", args.search_string, "..."
 
     my_query = PcQuery()
-    my_query.set_encoding("utf-8", "strict")
-    my_query.set_db_path(db_path)
-    my_query.set_search_string(args.search_string)
-    my_query.set_debug(args.debug)
-    my_query.set_print_function(args.print_function)
-    my_query.set_display_all(args.display_all)
+    my_query.db_path = path.expanduser(db_path)
+    my_query.search_string = args.search_string.decode(my_query.encoding, my_query.errors)
+    my_query.debug = args.debug
+    my_query.print_function = args.print_function
+    my_query.display_all = args.display_all
 
     my_query.search()
 
