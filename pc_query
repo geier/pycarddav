@@ -151,12 +151,12 @@ class PcQuery:
         for parameter_list in ("EMAIL",):
             if card.has_key(parameter_list):
                 for parameter in card[parameter_list]:
-                    s = name + " "
-
+                    #s = name + " "
+                    # ??? why is this not needed?
                     if not parameter[1] == list():
-                        s += " ("
+                     #   s += " ("
                         types = parameter[1].title()
-                        s += ")"
+                      #  s += ")"
                     email = parameter[0]
                     print email + "\t" + name +"\t" + types
                 del(card[parameter_list])
@@ -205,7 +205,8 @@ def main(argv):
 
     my_query = PcQuery()
     my_query.db_path = path.expanduser(db_path)
-    my_query.search_string = args.search_string.decode(my_query.encoding, my_query.errors)
+    my_query.search_string = args.search_string.decode(my_query.encoding,
+                                                       my_query.errors)
     my_query.debug = args.debug
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
