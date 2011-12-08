@@ -158,7 +158,7 @@ class PcQuery:
                         types = parameter[1].title()
                         s += ")"
                     email = parameter[0]
-                    print email + "\t" + name +"\t" + types
+                    print unicode(email + u"\t" + name + u"\t" + types).encode(self.encoding)
                 del(card[parameter_list])
         c.close()
 

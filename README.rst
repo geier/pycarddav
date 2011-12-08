@@ -4,7 +4,14 @@ News_ About_ Features_ Installation_ Usage_ Feedback_ Download_ License_
 
 News
 ----
-**10.10.2011:** pyCadDAV v0.2.1_ released
+**08.12.2011:** pyCardDAV v0.3_ released
+                this fixes an unicode bug and has a lot of internal changes
+                *Attention*: pc-query has been renamed to pc_query
+                if you are upgrading:
+                make sure to delete the old database, also the config file
+                format has somewhat changed
+
+**10.10.2011:** pyCardDAV v0.2.1_ released
 
 **14.09.2011:** pyCardDAV v0.2_ released
 
@@ -12,6 +19,7 @@ News
 
 **12.08.2011:** pyCardDAV v0.1_ released
 
+.. _v0.3: http://pycarddav.lostpackts.de/download/pycarddav0.3.tgz
 .. _v0.2.1: http://pycarddav.lostpackets.de/download/pycarddav0.2.1.tgz
 .. _v0.2: http://pycarddav.lostpackets.de/download/pycarddav0.2.tgz
 .. _github: https://github.com/geier/pycarddav/
@@ -21,10 +29,10 @@ About
 -----
 *pyCardDAV* is supposed to provide a simple way of accessing a CardDAV_
 resource, mainly for use with mutt's query_command, but it might be of some use
-solo.  *pyCardDAV* consists of *pycardsyncer*, a program
-for syncing your CardDAV resource into a local database and of *pc-query*, a
-program for querying the local database. *pyCardDAV* is some ugly python code
-that holds together vobject_, lxml_, PyCurl_ and pysqlite_.
+solo.  *pyCardDAV* consists of *pycardsyncer*, a program for syncing your
+CardDAV resource into a local database and of *pc_query*, a program for
+querying the local database. *pyCardDAV* is some ugly python code that holds
+together vobject_, lxml_, PyCurl_ and pysqlite_.
 
 .. _CardDav: http://en.wikipedia.org/wiki/CardDAV
 .. _vobject: http://vobject.skyhouseconsulting.com/
@@ -43,7 +51,7 @@ Features
 
 Installation
 ------------
-Move pc-query and pycardsyncer to some folder in your PATH.
+Move pc_query and pycardsyncer to some folder in your PATH.
 Copy and edit the supplied pycard.conf.sample file (default location is
 ~/.pycard/pycard.conf). Beware that only you can access this file, if you
 have untrusted users on your machine, since the password is stored in
@@ -54,9 +62,9 @@ Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
 Usage
 -----
 Execute pycardsyncer to sync your addresses to the local database (I am
-doing this every 60 minutes via cronjob). You can test pc-query with::
+doing this every 60 minutes via cronjob). You can test pc_query with::
 
-        % pc-query searchstring
+        % pc_query searchstring
 
 By default *pyCardDAV* only prints the names, email addresses and telephone
 numbers of contacts matching the search string, to see all vCard properties use
@@ -64,14 +72,15 @@ the "-a" option.
 
 
 For usage with mutt etc., *pyCardDAV* can also print only email addresses in a
-mutt friendly format (with the "-m" option. Edit your mutt configuration so
-that query_command uses pc-query:
+mutt friendly format (with the "-m" option). Edit your mutt configuration so
+that query_command uses pc_query:
 
 Example from .muttrc::
 
-        set query_command="/home/username/bin/pc-query -m '%s'"
+        set query_command="/home/username/bin/pc_query -m '%s'"
 
-*pyCardDAV* has so far been tested on recent versions of FreeBSD, Debian and Ubuntu.
+*pyCardDAV* has so far been tested on recent versions of FreeBSD, Debian and
+Ubuntu.
 
 Feedback
 --------
@@ -83,7 +92,8 @@ jabber/XMPP at geier@jabber.ccc.de or via github_
 
 Download
 --------
-Get the latest version of pyCardDAV from http://pyCardDAV.lostpackets.de/download/latest.tgz
+Get the latest version of pyCardDAV from
+http://pyCardDAV.lostpackets.de/download/latest.tgz
 or check out it out at https://github.com/geier/pycarddav .
 
 
