@@ -4,12 +4,15 @@ News_ About_ Features_ Installation_ Usage_ Feedback_ Download_ License_
 
 News
 ----
-**08.12.2011:** pyCardDAV v0.3_ released
-                this fixes an unicode bug and has a lot of internal changes
-                *Attention*: pc-query has been renamed to pc_query
-                if you are upgrading:
-                make sure to delete the old database, also the config file
-                format has somewhat changed
+**08.12.2011:** pyCardDAV v0.3_ released:
+
+this fixes an unicode bug and has a lot of internal changes
+
+*Attention*: pc-query has been renamed to pc_query
+
+if you are upgrading:
+  make sure to delete the old database, also the config file
+  format has somewhat changed
 
 **10.10.2011:** pyCardDAV v0.2.1_ released
 
@@ -19,7 +22,7 @@ News
 
 **12.08.2011:** pyCardDAV v0.1_ released
 
-.. _v0.3: http://pycarddav.lostpackts.de/download/pycarddav0.3.tgz
+.. _v0.3: http://pycarddav.lostpackets.de/download/pycarddav0.3.tgz
 .. _v0.2.1: http://pycarddav.lostpackets.de/download/pycarddav0.2.1.tgz
 .. _v0.2: http://pycarddav.lostpackets.de/download/pycarddav0.2.tgz
 .. _github: https://github.com/geier/pycarddav/
@@ -92,8 +95,7 @@ jabber/XMPP at geier@jabber.ccc.de or via github_
 
 Download
 --------
-Get the latest version of pyCardDAV from
-http://pyCardDAV.lostpackets.de/download/latest.tgz
+Get the latest version of pyCardDAV from http://pycarddav.lostpackets.de/
 or check out it out at https://github.com/geier/pycarddav .
 
 
