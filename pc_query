@@ -27,9 +27,30 @@ except ImportError:
 #encoding = 'utf-8'
 #errors = 'strict'
 
+class VCard(object):
+    """
+    this is mainly a list with some associated methods,
+    each list element is a CardProperty. On __init__ it gets filled from the db
+    according to v_ref
+    """
 
+    def __init__(self, v_ref = ""): #TODO
+        #some sql stuff
+        return
 
-class PcQuery:
+    def get_property(self, card_property): #TODO
+        """
+        returns a list of all CardProperties matching "card_property",
+        making VCard work like a dict (and perhaps it better would be one)
+        """
+        return
+
+class CardProperty(object):
+    """
+    A CardProperty object holds one VCard property including all parameters
+    """
+
+class PcQuery(object):
     """Querying the addressbook database"""
     def __init__(self, db_path = "~/.pycacard/abook.db",
                  encoding = "utf-8", errors = "strict", debug = False):
@@ -63,6 +84,15 @@ class PcQuery:
         result = c.fetchall()
         result = list(set(result))
         return result
+
+    def print_contact_info_new(self, contact):
+        """new style contact card information printing"""
+        print "Name: " + contact.get_namen()
+        emails = contact.get_prop('EMAIL')
+        for email in email:
+            print "Email", email.type_parameters(), ": " , email.card_properties()
+
+        return
 
     def print_contact_info(self, v_ref, display_all, more_than_one):
         """
