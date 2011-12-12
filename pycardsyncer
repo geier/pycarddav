@@ -21,7 +21,6 @@ from os import path
 
 from ConfigParser import SafeConfigParser
 
-from  util import *
 try:
     import vobject
 except ImportError:
@@ -130,7 +129,7 @@ options:
   --debug show some debugging output"""
 
 def version():
-    print "0.2.1"
+    print "0.3.0"
 
 def getXMLProps():
     response=StringIO.StringIO()
@@ -331,9 +330,9 @@ def main(argv):
     user = parser.get('default', 'user')
     passwd = parser.get('default', 'passwd')
     resource = parser.get('default', 'resource')
-    baseUrl = parser.get('default', 'baseUrl')
-    insecureSSL = parser.getint('default', 'insecureSSL')
-    dbPath = path.expanduser(parser.get('default', 'dbPath'))
+    baseUrl = parser.get('default', 'base_url')
+    insecureSSL = parser.getint('default', 'insecure_ssl')
+    dbPath = path.expanduser(parser.get('default', 'db_path'))
     DEBUG = parser.getint('default', 'DEBUG')
     if DEBUG:
         print "using config:"
