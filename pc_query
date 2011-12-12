@@ -24,31 +24,84 @@ except ImportError:
     sys.exit(1)
 
 
-#encoding = 'utf-8'
-#errors = 'strict'
 
-class VCard(object):
+class VCard(list):
     """
-    this is mainly a list with some associated methods,
-    each list element is a CardProperty. On __init__ it gets filled from the db
-    according to v_ref
+    internal representation of the a VCard. This is mainly a list with some
+    associated methods, each list element is a CardProperty
+    h_ref: unique id (realy just the url) of the VCard
+    db_path: database file from which to initialize the VCard
     """
 
-    def __init__(self, v_ref = ""): #TODO
-        #some sql stuff
-        return
+    def __init__(self, h_ref = "", db_path=""): #TODO
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        stuple = (h_ref,)
+        cur.execute('SELECT * FROM properties WHERE href=(?)', stuple)
+        result = cur.fetchall()
+        for vcard_id, vcard_property, vcard_value, vcard_href in result:
+            stuple = (vcard_id, )
+            cur.execute('SELECT parameter, value FROM parameters WHERE property_id=(?)', stuple)
+            parameters = cur.fetchall()
+            self.append(CardProperty(vcard_property, vcard_value, parameters,),)
+        conn.close()
 
-    def get_property(self, card_property): #TODO
+    def get_prop(self, card_property): #TODO
         """
         returns a list of all CardProperties matching "card_property",
         making VCard work like a dict (and perhaps it better would be one)
         """
-        return
+        collector = list()
+        for prop in self:
+            if prop.prop() == card_property:
+                collector.append(prop)
+        return collector
 
-class CardProperty(object):
+    def name(self):
+        """
+        returns the name of the contact (FN)
+        fluff to make the rest more readable
+        """
+        return self.get_prop('FN')[0].value()
+
+    def get_props(self):
+        """
+        returns a list of all properties (each property only once,
+        even if it occurs multiple times) this vcard has
+        """
+        collector = list()
+        for prop in self:
+            collector.append(prop.prop())
+        return list(set(collector))
+
+class CardProperty(list):
     """
     A CardProperty object holds one VCard property including all parameters
     """
+    def __init__(self, prop, value, params):
+        self.append(prop)
+        self.append(value)
+        self.append(params)
+
+    def prop(self):
+        return self[0]
+
+    def value(self):
+        return self[1]
+
+    def type_list(self):
+        collector = list()
+        for param in self[2]:
+            if param[0] == "TYPE":
+                collector.append(param[1])
+        return collector
+
+    def type_list_pretty(self):
+        types = self.type_list()
+        if len(types) == 0:
+            return None
+        else:
+            return " (" + ", ".join(types) + ")"
 
 class PcQuery(object):
     """Querying the addressbook database"""
@@ -69,11 +122,14 @@ class PcQuery(object):
         then these are printed using the different print functions
         """
         contact_ids = self.get_contact_id_from_string()
-        for contact_id in contact_ids:
+        while len(contact_ids) != 0:
+            contact_id= contact_ids.pop()
             if self.print_function == "print_email":
-                self.print_email(contact_id[0], True, 1)
+                self.print_email(contact_id[0])
             else:
-                self.print_contact_info(contact_id[0], self.display_all, 1)
+                self.print_contact_info(contact_id[0] )
+                if len(contact_ids) > 0:
+                    print ""
 
     def get_contact_id_from_string(self):
         """returns list of ids from db matching search_string"""
@@ -83,114 +139,31 @@ class PcQuery(object):
         c.execute('SELECT href FROM properties WHERE value LIKE (?)', t)
         result = c.fetchall()
         result = list(set(result))
+        conn.close()
         return result
 
-    def print_contact_info_new(self, contact):
+    def print_prop(self, contact, prop):
+        for line in contact.get_prop(prop.upper()):
+            if len(line.type_list()) != 0:
+                print prop.capitalize() + line.type_list_pretty() + ": " + line.value()
+
+    def print_contact_info(self, contact_href):
         """new style contact card information printing"""
-        print "Name: " + contact.get_namen()
-        emails = contact.get_prop('EMAIL')
-        for email in email:
-            print "Email", email.type_parameters(), ": " , email.card_properties()
+        contact = VCard(contact_href, self.db_path)
 
-        return
+        print "Name: " + contact.name()
+        for prop in ("Email", "Tel",):
+            self.print_prop(contact, prop)
+        if self.display_all:
+            for prop in contact.get_props():
+                if not prop in ("EMAIL", "TEL"):
+                    self.print_prop(contact, prop)
 
-    def print_contact_info(self, v_ref, display_all, more_than_one):
-        """
-        this is a more or less a clone of vobjects prettyPrint()
-        all the ugly stuff happens here, the disgusting internals should
-        probably be hidden in another class
-        """
-        conn = sqlite3.connect(self.db_path)
-        c = conn.cursor()
-        t = (v_ref,)
-        c.execute('SELECT * FROM properties WHERE href=(?)', t)
-        result = c.fetchall()
-        card = dict()
-        for i in result:
-            if not card.has_key(i[1]):
-                card[i[1]] = list()
-            t = (i[0],)
-            c.execute('SELECT parameter,value FROM parameters WHERE '
-            'property_id=(?)', t )
-            parameters = c.fetchall()
-            parameter_string = str()
-            if not parameters == list():
-                for parameter in parameters:
-                    if parameter[0] == "TYPE":
-                        if not parameter_string == str():
-                            parameter_string += ", "
-                        parameter_string += parameter[1]
-            card[i[1]].append((i[2], parameter_string))
-        print "Name: " + card["FN"][0][0]
-        del(card["FN"])
-        for parameter_list in ("EMAIL","TEL"):
-            if card.has_key(parameter_list):
-                for parameter in card[parameter_list]:
-                    s = ""
-                    s += parameter_list.title()
-
-                    if not parameter[1] == list():
-                        s += " ("
-                        s += parameter[1].title()
-                        s += ")"
-                    s += ": " +  parameter[0]
-                    print s
-                del(card[parameter_list])
-        if display_all == True:
-            for param_type in card:
-                s = ""
-                s += param_type
-                if not card[param_type][0][1] == str():
-                    s += " (" + card[param_type][0][1] + ")"
-                s += ": "
-                s += card[param_type][0][0]
-                print s
-        if more_than_one:
-            print "\n"
-
-        c.close()
-
-    def print_email(self, v_ref, ignore, ignore1):
-        """
-        maimed print contact info, for use with mutt
-        hardly any prettier
-        """
-        conn = sqlite3.connect(self.db_path)
-        c = conn.cursor()
-        t = (v_ref,)
-        c.execute('SELECT * FROM properties WHERE href=(?)', t)
-        result = c.fetchall()
-        card = dict()
-        for i in result:
-            if not card.has_key(i[1]):
-                card[i[1]] = list()
-            t = (i[0],)
-            c.execute('SELECT parameter,value FROM parameters WHERE '
-                      'property_id=(?)', t)
-            parameters = c.fetchall()
-            parameter_string = str()
-            if not parameters == list():
-                for parameter in parameters:
-                    if parameter[0] == "TYPE":
-                        if not parameter_string == str():
-                            parameter_string += ", "
-                        parameter_string += parameter[1]
-            card[i[1]].append((i[2], parameter_string))
-        name = card["FN"][0][0]
-        del(card["FN"])
-        for parameter_list in ("EMAIL",):
-            if card.has_key(parameter_list):
-                for parameter in card[parameter_list]:
-                    #s = name + " "
-                    # ??? why is this not needed?
-                    if not parameter[1] == list():
-                     #   s += " ("
-                        types = parameter[1].title()
-                      #  s += ")"
-                    email = parameter[0]
-                    print unicode(email + u"\t" + name + u"\t" + types).encode(self.encoding)
-                del(card[parameter_list])
-        c.close()
+    def print_email(self, contact_href):
+        """prints only name, email and type for use with mutt"""
+        contact = VCard(contact_href, self.db_path)
+        for email in contact.get_prop('EMAIL'):
+            print contact.name() + "\t" + email.value() + "\t" + ", ".join(email.type_list())
 
 def signal_handler(signal, frame):
     """
