@@ -145,13 +145,13 @@ class PcQuery(object):
     def print_prop(self, contact, prop):
         for line in contact.get_prop(prop.upper()):
             if len(line.type_list()) != 0:
-                print prop.capitalize() + line.type_list_pretty() + ": " + line.value()
+                print unicode(prop.capitalize() + line.type_list_pretty() + u": " + line.value()).encode(self.encoding)
 
     def print_contact_info(self, contact_href):
         """new style contact card information printing"""
         contact = VCard(contact_href, self.db_path)
 
-        print "Name: " + contact.name()
+        print unicode("Name: " + contact.name()).encode(self.encoding)
         for prop in ("Email", "Tel",):
             self.print_prop(contact, prop)
         if self.display_all:
@@ -163,7 +163,7 @@ class PcQuery(object):
         """prints only name, email and type for use with mutt"""
         contact = VCard(contact_href, self.db_path)
         for email in contact.get_prop('EMAIL'):
-            print contact.name() + "\t" + email.value() + "\t" + ", ".join(email.type_list())
+            print unicode(email.value() + u"\t" + contact.name() + u"\t" + u", ".join(email.type_list())).encode(self.encoding)
 
 def signal_handler(signal, frame):
     """
@@ -204,7 +204,6 @@ def main(argv):
     parser.read(configfile)
     db_path = path.expanduser(parser.get('default', 'db_path'))
 
-    print "searching for ", args.search_string, "..."
 
     my_query = PcQuery()
     my_query.db_path = path.expanduser(db_path)
@@ -214,6 +213,7 @@ def main(argv):
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
 
+    print "searching for " + args.search_string + "..."
     my_query.search()
 
 
