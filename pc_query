@@ -165,6 +165,31 @@ class PcQuery(object):
         for email in contact.get_prop('EMAIL'):
             print unicode(email.value() + u"\t" + contact.name() + u"\t" + u", ".join(email.type_list())).encode(self.encoding)
 
+    def select_entry(self):
+        """select a single entry from a list matching the search_string"""
+        ids = self.get_contact_id_from_string()
+        if len(ids) > 1:
+            print "There are several cards matching your search string:"
+            for i, x in enumerate(ids):
+                contact = VCard(x[0], self.db_path)
+                print (i+1), contact.name()
+            while True:
+                id_to_edit = raw_input("Which one do you want to edit: ")
+                try:
+                    id_to_edit = int(id_to_edit)
+                    if ((id_to_edit < 0) or (id_to_edit > len(ids))):
+                            print "nononon"
+                            pass
+                    href_to_edit = (id_to_edit-1)
+                    break
+                except:
+                    pass
+                print "Please only type a number between 1 and", len(ids)
+        else:
+            href_to_edit = ids[0]
+
+
+
 def signal_handler(signal, frame):
     """
     tries to hide some ugly python backtraces from the user after
@@ -190,6 +215,8 @@ def main(argv):
     parser.add_argument("-m", dest = "print_function", action = "store_const",
             const = "print_email", default = "print_contact_info",
             help = "only prints email addresses, in a mutt friendly format")
+    parser.add_argument("-e", dest = "edit", action = "store_true",
+            default = "False", help="edit the contact file")
     parser.add_argument("--debug", action = "store_true", dest = "debug",
             default = "False", help = "enable debugging")
     parser.add_argument("search_string", metavar = "SEARCHSTRING",
@@ -204,12 +231,16 @@ def main(argv):
     parser.read(configfile)
     db_path = path.expanduser(parser.get('default', 'db_path'))
 
-
     my_query = PcQuery()
     my_query.db_path = path.expanduser(db_path)
     my_query.search_string = args.search_string.decode(my_query.encoding,
                                                        my_query.errors)
     my_query.debug = args.debug
+
+    if (args.edit == True):
+        edit_entry = my_query.select_entry()
+        return 0
+        #my_query.edit(edit_entry)
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
 
