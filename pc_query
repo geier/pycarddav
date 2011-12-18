@@ -185,8 +185,10 @@ class PcQuery(object):
                 except:
                     pass
                 print "Please only type a number between 1 and", len(ids)
-        else:
+        elif len(ids) != 0:
+            print "test"
             href_to_edit = ids[0]
+            print href_to_edit
 
 
 
