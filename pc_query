@@ -173,22 +173,28 @@ class PcQuery(object):
             for i, x in enumerate(ids):
                 contact = VCard(x[0], self.db_path)
                 print (i+1), contact.name()
-            while True:
+            while True: # should break if input not convertible to int
                 id_to_edit = raw_input("Which one do you want to edit: ")
-                try:
-                    id_to_edit = int(id_to_edit)
-                    if ((id_to_edit < 0) or (id_to_edit > len(ids))):
-                            print "nononon"
-                            pass
-                    href_to_edit = (id_to_edit-1)
+                #try:
+                id_to_edit = int(id_to_edit)
+                if (id_to_edit > 0) and (id_to_edit <= len(ids)): #FIXME
+                    href_to_edit = ids[id_to_edit - 1][0]
                     break
-                except:
-                    pass
+                #except:
+                #    pass
                 print "Please only type a number between 1 and", len(ids)
         elif len(ids) != 0:
-            print "test"
             href_to_edit = ids[0]
-            print href_to_edit
+        print ""
+        self.print_contact_info(href_to_edit)
+        print ""
+        edit = "foo"
+        while (edit != "y") and (edit != "N") and (edit != ""):
+            edit = raw_input("Is this the entry you want to edit [y/N]? ")
+        if (edit == "N") or (edit == ""):
+            sys.exit()
+        print edit
+
 
 
 
