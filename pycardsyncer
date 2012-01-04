@@ -12,7 +12,6 @@
 ##############################
 # imports {{{
 
-from IPython.Debugger import Tracer; debug_here = Tracer()
 import StringIO
 import sys
 import getopt
