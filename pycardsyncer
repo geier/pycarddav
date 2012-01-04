@@ -276,6 +276,10 @@ def insertVcardInDb(vRef,v):
                 conn = sqlite3.connect(dbPath)
                 c = conn.cursor()
                 t =(propertyName, propertyValue,vRef,)
+                print "propertyName: ", propertyName, " type: ", type(propertyName)
+                print "propertyValue: ", propertyValue, " type: ", type(propertyValue)
+                print "vRef: ", vRef, " type: ", type(vRef)
+                print "t: ", t, " type: ", type(t)
 
                 c.execute('INSERT INTO properties (property, value, href) VALUES (?,?,?);', t)
                 lastrowid = c.lastrowid
