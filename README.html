@@ -53,7 +53,8 @@ Copy and edit the supplied pycard.conf.sample file (default location is
 ~/.pycard/pycard.conf). Beware that only you can access this file, if you
 have untrusted users on your machine, since the password is stored in
 cleartext.</p>
-<p>Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.</p>
+<p>Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
+Also <em>pyCardDAV</em> currently only works with python 2.7.</p>
 </div>
 <div class="section" id="usage">
 <h1>Usage</h1>
@@ -72,8 +73,8 @@ that query_command uses pc_query:</p>
 <pre class="literal-block">
 set query_command=&quot;/home/username/bin/pc_query -m '%s'&quot;
 </pre>
-<p><em>pyCardDAV</em> has so far been tested on recent versions of FreeBSD, Debian and
-Ubuntu.</p>
+<p><em>pyCardDAV</em> has so far been successfully tested on recent versions of FreeBSD,
+Debian and Ubuntu.</p>
 </div>
 <div class="section" id="feedback">
 <h1>Feedback</h1>
