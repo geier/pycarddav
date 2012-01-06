@@ -239,7 +239,7 @@ def main(argv):
         "-c", "--config", action = "store", dest = "configfile",
         default = "~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
-    parser.add_argument("-v", "--version", action = "version", version = "0.3")
+    parser.add_argument("-v", "--version", action = "version", version = "0.3.1")
     parser.add_argument("-a", action = "store_true", dest = "display_all",
             default = "False", help = "prints the whole card, not only name, "
             "telephone numbers and email addresses")
@@ -261,6 +261,16 @@ def main(argv):
     parser = SafeConfigParser()
     parser.read(configfile)
     db_path = path.expanduser(parser.get('default', 'db_path'))
+    # testing if the db exists
+    if not path.exists(db_path):
+        sys.exit(str(db_path) + " file does not exist, please sync with pycardsyncer first.")
+    # testing for database version
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('SELECT version FROM version')
+    database_version = 1
+    if not cursor.fetchone()[0] == database_version:
+        sys.exit(str(db_path) + " is probably not a valid database.\nYou should consider to remove it and sync again using pycardsyncer.")
 
     my_query = PcQuery()
     my_query.db_path = path.expanduser(db_path)
@@ -274,6 +284,8 @@ def main(argv):
         return 0
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
+
+
 
     print "searching for " + args.search_string + "..."
     my_query.search()

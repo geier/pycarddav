@@ -4,7 +4,7 @@ VERSION := $(shell cat VERSION)
 VERSION != cat VERSION
 
 doc: README.rst
-	rst2html.py --link-stylesheet --template=template.txt --stylesheet=http://pycarddav.lostpackets.de/css/main.css --no-generator README.rst > README.html
+	/usr/local/bin/rst2html.py --link-stylesheet --template=template.txt --stylesheet=http://pycarddav.lostpackets.de/css/main.css --no-generator README.rst > README.html
 
 tar: doc
 	mkdir pycarddav$(VERSION)

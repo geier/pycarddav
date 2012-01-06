@@ -4,6 +4,15 @@ News_ About_ Features_ Installation_ Usage_ Feedback_ Download_ License_
 
 News
 ----
+**06.01.2012:** pyCardDAV v0.3.1_ released:
+
+this bugfix release fixes some bugs on Debian and a formatting bug (thanks to
+Antoine Sirinelli) and one more unicode bug (thanks to Thomas Klausner). Also,
+some more meaningful error messages were added.
+
+if you are upgrading:
+  you should delete the old database again and resync using pycardsyncer
+
 **08.12.2011:** pyCardDAV v0.3_ released:
 
 this fixes an unicode bug and has a lot of internal changes
@@ -22,6 +31,7 @@ if you are upgrading:
 
 **12.08.2011:** pyCardDAV v0.1_ released
 
+.. _v0.3.1: http://pycarddav.lostpackets.de/download/pycarddav0.3.1.tgz
 .. _v0.3: http://pycarddav.lostpackets.de/download/pycarddav0.3.tgz
 .. _v0.2.1: http://pycarddav.lostpackets.de/download/pycarddav0.2.1.tgz
 .. _v0.2: http://pycarddav.lostpackets.de/download/pycarddav0.2.tgz
@@ -61,6 +71,7 @@ have untrusted users on your machine, since the password is stored in
 cleartext.
 
 Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
+Also *pyCardDAV* currently only works with python 2.7.
 
 Usage
 -----
@@ -82,8 +93,8 @@ Example from .muttrc::
 
         set query_command="/home/username/bin/pc_query -m '%s'"
 
-*pyCardDAV* has so far been tested on recent versions of FreeBSD, Debian and
-Ubuntu.
+*pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
+Debian and Ubuntu.
 
 Feedback
 --------
