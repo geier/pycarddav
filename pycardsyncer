@@ -12,6 +12,7 @@
 ##############################
 # imports {{{
 
+#from IPython.Debugger import Tracer; debug_here = Tracer()
 import StringIO
 import sys
 import getopt
@@ -55,6 +56,23 @@ def makeTables():
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
     try:
+            c.execute('''CREATE TABLE version        (
+                    version INTEGER
+                    )''')
+            if DEBUG:
+                    print "created version table"
+    except sqlite3.OperationalError as detail:
+        if DEBUG:
+            print detail
+    except:
+            sys.stderr.write('Failed to connect to database, Unknown Error')
+    conn.commit()
+
+    # VERSION information
+    t = (1,)
+    c.execute('INSERT INTO version (version) VALUES (?)',t)
+
+    try:
             c.execute('''CREATE TABLE vcardtable        (
                     href TEXT PRIMARY KEY NOT NULL,
                     etag TEXT,
@@ -68,8 +86,6 @@ def makeTables():
     except:
             sys.stderr.write('Failed to connect to database, Unknown Error')
     conn.commit()
-
-
 
     # properties table
     try:
@@ -274,7 +290,12 @@ def insertVcardInDb(vRef,v):
             else:
                 conn = sqlite3.connect(dbPath)
                 c = conn.cursor()
-                t =(propertyName, propertyValue,vRef,)
+                t =(unicode(propertyName), unicode(propertyValue),vRef,)
+                if DEBUG:
+                    print "unicode(propertyName): ", unicode(propertyName), " type: ", type(unicode(propertyName))
+                    print "unicode(propertyValue): ", unicode(propertyValue), " type: ", type(unicode(propertyValue))
+                    print "vRef: ", vRef, " type: ", type(vRef)
+                    print "t: ", t, " type: ", type(t)
 
                 c.execute('INSERT INTO properties (property, value, href) VALUES (?,?,?);', t)
                 lastrowid = c.lastrowid
@@ -369,8 +390,12 @@ def main(argv):
             
 
             # this is the important part
-            insertVcardInDb(vRef,v)
-            updateEtag(vRef, vEtag)
+            try:
+                insertVcardInDb(vRef,v)
+                updateEtag(vRef, vEtag)
+            except Exception, err:
+                sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db" % str(vRef))
+                sys.stderr.write('%s\n' % str(err))
 
 
 
