@@ -16,6 +16,7 @@ import signal
 from os import path
 import argparse
 from ConfigParser import SafeConfigParser
+import util
 
 try:
     import sqlite3
@@ -33,7 +34,7 @@ class VCard(list):
     db_path: database file from which to initialize the VCard
     """
 
-    def __init__(self, h_ref = "", db_path=""): #TODO
+    def __init__(self, h_ref = "", db_path=""):
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
         stuple = (h_ref,)
@@ -46,7 +47,7 @@ class VCard(list):
             self.append(CardProperty(vcard_property, vcard_value, parameters,),)
         conn.close()
 
-    def get_prop(self, card_property): #TODO
+    def get_prop(self, card_property):
         """
         returns a list of all CardProperties matching "card_property",
         making VCard work like a dict (and perhaps it better would be one)
@@ -73,6 +74,11 @@ class VCard(list):
         for prop in self:
             collector.append(prop.prop())
         return list(set(collector))
+
+    def edit(self):
+        """edits the contact card"""
+        for line in self:
+            line.edit()
 
 class CardProperty(list):
     """
@@ -101,7 +107,13 @@ class CardProperty(list):
         if len(types) == 0:
             return None
         else:
-            return " (" + ", ".join(types) + ")"
+            return u" (" + u", ".join(types) + u")"
+
+    def edit(self):
+        util.pdebug((self.prop(), self.type_list_pretty(), self.value()))
+        test = 3
+        util.pdebug(test)
+        self[1] = raw_input(self.prop() + self.type_list_pretty() + u" [" + self.value() + u"]: ")
 
 class PcQuery(object):
     """Querying the addressbook database"""
@@ -146,6 +158,11 @@ class PcQuery(object):
         for line in contact.get_prop(prop.upper()):
             if len(line.type_list()) != 0:
                 print unicode(prop.capitalize() + line.type_list_pretty() + u": " + line.value()).encode(self.encoding)
+
+    #def edit_prop(self, contact, prop):
+    #    for line in contact.get_prop(prop.upper()):
+    #        if len(line.type_list()) != 0:
+    #        line.value = raw_input((prop.capitalize() + line.type_list_pretty() + u"[" + line.value() + u"]:").encode(self.encoding))
 
     def print_contact_info(self, contact_href):
         """new style contact card information printing"""
@@ -193,7 +210,13 @@ class PcQuery(object):
             edit = raw_input("Is this the entry you want to edit [y/N]? ")
         if (edit == "N") or (edit == ""):
             sys.exit()
-        print edit
+        else:
+            return href_to_edit
+
+    def edit(self, contact_href):
+        """edit the contact card referenced by contact_href"""
+        contact = VCard(contact_href, self.db_path)
+        contact.edit()
 
 
 
@@ -247,8 +270,8 @@ def main(argv):
 
     if (args.edit == True):
         edit_entry = my_query.select_entry()
+        my_query.edit(edit_entry)
         return 0
-        #my_query.edit(edit_entry)
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
 
