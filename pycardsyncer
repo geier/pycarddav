@@ -275,11 +275,12 @@ def insertVcardInDb(vRef,v):
             else:
                 conn = sqlite3.connect(dbPath)
                 c = conn.cursor()
-                t =(propertyName, propertyValue,vRef,)
-                print "propertyName: ", propertyName, " type: ", type(propertyName)
-                print "propertyValue: ", propertyValue, " type: ", type(propertyValue)
-                print "vRef: ", vRef, " type: ", type(vRef)
-                print "t: ", t, " type: ", type(t)
+                t =(unicode(propertyName), unicode(propertyValue),vRef,)
+                if DEBUG:
+                    print "unicode(propertyName): ", unicode(propertyName), " type: ", type(unicode(propertyName))
+                    print "unicode(propertyValue): ", unicode(propertyValue), " type: ", type(unicode(propertyValue))
+                    print "vRef: ", vRef, " type: ", type(vRef)
+                    print "t: ", t, " type: ", type(t)
 
                 c.execute('INSERT INTO properties (property, value, href) VALUES (?,?,?);', t)
                 lastrowid = c.lastrowid
@@ -374,8 +375,12 @@ def main(argv):
             
 
             # this is the important part
-            insertVcardInDb(vRef,v)
-            updateEtag(vRef, vEtag)
+            try:
+                insertVcardInDb(vRef,v)
+                updateEtag(vRef, vEtag)
+            except Exception, err:
+                sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db" % str(vRef))
+                sys.stderr.write('%s\n' % str(err))
 
 
 
