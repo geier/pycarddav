@@ -183,7 +183,7 @@ def main(argv):
         "-c", "--config", action = "store", dest = "configfile",
         default = "~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
-    parser.add_argument("-v", "--version", action = "version", version = "0.3")
+    parser.add_argument("-v", "--version", action = "version", version = "0.3.1")
     parser.add_argument("-a", action = "store_true", dest = "display_all",
             default = "False", help = "prints the whole card, not only name, "
             "telephone numbers and email addresses")
