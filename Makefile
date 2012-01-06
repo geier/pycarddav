@@ -4,11 +4,11 @@ VERSION := $(shell cat VERSION)
 VERSION != cat VERSION
 
 doc: README.rst
-	rst2html --link-stylesheet --template=template.txt --stylesheet=http://pycarddav.lostpackets.de/css/main.css --no-generator README.rst > README.html
+	rst2html.py --link-stylesheet --template=template.txt --stylesheet=http://pycarddav.lostpackets.de/css/main.css --no-generator README.rst > README.html
 
 tar: doc
 	mkdir pycarddav$(VERSION)
-	cp README.rst README.html pc-query pycard.conf.sample pycardsyncer pycarddav$(VERSION)
+	cp README.rst README.html pc_query pycard.conf.sample pycardsyncer pycarddav$(VERSION)
 	tar -czf pycarddav$(VERSION).tgz pycarddav$(VERSION)/*
 	rm -rf pycarddav$(VERSION)
 
