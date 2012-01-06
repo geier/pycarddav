@@ -10,6 +10,9 @@ this bugfix release fixes some bugs on Debian and a formatting bug (thanks to
 Antoine Sirinelli) and one more unicode bug (thanks to Thomas Klausner). Also,
 some more meaningful error messages were added.
 
+if you are upgrading:
+  you should delete the old database again and resync using pycardsyncer
+
 **08.12.2011:** pyCardDAV v0.3_ released:
 
 this fixes an unicode bug and has a lot of internal changes
