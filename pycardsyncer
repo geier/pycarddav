@@ -56,6 +56,23 @@ def makeTables():
     conn = sqlite3.connect(dbPath)
     c = conn.cursor()
     try:
+            c.execute('''CREATE TABLE version        (
+                    version INTEGER
+                    )''')
+            if DEBUG:
+                    print "created version table"
+    except sqlite3.OperationalError as detail:
+        if DEBUG:
+            print detail
+    except:
+            sys.stderr.write('Failed to connect to database, Unknown Error')
+    conn.commit()
+
+    # VERSION information
+    t = (1,)
+    c.execute('INSERT INTO version (version) VALUES (?)',t)
+
+    try:
             c.execute('''CREATE TABLE vcardtable        (
                     href TEXT PRIMARY KEY NOT NULL,
                     etag TEXT,
@@ -69,8 +86,6 @@ def makeTables():
     except:
             sys.stderr.write('Failed to connect to database, Unknown Error')
     conn.commit()
-
-
 
     # properties table
     try:
