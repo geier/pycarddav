@@ -110,10 +110,10 @@ class CardProperty(list):
             return u" (" + u", ".join(types) + u")"
 
     def edit(self):
-        util.pdebug((self.prop(), self.type_list_pretty(), self.value()))
-        test = 3
-        util.pdebug(test)
-        self[1] = raw_input(self.prop() + self.type_list_pretty() + u" [" + self.value() + u"]: ")
+        if self.type_list_pretty() == None:
+            self[1] = raw_input((self.prop() + u" [" + self.value()+ u"]: ").encode("utf-8")).decode(sys.stdin.encoding)
+        else:
+            self[1] = raw_input((self.prop() + self.type_list_pretty() + u" [" + self.value() + u"]: ").encode("utf-8")).decode(sys.stdin.encoding)
 
 class PcQuery(object):
     """Querying the addressbook database"""
@@ -192,13 +192,13 @@ class PcQuery(object):
                 print (i+1), contact.name()
             while True: # should break if input not convertible to int
                 id_to_edit = raw_input("Which one do you want to edit: ")
-                #try:
-                id_to_edit = int(id_to_edit)
-                if (id_to_edit > 0) and (id_to_edit <= len(ids)): #FIXME
-                    href_to_edit = ids[id_to_edit - 1][0]
-                    break
-                #except:
-                #    pass
+                try:
+                    id_to_edit = int(id_to_edit)
+                    if (id_to_edit > 0) and (id_to_edit <= len(ids)): #FIXME
+                        href_to_edit = ids[id_to_edit - 1][0]
+                        break
+                except:
+                    pass
                 print "Please only type a number between 1 and", len(ids)
         elif len(ids) != 0:
             href_to_edit = ids[0]
