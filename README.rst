@@ -61,6 +61,8 @@ Features
 - *pyCardDAV* is read-only for now
 - *pyCardDAV* is only tested against davical
 - your password is stored in cleartext in the config file
+- *pyCardDAV* simply ignores embedded pictures and will crash on any other
+  embedded binary data
 
 Installation
 ------------
@@ -95,6 +97,10 @@ Example from .muttrc::
 
 *pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
 Debian and Ubuntu.
+
+Additional Information
+----------------------
+For now, VCard properties that have no value are not shown.
 
 Feedback
 --------

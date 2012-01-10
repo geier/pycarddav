@@ -144,10 +144,11 @@ class CardProperty(list):
             self[1] = temp
 
     def print_yourself(self):
-        if self.type_list_pretty() == None:
-            print unicode(self.prop().capitalize() + u": " + self.value()).encode("utf-8")
-        else:
-            print unicode(self.prop().capitalize() + self.type_list_pretty() + u": " + self.value()).encode("utf-8")
+        if self.value() != unicode():
+            if self.type_list_pretty() == None:
+                print unicode(self.prop().capitalize() + u": " + self.value()).encode("utf-8")
+            else:
+                print unicode(self.prop().capitalize() + self.type_list_pretty() + u": " + self.value()).encode("utf-8")
 
 class PcQuery(object):
     """Querying the addressbook database"""
