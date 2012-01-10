@@ -11,9 +11,12 @@
 <div class="document" id="pycarddav">
 <h1 class="title">pyCardDAV</h1>
 
-<p><a class="reference internal" href="#news">News</a> <a class="reference internal" href="#about">About</a> <a class="reference internal" href="#features">Features</a> <a class="reference internal" href="#installation">Installation</a> <a class="reference internal" href="#usage">Usage</a> <a class="reference internal" href="#feedback">Feedback</a> <a class="reference internal" href="#download">Download</a> <a class="reference internal" href="#license">License</a></p>
+<p><a class="reference internal" href="#news">News</a> <a class="reference internal" href="#about">About</a> <a class="reference internal" href="#features">Features</a> <a class="reference internal" href="#installation">Installation</a> <a class="reference internal" href="#usage">Usage</a> <a class="reference internal" href="#feedback">Feedback</a> <a class="reference internal" href="#license">License</a></p>
 <div class="section" id="news">
 <h1>News</h1>
+<p><strong>06.01.2012:</strong> pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.3.2.tgz">v0.3.2</a> released:</p>
+<p>this is a minor bugfix update, db deleting should not be necessary. If
+everything is working fine at the moment, there is no need to upgrade.</p>
 <p><strong>06.01.2012:</strong> pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.3.1.tgz">v0.3.1</a> released:</p>
 <p>this bugfix release fixes some bugs on Debian and a formatting bug (thanks to
 Antoine Sirinelli) and one more unicode bug (thanks to Thomas Klausner). Also,
@@ -56,11 +59,11 @@ together <a class="reference external" href="http://vobject.skyhouseconsulting.c
 </div>
 <div class="section" id="installation">
 <h1>Installation</h1>
-<p>Move pc_query and pycardsyncer to some folder in your PATH.
+<p>You can download <em>pyCardDAV</em> either from the above download link or check it
+out at <a class="reference external" href="https://github.com/geier/pycarddav/">github</a>.  Move pc_query and pycardsyncer to some folder in your PATH.
 Copy and edit the supplied pycard.conf.sample file (default location is
-~/.pycard/pycard.conf). Beware that only you can access this file, if you
-have untrusted users on your machine, since the password is stored in
-cleartext.</p>
+~/.pycard/pycard.conf). Beware that only you can access this file, if you have
+untrusted users on your machine, since the password is stored in cleartext.</p>
 <p>Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
 Users of python versions &lt; 2.7 will also need to install argparse.</p>
 <p><em>pyCardDAV</em> has so far been successfully tested on recent versions of FreeBSD,
@@ -90,11 +93,6 @@ set query_command=&quot;/home/username/bin/pc_query -m '%s'&quot;
 <p>Please do provide feedback if <em>pyCardDAV</em> works for you or even more importantly
 if it doesn't. You can reach me by email at <a class="reference external" href="mailto:pycarddav&#64;lostpackets.de">pycarddav&#64;lostpackets.de</a> , by
 jabber/XMPP at <a class="reference external" href="mailto:geier&#64;jabber.ccc.de">geier&#64;jabber.ccc.de</a> or via <a class="reference external" href="https://github.com/geier/pycarddav/">github</a></p>
-</div>
-<div class="section" id="download">
-<h1>Download</h1>
-<p>Get the latest version of pyCardDAV from <a class="reference external" href="http://pycarddav.lostpackets.de/">http://pycarddav.lostpackets.de/</a>
-or check out it out at <a class="reference external" href="https://github.com/geier/pycarddav">https://github.com/geier/pycarddav</a> .</p>
 </div>
 <div class="section" id="license">
 <h1>License</h1>

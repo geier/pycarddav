@@ -1,9 +1,14 @@
 pyCardDAV
 =========
-News_ About_ Features_ Installation_ Usage_ Feedback_ Download_ License_
+News_ About_ Features_ Installation_ Usage_ Feedback_ License_
 
 News
 ----
+**06.01.2012:** pyCardDAV v0.3.2_ released:
+
+this is a minor bugfix update, db deleting should not be necessary. If
+everything is working fine at the moment, there is no need to upgrade.
+
 **06.01.2012:** pyCardDAV v0.3.1_ released:
 
 this bugfix release fixes some bugs on Debian and a formatting bug (thanks to
@@ -31,6 +36,7 @@ if you are upgrading:
 
 **12.08.2011:** pyCardDAV v0.1_ released
 
+.. _v0.3.2: http://pycarddav.lostpackets.de/download/pycarddav0.3.2.tgz
 .. _v0.3.1: http://pycarddav.lostpackets.de/download/pycarddav0.3.1.tgz
 .. _v0.3: http://pycarddav.lostpackets.de/download/pycarddav0.3.tgz
 .. _v0.2.1: http://pycarddav.lostpackets.de/download/pycarddav0.2.1.tgz
@@ -64,11 +70,11 @@ Features
 
 Installation
 ------------
-Move pc_query and pycardsyncer to some folder in your PATH.
+You can download *pyCardDAV* either from the above download link or check it
+out at github_.  Move pc_query and pycardsyncer to some folder in your PATH.
 Copy and edit the supplied pycard.conf.sample file (default location is
-~/.pycard/pycard.conf). Beware that only you can access this file, if you
-have untrusted users on your machine, since the password is stored in
-cleartext.
+~/.pycard/pycard.conf). Beware that only you can access this file, if you have
+untrusted users on your machine, since the password is stored in cleartext.
 
 Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
 Users of python versions < 2.7 will also need to install argparse.
@@ -108,12 +114,6 @@ if it doesn't. You can reach me by email at pycarddav@lostpackets.de , by
 jabber/XMPP at geier@jabber.ccc.de or via github_
 
 .. _github: https://github.com/geier/pycarddav/
-
-Download
---------
-Get the latest version of pyCardDAV from http://pycarddav.lostpackets.de/
-or check out it out at https://github.com/geier/pycarddav .
-
 
 License
 -------
