@@ -112,9 +112,11 @@ class CardProperty(list):
         self.append(params)
 
     def prop(self):
+        """pure fluff for getting self[0]"""
         return self[0]
 
     def value(self):
+        """pure fluff for getting self[1]"""
         return self[1]
 
     def type_list(self):
@@ -284,7 +286,6 @@ def main(argv):
 
     if (args.edit == True):
         contact = my_query.select_entry()
-        print contact
         contact.edit()
         return 0
     my_query.print_function = args.print_function
