@@ -28,9 +28,9 @@ except ImportError:
 
 class VCard(list):
     """
-    internal representation of the a VCard. This is mainly a list with some
+    internal representation of a VCard. This is mainly a list with some
     associated methods, each list element is a CardProperty
-    h_ref: unique id (realy just the url) of the VCard
+    h_ref: unique id (really just the url) of the VCard
     db_path: database file from which to initialize the VCard
     """
 
@@ -135,9 +135,11 @@ class CardProperty(list):
 
     def edit(self):
         if self.type_list_pretty() == None:
-            self[1] = raw_input((self.prop() + u" [" + self.value()+ u"]: ").encode("utf-8")).decode(sys.stdin.encoding)
+            temp = raw_input((self.prop() + u" [" + self.value()+ u"]: ").encode("utf-8")).decode(sys.stdin.encoding)
         else:
-            self[1] = raw_input((self.prop() + self.type_list_pretty() + u" [" + self.value() + u"]: ").encode("utf-8")).decode(sys.stdin.encoding)
+            temp = raw_input((self.prop() + self.type_list_pretty() + u" [" + self.value() + u"]: ").encode("utf-8")).decode(sys.stdin.encoding)
+        if not temp == unicode():
+            self[1] = temp
 
     def print_yourself(self):
         if self.type_list_pretty() == None:
@@ -183,12 +185,6 @@ class PcQuery(object):
         result = list(set(result))
         conn.close()
         return result
-
-
-    #def edit_prop(self, contact, prop):
-    #    for line in contact.get_prop(prop.upper()):
-    #        if len(line.type_list()) != 0:
-    #        line.value = raw_input((prop.capitalize() + line.type_list_pretty() + u"[" + line.value() + u"]:").encode(self.encoding))
 
     def select_entry(self):
         """select a single entry from a list matching the search_string"""
@@ -286,12 +282,17 @@ def main(argv):
 
     if (args.edit == True):
         contact = my_query.select_entry()
-        contact.edit()
+        while True:
+            contact.edit()
+            print ""
+            contact.print_contact_info(True)
+            edit = raw_input("Is this correct [y/N]?")
+            if edit == "y" or edit == u"y":
+                contact.save()
+                print "data successfully written to the database"
         return 0
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
-
-
 
     print "searching for " + args.search_string + "..."
     my_query.search()
