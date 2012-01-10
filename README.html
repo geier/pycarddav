@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.8.1: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.7: http://docutils.sourceforge.net/" />
 <title>pyCardDAV</title>
 <link rel="stylesheet" href="http://pycarddav.lostpackets.de/css/main.css" type="text/css" />
 </head>
@@ -62,7 +62,10 @@ Copy and edit the supplied pycard.conf.sample file (default location is
 have untrusted users on your machine, since the password is stored in
 cleartext.</p>
 <p>Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
-Also <em>pyCardDAV</em> currently only works with python 2.7.</p>
+User of python versions &lt; 2.7 will also need to install argparse.</p>
+<p><em>pyCardDAV</em> has so far been successfully tested on recent versions of FreeBSD,
+NetBSD, Debian and Ubuntu with python 2.6 and 2.7.</p>
+<p>NetBSD/pkgsrc users can install <em>pyCardDAV</em> via <a class="reference external" href="http://pkgsrc.se/misc/py-carddav">pkgsrc</a>.</p>
 </div>
 <div class="section" id="usage">
 <h1>Usage</h1>
@@ -81,8 +84,6 @@ that query_command uses pc_query:</p>
 <pre class="literal-block">
 set query_command=&quot;/home/username/bin/pc_query -m '%s'&quot;
 </pre>
-<p><em>pyCardDAV</em> has so far been successfully tested on recent versions of FreeBSD,
-Debian and Ubuntu.</p>
 </div>
 <div class="section" id="feedback">
 <h1>Feedback</h1>

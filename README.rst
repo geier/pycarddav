@@ -71,7 +71,14 @@ have untrusted users on your machine, since the password is stored in
 cleartext.
 
 Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
-Also *pyCardDAV* currently only works with python 2.7.
+Users of python versions < 2.7 will also need to install argparse.
+
+*pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
+NetBSD, Debian and Ubuntu with python 2.6 and 2.7.
+
+NetBSD/pkgsrc users can install *pyCardDAV* via pkgsrc_.
+
+.. _pkgsrc: http://pkgsrc.se/misc/py-carddav
 
 Usage
 -----
@@ -93,8 +100,6 @@ Example from .muttrc::
 
         set query_command="/home/username/bin/pc_query -m '%s'"
 
-*pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
-Debian and Ubuntu.
 
 Feedback
 --------
