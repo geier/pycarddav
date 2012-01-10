@@ -12,8 +12,10 @@ tar: doc
 	tar -czf pycarddav$(VERSION).tgz pycarddav$(VERSION)/*
 	rm -rf pycarddav$(VERSION)
 
-release: tar
+update_web: doc
 	scp README.html pycarddav.lostpackets.de:pycarddav.lostpackets.de/index.html
+
+release: tar
 	scp pycarddav$(VERSION).tgz pycarddav.lostpackets.de:pycarddav.lostpackets.de/download/
 
 clean:
