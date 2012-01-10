@@ -11,5 +11,11 @@ def smartEncode(string):
 	return unicode(string).encode('utf-8', 'strict')
 
 def pdebug(var):
-    for onevar in var:
-        print "type: ", type(onevar), " value: ", onevar
+    if type(var) in (unicode, str):
+        print "type: ", type(var), " value: ", var
+
+    try:
+        for onevar in var:
+            print "type: ", type(onevar), " value: ", onevar
+    except:
+        print "type: ", type(var), " value: ", var
