@@ -35,6 +35,8 @@ class VCard(list):
     """
 
     def __init__(self, h_ref = "", db_path=""):
+        self.h_ref = h_ref
+        self.db_path = db_path
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
         stuple = (h_ref,)
@@ -268,7 +270,7 @@ def main(argv):
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute('SELECT version FROM version')
-        database_version = 1
+        database_version = 2
         if not cursor.fetchone()[0] == database_version:
             sys.exit(str(db_path) + " is probably not a valid or an outdated database.\nYou should consider to remove it and sync again using pycardsyncer.")
     except sqlite3.OperationalError:
