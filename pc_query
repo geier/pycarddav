@@ -75,6 +75,28 @@ class VCard(list):
             collector.append(prop.prop())
         return list(set(collector))
 
+    def print_contact_info(self, display_all = False):
+        """new style contact card information printing"""
+        print unicode("Name: " + self.name()).encode("utf-8")
+        for prop in ("EMAIL", "TEL",):
+            for line in self.get_prop(prop):
+                line.print_yourself()
+        if display_all == True:
+            for props in self.get_props():
+                if not props in ("EMAIL", "TEL"):
+                    for line in self.get_prop(props):
+                        line.print_yourself()
+
+    def print_email(self):
+        """prints only name, email and type for use with mutt"""
+        for email in self.get_prop('EMAIL'):
+            print unicode(email.value() + u"\t" + self.name() + u"\t" + u", ".join(email.type_list())).encode("utf-8")
+
+    def print_prop(self, prop):
+        for line in self.get_prop(prop.upper()):
+            if len(line.type_list()) != 0:
+                print unicode(prop.capitalize() + line.type_list_pretty() + u": " + line.value()).encode("utf-8")
+
     def edit(self):
         """edits the contact card"""
         for line in self:
@@ -115,6 +137,12 @@ class CardProperty(list):
         else:
             self[1] = raw_input((self.prop() + self.type_list_pretty() + u" [" + self.value() + u"]: ").encode("utf-8")).decode(sys.stdin.encoding)
 
+    def print_yourself(self):
+        if self.type_list_pretty() == None:
+            print unicode(self.prop().capitalize() + u": " + self.value()).encode("utf-8")
+        else:
+            print unicode(self.prop().capitalize() + self.type_list_pretty() + u": " + self.value()).encode("utf-8")
+
 class PcQuery(object):
     """Querying the addressbook database"""
     def __init__(self, db_path = "~/.pycacard/abook.db",
@@ -135,11 +163,11 @@ class PcQuery(object):
         """
         contact_ids = self.get_contact_id_from_string()
         while len(contact_ids) != 0:
-            contact_id= contact_ids.pop()
+            contact_id = contact_ids.pop()
             if self.print_function == "print_email":
-                self.print_email(contact_id[0])
+                VCard(contact_id[0], self.db_path).print_email()
             else:
-                self.print_contact_info(contact_id[0] )
+                VCard(contact_id[0], self.db_path).print_contact_info(self.display_all )
                 if len(contact_ids) > 0:
                     print ""
 
@@ -154,33 +182,11 @@ class PcQuery(object):
         conn.close()
         return result
 
-    def print_prop(self, contact, prop):
-        for line in contact.get_prop(prop.upper()):
-            if len(line.type_list()) != 0:
-                print unicode(prop.capitalize() + line.type_list_pretty() + u": " + line.value()).encode(self.encoding)
 
     #def edit_prop(self, contact, prop):
     #    for line in contact.get_prop(prop.upper()):
     #        if len(line.type_list()) != 0:
     #        line.value = raw_input((prop.capitalize() + line.type_list_pretty() + u"[" + line.value() + u"]:").encode(self.encoding))
-
-    def print_contact_info(self, contact_href):
-        """new style contact card information printing"""
-        contact = VCard(contact_href, self.db_path)
-
-        print unicode("Name: " + contact.name()).encode(self.encoding)
-        for prop in ("Email", "Tel",):
-            self.print_prop(contact, prop)
-        if self.display_all == True:
-            for prop in contact.get_props():
-                if not prop in ("EMAIL", "TEL"):
-                    self.print_prop(contact, prop)
-
-    def print_email(self, contact_href):
-        """prints only name, email and type for use with mutt"""
-        contact = VCard(contact_href, self.db_path)
-        for email in contact.get_prop('EMAIL'):
-            print unicode(email.value() + u"\t" + contact.name() + u"\t" + u", ".join(email.type_list())).encode(self.encoding)
 
     def select_entry(self):
         """select a single entry from a list matching the search_string"""
@@ -203,7 +209,8 @@ class PcQuery(object):
         elif len(ids) != 0:
             href_to_edit = ids[0]
         print ""
-        self.print_contact_info(href_to_edit)
+        card_to_edit = VCard(href_to_edit, self.db_path)
+        card_to_edit.print_contact_info()
         print ""
         edit = "foo"
         while (edit != "y") and (edit != "N") and (edit != ""):
@@ -211,13 +218,7 @@ class PcQuery(object):
         if (edit == "N") or (edit == ""):
             sys.exit()
         else:
-            return href_to_edit
-
-    def edit(self, contact_href):
-        """edit the contact card referenced by contact_href"""
-        contact = VCard(contact_href, self.db_path)
-        contact.edit()
-
+            return card_to_edit
 
 
 
@@ -273,7 +274,7 @@ def main(argv):
         if not cursor.fetchone()[0] == database_version:
             sys.exit(str(db_path) + " is probably not a valid or an outdated database.\nYou should consider to remove it and sync again using pycardsyncer.")
     except sqlite3.OperationalError:
-            sys.exit(str(db_path) + " is probably not a valid or an outdated database.\nYou should consider to remove it and sync again using pycardsyncer.")
+        sys.exit(str(db_path) + " is probably not a valid or an outdated database.\nYou should consider to remove it and sync again using pycardsyncer.")
 
     my_query = PcQuery()
     my_query.db_path = path.expanduser(db_path)
@@ -282,8 +283,9 @@ def main(argv):
     my_query.debug = args.debug
 
     if (args.edit == True):
-        edit_entry = my_query.select_entry()
-        my_query.edit(edit_entry)
+        contact = my_query.select_entry()
+        print contact
+        contact.edit()
         return 0
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
