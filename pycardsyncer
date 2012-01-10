@@ -144,7 +144,7 @@ options:
   --debug show some debugging output"""
 
 def version():
-    print "0.3.1"
+    print "0.3.2"
 
 def getXMLProps():
     response=StringIO.StringIO()
