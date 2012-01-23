@@ -16,7 +16,14 @@ import signal
 from os import path
 import argparse
 from ConfigParser import SafeConfigParser
-import util
+
+try:
+    from termcolor import colored, cprint
+    def print_bold(text):
+        cprint(text, attrs=['bold'])
+except:
+    def print_bold(text):
+        print(text)
 
 try:
     import sqlite3
@@ -79,7 +86,7 @@ class VCard(list):
 
     def print_contact_info(self, display_all = False):
         """new style contact card information printing"""
-        print unicode("Name: " + self.name()).encode("utf-8")
+        print_bold(unicode("Name: " + self.name()).encode("utf-8"))
         for prop in ("EMAIL", "TEL",):
             for line in self.get_prop(prop):
                 line.print_yourself()
