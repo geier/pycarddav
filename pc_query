@@ -44,7 +44,7 @@ class VCard(list):
         result = cur.fetchall()
         for vcard_id, vcard_property, vcard_value, vcard_href in result:
             stuple = (vcard_id, )
-            cur.execute('SELECT parameter, value FROM parameters WHERE property_id=(?)', stuple)
+            cur.execute('SELECT parameter, value, property_id FROM parameters WHERE property_id=(?)', stuple)
             parameters = cur.fetchall()
             self.append(CardProperty(vcard_property, vcard_value, parameters,),)
         conn.close()
@@ -104,14 +104,24 @@ class VCard(list):
         for line in self:
             line.edit()
 
+    def save(self):
+        """saves the changed properties to the db"""
+        for card_prop in self:
+            if card_prop[4] == 1:
+                print "line changed:"
+                card_prop.print_yourself()
+        print "saving the changes you made... NOT"
+
 class CardProperty(list):
     """
     A CardProperty object holds one VCard property including all parameters
     """
-    def __init__(self, prop, value, params):
+    def __init__(self, prop, value, params, uid=0, changed=0):
         self.append(prop)
         self.append(value)
         self.append(params)
+        self.append(uid)
+        self.append(changed)
 
     def prop(self):
         """pure fluff for getting self[0]"""
@@ -142,6 +152,7 @@ class CardProperty(list):
             temp = raw_input((self.prop() + self.type_list_pretty() + u" [" + self.value() + u"]: ").encode("utf-8")).decode(sys.stdin.encoding)
         if not temp == unicode():
             self[1] = temp
+            self[4] = 1
 
     def print_yourself(self):
         if self.value() != unicode():
@@ -293,6 +304,7 @@ def main(argv):
             if edit == "y" or edit == u"y":
                 contact.save()
                 print "data successfully written to the database"
+                sys.exit()
         return 0
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
