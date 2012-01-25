@@ -229,7 +229,7 @@ class PcQuery(object):
                     pass
                 print "Please only type a number between 1 and", len(ids)
         elif len(ids) != 0:
-            href_to_edit = ids[0]
+            href_to_edit = ids[0][0]
         print ""
         card_to_edit = VCard(href_to_edit, self.db_path)
         card_to_edit.print_contact_info()
