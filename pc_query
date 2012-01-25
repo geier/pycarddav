@@ -46,7 +46,7 @@ class VCard(list):
             stuple = (vcard_id, )
             cur.execute('SELECT parameter, value, property_id FROM parameters WHERE property_id=(?)', stuple)
             parameters = cur.fetchall()
-            self.append(CardProperty(vcard_property, vcard_value, parameters,),)
+            self.append(CardProperty(vcard_property, vcard_value, parameters, vcard_id),)
         conn.close()
 
     def get_prop(self, card_property):
@@ -106,10 +106,13 @@ class VCard(list):
 
     def save(self):
         """saves the changed properties to the db"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
         for card_prop in self:
-            if card_prop[4] == 1:
-                print "line changed:"
-                card_prop.print_yourself()
+            if card_prop[4] == 1: # value changed
+                cursor.execute('UPDATE properties SET value = ? WHERE id == ?',(card_prop[1], card_prop[3],))
+        conn.commit()
+        conn.close()
         print "saving the changes you made... NOT"
 
 class CardProperty(list):
@@ -152,7 +155,7 @@ class CardProperty(list):
             temp = raw_input((self.prop() + self.type_list_pretty() + u" [" + self.value() + u"]: ").encode("utf-8")).decode(sys.stdin.encoding)
         if not temp == unicode():
             self[1] = temp
-            self[4] = 1
+            self[4] = 1 #marking this property as changed
 
     def print_yourself(self):
         if self.value() != unicode():
@@ -294,18 +297,22 @@ def main(argv):
                                                        my_query.errors)
     my_query.debug = args.debug
 
+    # editing a card:
     if (args.edit == True):
         contact = my_query.select_entry()
         while True:
             contact.edit()
             print ""
             contact.print_contact_info(True)
-            edit = raw_input("Is this correct [y/N]?")
-            if edit == "y" or edit == u"y":
-                contact.save()
-                print "data successfully written to the database"
-                sys.exit()
+            while 1:
+                edit = raw_input("Is this correct [y/N]?")
+                if edit == "y" or edit == u"y":
+                    contact.save()
+                    sys.exit()
+                if edit == "N" or edit == "n":
+                    return 0
         return 0
+
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
 
