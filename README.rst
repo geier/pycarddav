@@ -4,37 +4,36 @@ News_ About_ Features_ Installation_ Usage_ Feedback_ License_
 
 News
 ----
-**06.01.2012:** pyCardDAV v0.3.2_ released:
+06.01.2012: pyCardDAV v0.3.2_ released:
+  this is a minor bugfix update, db deleting should not be necessary. If
+  everything is working fine at the moment, there is no need to upgrade.
 
-this is a minor bugfix update, db deleting should not be necessary. If
-everything is working fine at the moment, there is no need to upgrade.
+06.01.2012: pyCardDAV v0.3.1_ released:
+  this bugfix release fixes some bugs on Debian and a formatting bug (thanks to
+  Antoine Sirinelli) and one more unicode bug (thanks to Thomas Klausner). Also,
+  some more meaningful error messages were added.
 
-**06.01.2012:** pyCardDAV v0.3.1_ released:
-
-this bugfix release fixes some bugs on Debian and a formatting bug (thanks to
-Antoine Sirinelli) and one more unicode bug (thanks to Thomas Klausner). Also,
-some more meaningful error messages were added.
-
-if you are upgrading:
+  **Attention** if you are upgrading:
   you should delete the old database again and resync using pycardsyncer
 
-**08.12.2011:** pyCardDAV v0.3_ released:
+08.12.2011: pyCardDAV v0.3_ released:
+  this fixes an unicode bug and has a lot of internal changes
 
-this fixes an unicode bug and has a lot of internal changes
-
-*Attention*: pc-query has been renamed to pc_query
-
-if you are upgrading:
+  **Attention** pc-query has been renamed to pc_query,
   make sure to delete the old database, also the config file
   format has somewhat changed
 
-**10.10.2011:** pyCardDAV v0.2.1_ released
+10.10.2011: pyCardDAV v0.2.1_ released
+  this fixes a minor bug in the example config file
 
-**14.09.2011:** pyCardDAV v0.2_ released
+14.09.2011: pyCardDAV v0.2_ released
+  **New** config files are now supported
 
-**13.09.2011:** pyCardDAV moved to github_, feel free to fork etc.
+13.09.2011: pyCardDAV moved to github_
+  feel free to fork etc.
 
-**12.08.2011:** pyCardDAV v0.1_ released
+12.08.2011: pyCardDAV v0.1_ released
+  first public version
 
 .. _v0.3.2: http://pycarddav.lostpackets.de/download/pycarddav0.3.2.tgz
 .. _v0.3.1: http://pycarddav.lostpackets.de/download/pycarddav0.3.1.tgz
@@ -66,7 +65,7 @@ Features
 - *pyCardDAV* can only use one addressbook resource at the moment
 - *pyCardDAV* is read-only for now
 - *pyCardDAV* is only tested against davical
-- your password is stored in cleartext in the config file
+- **Warning** your password is stored in cleartext in the config file
 
 Installation
 ------------

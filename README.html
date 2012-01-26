@@ -5,38 +5,43 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.7: http://docutils.sourceforge.net/" />
 <title>pyCardDAV</title>
-<link rel="stylesheet" href="http://pycarddav.lostpackets.de/css/main.css" type="text/css" />
+<link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" />
 </head>
 <body>
 <div class="document" id="pycarddav">
+<div class="container">
+<div class="container-fluid">
 <h1 class="title">pyCardDAV</h1>
 
 <p><a class="reference internal" href="#news">News</a> <a class="reference internal" href="#about">About</a> <a class="reference internal" href="#features">Features</a> <a class="reference internal" href="#installation">Installation</a> <a class="reference internal" href="#usage">Usage</a> <a class="reference internal" href="#feedback">Feedback</a> <a class="reference internal" href="#license">License</a></p>
 <div class="section" id="news">
 <h1>News</h1>
-<p><strong>06.01.2012:</strong> pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.3.2.tgz">v0.3.2</a> released:</p>
-<p>this is a minor bugfix update, db deleting should not be necessary. If
-everything is working fine at the moment, there is no need to upgrade.</p>
-<p><strong>06.01.2012:</strong> pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.3.1.tgz">v0.3.1</a> released:</p>
-<p>this bugfix release fixes some bugs on Debian and a formatting bug (thanks to
+<dl class="docutils">
+<dt>06.01.2012: pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.3.2.tgz">v0.3.2</a> released:</dt>
+<dd>this is a minor bugfix update, db deleting should not be necessary. If
+everything is working fine at the moment, there is no need to upgrade.</dd>
+<dt>06.01.2012: pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.3.1.tgz">v0.3.1</a> released:</dt>
+<dd><p class="first">this bugfix release fixes some bugs on Debian and a formatting bug (thanks to
 Antoine Sirinelli) and one more unicode bug (thanks to Thomas Klausner). Also,
 some more meaningful error messages were added.</p>
-<dl class="docutils">
-<dt>if you are upgrading:</dt>
-<dd>you should delete the old database again and resync using pycardsyncer</dd>
+<p class="last"><span class="label warning">Attention</span> if you are upgrading:
+you should delete the old database again and resync using pycardsyncer</p>
+</dd>
+<dt>08.12.2011: pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.3.tgz">v0.3</a> released:</dt>
+<dd><p class="first">this fixes an unicode bug and has a lot of internal changes</p>
+<p class="last"><span class="label warning">Attention</span> pc-query has been renamed to pc_query,
+make sure to delete the old database, also the config file
+format has somewhat changed</p>
+</dd>
+<dt>10.10.2011: pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.2.1.tgz">v0.2.1</a> released</dt>
+<dd>this fixes a minor bug in the example config file</dd>
+<dt>14.09.2011: pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.2.tgz">v0.2</a> released</dt>
+<dd><span class="label success">New</span> config files are now supported</dd>
+<dt>13.09.2011: pyCardDAV moved to <a class="reference external" href="https://github.com/geier/pycarddav/">github</a></dt>
+<dd>feel free to fork etc.</dd>
+<dt>12.08.2011: pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav01.tgz">v0.1</a> released</dt>
+<dd>first public version</dd>
 </dl>
-<p><strong>08.12.2011:</strong> pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.3.tgz">v0.3</a> released:</p>
-<p>this fixes an unicode bug and has a lot of internal changes</p>
-<p><em>Attention</em>: pc-query has been renamed to pc_query</p>
-<dl class="docutils">
-<dt>if you are upgrading:</dt>
-<dd>make sure to delete the old database, also the config file
-format has somewhat changed</dd>
-</dl>
-<p><strong>10.10.2011:</strong> pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.2.1.tgz">v0.2.1</a> released</p>
-<p><strong>14.09.2011:</strong> pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.2.tgz">v0.2</a> released</p>
-<p><strong>13.09.2011:</strong> pyCardDAV moved to <a class="reference external" href="https://github.com/geier/pycarddav/">github</a>, feel free to fork etc.</p>
-<p><strong>12.08.2011:</strong> pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav01.tgz">v0.1</a> released</p>
 </div>
 <div class="section" id="about">
 <h1>About</h1>
@@ -54,7 +59,7 @@ together <a class="reference external" href="http://vobject.skyhouseconsulting.c
 <li><em>pyCardDAV</em> can only use one addressbook resource at the moment</li>
 <li><em>pyCardDAV</em> is read-only for now</li>
 <li><em>pyCardDAV</em> is only tested against davical</li>
-<li>your password is stored in cleartext in the config file</li>
+<li><span class="label important">Warning</span> your password is stored in cleartext in the config file</li>
 </ul>
 </div>
 <div class="section" id="installation">
@@ -101,6 +106,8 @@ jabber/XMPP at <a class="reference external" href="mailto:geier&#64;jabber.ccc.d
 Christian Geier wrote this file. As long as you retain this notice you
 can do whatever you want with this stuff. If we meet some day, and you think
 this stuff is worth it, you can buy me a beer in return Christian Geier</p>
+</div>
+</div>
 </div>
 <a href="http://github.com/geier/pycarddav"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://a248.e.akamai.net/assets.github.com/img/e6bef7a091f5f3138b8cd40bc3e114258dd68ddf/687474703a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67" alt="Fork me on GitHub"></a>
 </div>
