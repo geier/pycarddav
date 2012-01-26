@@ -15,7 +15,7 @@
 #from IPython.Debugger import Tracer; debug_here = Tracer()
 import StringIO
 import sys
-import getopt
+import argparse
 import signal
 from os import path
 
@@ -49,147 +49,11 @@ except:
 # /imports
 ###########################}}}
 
-##############################################
-# database creation foo {{{
-
-def makeTables():
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    try:
-            c.execute('''CREATE TABLE version (
-                    version INTEGER
-                    )''')
-            if DEBUG:
-                    print "created version table"
-    except sqlite3.OperationalError as detail:
-        if DEBUG:
-            print detail
-    except:
-            sys.stderr.write('Failed to connect to database, Unknown Error')
-    conn.commit()
-
-    # VERSION information
-    t = (2,) # database version db Version
-    c.execute('INSERT INTO version (version) VALUES (?)',t)
-
-    try:
-            c.execute('''CREATE TABLE vcardtable (
-                    href TEXT PRIMARY KEY NOT NULL,
-                    etag TEXT,
-                    name TEXT,
-                    edited INT
-                    )''')
-            if DEBUG:
-                    print "created vcards table"
-    except sqlite3.OperationalError as detail:
-        if DEBUG:
-            print detail
-    except:
-            sys.stderr.write('Failed to connect to database, Unknown Error')
-    conn.commit()
-
-    # properties table
-    try:
-            c.execute('''CREATE TABLE properties (
-            id INTEGER PRIMARY KEY NOT NULL,
-            property TEXT NOT NULL,
-            value TEXT,
-            href TEXT NOT NULL,
-            FOREIGN KEY(href) REFERENCES vcardtable(href)
-            )''')
-            if DEBUG:
-                    print "created properties table"
-    except sqlite3.OperationalError as detail:
-            if DEBUG:
-                    print detail
-    except:
-            sys.stderr.write('Failed to connect to database, Unknown Error')
-    conn.commit()
-
-    # parameter table
-    try:
-            c.execute('''CREATE TABLE parameters(
-            parameter TEXT NOT NULL,
-            value TEXT,
-            href TEXT NOT NULL,
-            property_id INTEGER NOT NULL,
-            FOREIGN KEY(href) REFERENCES vcardtable(href),
-            FOREIGN KEY(property_id) REFERENCES properties(id)
-            )''')
-            if DEBUG:
-                    print "created parameters table"
-    except sqlite3.OperationalError as detail:
-            if DEBUG:
-                    print detail
-    except:
-            sys.stderr.write('Failed to connect to database, Unknown Error')
-    conn.commit()
-
-    c.close()
-
-    c.close()
-
-# /database foo }}}
-##############################################
 
 def smartencode(s):
     unicode(s).encode("utf-8", "strict")
 
-def usage():
-    print """usage: pycardsyncer [options]
-       pycardsyncer --help/-h       show this help text
-       pycardsyncer --version/-v    show version
-options: 
-  -c <file>/--config=<file> location of config file
-                            default: ~/.pycard/pycard.config
-  --debug show some debugging output"""
 
-def version():
-    print "0.3.1"
-
-def getXMLProps():
-    response=StringIO.StringIO()
-    header=StringIO.StringIO()
-    c = pycurl.Curl()
-    c.setopt(pycurl.WRITEFUNCTION, response.write)
-    c.setopt(pycurl.HEADERFUNCTION, header.write)
-    c.setopt(pycurl.USERPWD, user+":"+passwd)
-    c.setopt(pycurl.URL, resource)
-    if (insecureSSL == 1):
-        c.setopt(pycurl.SSL_VERIFYPEER, 0)
-    c.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_SSLv3)
-    c.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
-    c.perform()
-    c.close
-    header =  header.getvalue()
-    xml = response.getvalue()
-    if (header.find("addressbook") == -1):
-        print "URL is not a CardDAV resource"
-        sys.exit(1)
-    return xml
-
-def processXMLProps(xml):
-    namespace="{DAV:}"
-    element = ET.XML(xml)
-    abook = dict()
-    for response in element.iterchildren():
-        if (response.tag == namespace+"response"):
-            href = ""
-            etag = ""
-            insert = False
-            for refprop in response.iterchildren():
-                if (refprop.tag == namespace+"href"):
-                    href = refprop.text
-                for prop in refprop.iterchildren():
-                    for props in prop.iterchildren():
-                        if (props.tag == namespace+"getcontenttype" and props.text == "text/vcard"):
-                            insert = True
-                        if (props.tag == namespace+"getetag"):
-                            etag = props.text
-                        #print("%s - %s" % (props.tag, props.text))
-                    if insert:
-                        abook[href] = etag
-    return abook
 
 def checkNewEtag(vRef, vEtag):
     """returns True when the etag has been updated, otherwise False"""
@@ -309,62 +173,192 @@ def insertVcardInDb(vRef,v):
 def signal_handler(signal, frame):
     sys.exit(0)
 
+class PyCardDAV:
+    def __init__(self):
+        self.debug = ""
+        self.user = ""
+        self.passwd = ""
+        self.resource = ""
+        self.base_url = ""
+        self.insecure_ssl = 0
+
+    def get_abook(self):
+        xml = self._get_xml_props()
+        abook = self._process_xml_props(xml)
+        return abook
+
+    def _get_xml_props(self):
+        response=StringIO.StringIO()
+        header=StringIO.StringIO()
+        curl = pycurl.Curl()
+        curl.setopt(pycurl.WRITEFUNCTION, response.write)
+        curl.setopt(pycurl.HEADERFUNCTION, header.write)
+        curl.setopt(pycurl.USERPWD, self.user+":"+self.passwd)
+        curl.setopt(pycurl.URL, self.resource)
+        if (self.insecure_ssl == 1):
+            curl.setopt(pycurl.SSL_VERIFYPEER, 0)
+        curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_SSLv3)
+        curl.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
+        curl.perform()
+        curl.close
+        header = header.getvalue()
+        xml = response.getvalue()
+        if (header.find("addressbook") == -1):
+            print "URL is not a CardDAV resource"
+            sys.exit(1)
+        return xml
+
+    def _process_xml_props(self, xml):
+        namespace="{DAV:}"
+        element = ET.XML(xml)
+        abook = dict()
+        for response in element.iterchildren():
+            if (response.tag == namespace+"response"):
+                href = ""
+                etag = ""
+                insert = False
+                for refprop in response.iterchildren():
+                    if (refprop.tag == namespace+"href"):
+                        href = refprop.text
+                    for prop in refprop.iterchildren():
+                        for props in prop.iterchildren():
+                            if (props.tag == namespace+"getcontenttype" and props.text == "text/vcard"):
+                                insert = True
+                            if (props.tag == namespace+"getetag"):
+                                etag = props.text
+                            #print("%s - %s" % (props.tag, props.text))
+                        if insert:
+                            abook[href] = etag
+        return abook
+
+class DbTool:
+    def __init__(self):
+        self.db_path = ""
+        self.debug = 0
+
+    def make_tables(self):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''CREATE TABLE version ( version INTEGER )''')
+            if self.debug:
+                print "created version table"
+        except sqlite3.OperationalError as detail:
+            if self.debug:
+                print detail
+        except:
+                sys.stderr.write('Failed to connect to database, Unknown Error')
+        conn.commit()
+        # VERSION information
+        t = (2,) # database version db Version
+        cursor.execute('INSERT INTO version (version) VALUES (?)',t)
+        conn.commit()
+        try:
+            cursor.execute('''CREATE TABLE vcardtable (
+                    href TEXT PRIMARY KEY NOT NULL,
+                    etag TEXT,
+                    name TEXT,
+                    edited INT
+                    )''')
+            if self.debug:
+                print "created vcardtable"
+        except sqlite3.OperationalError as detail:
+            if self.debug:
+                print detail
+        except:
+                sys.stderr.write('Failed to connect to database, Unknown Error')
+        conn.commit()
+        # properties table
+        try:
+                cursor.execute('''CREATE TABLE properties (
+                id INTEGER PRIMARY KEY NOT NULL,
+                property TEXT NOT NULL,
+                value TEXT,
+                href TEXT NOT NULL,
+                FOREIGN KEY(href) REFERENCES vcardtable(href)
+                )''')
+                if self.debug:
+                        print "created properties table"
+        except sqlite3.OperationalError as detail:
+                if self.debug:
+                        print detail
+        except:
+                sys.stderr.write('Failed to connect to database, Unknown Error')
+        conn.commit()
+        # parameter table
+        try:
+                cursor.execute('''CREATE TABLE parameters(
+                parameter TEXT NOT NULL,
+                value TEXT,
+                href TEXT NOT NULL,
+                property_id INTEGER NOT NULL,
+                FOREIGN KEY(href) REFERENCES vcardtable(href),
+                FOREIGN KEY(property_id) REFERENCES properties(id)
+                )''')
+                if self.debug:
+                        print "created parameters table"
+        except sqlite3.OperationalError as detail:
+               if self.debug:
+                        print detail
+        except:
+                sys.stderr.write('Failed to connect to database, Unknown Error')
+        conn.commit()
+        cursor.close()
+
+
 def main(argv):
-    configfile="~/.pycard/pycard.conf"
-    global user, passwd, resource, baseUrl, insecureSSL, dbPath, DEBUG
-    DEBUG=0
-    dbPath="~/.pycard/pycard.conf"
-    try:
-        opts, args = getopt.getopt(argv, "hc:v", ["help", "config=","version","debug"])
-    except getopt.GetoptError:
-        usage()
-        sys.exit(1)
-
-    for opt, arg in opts:
-        if opt in ("-h","--help"):
-            usage()
-            sys.exit()
-        elif opt in ("-v","--version"):
-            version()
-            sys.exit()
-        elif opt == "--debug":
-            DEBUG=1
-        elif opt in ("-c","--config"):
-            configfile=arg
-
-
     # trying to hide some ugly python code on pressing Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
 
-    #config file foo 
+    my_dbtool = DbTool()
+    syncer = PyCardDAV()
+
+    configfile="~/.pycard/pycard.conf"
+    global user, passwd, resource, baseUrl, insecureSSL, dbPath
+    dbPath="~/.pycard/pycard.conf"
+
+    arg_parser = argparse.ArgumentParser(
+            description = "syncs the local db to the CardDAV server")
+    arg_parser.add_argument(
+        "-c", "--config", action = "store", dest = "configfile",
+        default = "~/.pycard/pycard.conf",
+        help="defaults to ~/.pycard/pycard.conf")
+    arg_parser.add_argument("-v", "--version", action = "version", version = "0.3.1")
+    arg_parser.add_argument("--debug", action = "store_true", dest = "debug",
+            default = "False", help = "enable debugging")
+    args = arg_parser.parse_args()
+    
+
+    #config file foo
     configfile = path.expanduser(configfile)
-    if DEBUG:
+    if args.debug:
         print "reading config from ", configfile
-    parser = SafeConfigParser()
-    parser.read(configfile)
-    user = parser.get('default', 'user')
-    passwd = parser.get('default', 'passwd')
-    resource = parser.get('default', 'resource')
-    baseUrl = parser.get('default', 'base_url')
-    insecureSSL = parser.getint('default', 'insecure_ssl')
-    dbPath = path.expanduser(parser.get('default', 'db_path'))
-    DEBUG = parser.getint('default', 'DEBUG')
-    if DEBUG:
-        print "using config:"
-        print "user: ", user
-        print "passwd: ", passwd
-        print "resource: ", resource
-        print "baseUrl: ", baseUrl
-        print "insecureSSL: ", insecureSSL
-        print "dbPath: ", dbPath
+    conf_parser = SafeConfigParser()
+    conf_parser.read(configfile)
+    syncer.user = conf_parser.get('default', 'user')
+    syncer.passwd = conf_parser.get('default', 'passwd')
+    syncer.resource = conf_parser.get('default', 'resource')
+    syncer.baseUrl = conf_parser.get('default', 'base_url')
+    syncer.insecure_ssl = conf_parser.getint('default', 'insecure_ssl')
+    my_dbtool.db_path = path.expanduser(conf_parser.get('default', 'db_path'))
+    my_dbtool.debug = conf_parser.getint('default', 'DEBUG')
+    my_dbtool.debug = args.debug #argument overrides config file
+    syncer.debug = conf_parser.getint('default', 'DEBUG')
+    syncer.debug = args.debug #argument overrides config file
+    if my_dbtool.debug:
+        print "using remote options:"
+        print "  user: ", syncer.user
+        print "  passwd: ", syncer.passwd
+        print "  resource: ", syncer.resource
+        print "  baseUrl: ", syncer.baseUrl
+        print "  insecureSSL: ", syncer.insecure_ssl
+        print "using local options:"
+        print "  dbPath: ", my_dbtool.db_path
         print "\n"
 
-    makeTables()
+    my_dbtool.make_tables()
 
-    # primitive XML processing
-    xml = getXMLProps()
-
-    abook = processXMLProps(xml)
+    abook = syncer.get_abook()
 
     for vRef,vEtag  in abook.iteritems():
         if checkVRefExists(vRef):
@@ -372,17 +366,12 @@ def main(argv):
         
         if checkNewEtag(vRef,vEtag):
             deleteVcardFromDb(vRef)
-            if DEBUG:
+            if args.debug:
                 print "getting ", vRef, " etag: ", vEtag
 
             vcard = getVcard(vRef)
             v = vobject.readOne(vcard)
 
-            # DEBUG
-            #print v.prettyPrint()
-            #print v.contents
-            # /DEBUG
-            
 
             # this is the important part
             try:
