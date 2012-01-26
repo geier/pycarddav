@@ -1,36 +1,41 @@
 pyCardDAV
 =========
-News_ About_ Features_ Installation_ Usage_ Feedback_ Download_ License_
+News_ About_ Features_ Installation_ Usage_ Feedback_ License_
 
 News
 ----
-**06.01.2012:** pyCardDAV v0.3.1_ released:
+06.01.2012: pyCardDAV v0.3.2_ released:
+  this is a minor bugfix update, db deleting should not be necessary. If
+  everything is working fine at the moment, there is no need to upgrade.
 
-this bugfix release fixes some bugs on Debian and a formatting bug (thanks to
-Antoine Sirinelli) and one more unicode bug (thanks to Thomas Klausner). Also,
-some more meaningful error messages were added.
+06.01.2012: pyCardDAV v0.3.1_ released:
+  this bugfix release fixes some bugs on Debian and a formatting bug (thanks to
+  Antoine Sirinelli) and one more unicode bug (thanks to Thomas Klausner). Also,
+  some more meaningful error messages were added.
 
-if you are upgrading:
+  **Attention** if you are upgrading:
   you should delete the old database again and resync using pycardsyncer
 
-**08.12.2011:** pyCardDAV v0.3_ released:
+08.12.2011: pyCardDAV v0.3_ released:
+  this fixes an unicode bug and has a lot of internal changes
 
-this fixes an unicode bug and has a lot of internal changes
-
-*Attention*: pc-query has been renamed to pc_query
-
-if you are upgrading:
+  **Attention** pc-query has been renamed to pc_query,
   make sure to delete the old database, also the config file
   format has somewhat changed
 
-**10.10.2011:** pyCardDAV v0.2.1_ released
+10.10.2011: pyCardDAV v0.2.1_ released
+  this fixes a minor bug in the example config file
 
-**14.09.2011:** pyCardDAV v0.2_ released
+14.09.2011: pyCardDAV v0.2_ released
+  **New** config files are now supported
 
-**13.09.2011:** pyCardDAV moved to github_, feel free to fork etc.
+13.09.2011: pyCardDAV moved to github_
+  feel free to fork etc.
 
-**12.08.2011:** pyCardDAV v0.1_ released
+12.08.2011: pyCardDAV v0.1_ released
+  first public version
 
+.. _v0.3.2: http://pycarddav.lostpackets.de/download/pycarddav0.3.2.tgz
 .. _v0.3.1: http://pycarddav.lostpackets.de/download/pycarddav0.3.1.tgz
 .. _v0.3: http://pycarddav.lostpackets.de/download/pycarddav0.3.tgz
 .. _v0.2.1: http://pycarddav.lostpackets.de/download/pycarddav0.2.1.tgz
@@ -63,17 +68,25 @@ Features
 - your password is stored in cleartext in the config file
 - *pyCardDAV* simply ignores embedded pictures and will crash on any other
   embedded binary data
+- **Warning** your password is stored in cleartext in the config file
 
 Installation
 ------------
-Move pc_query and pycardsyncer to some folder in your PATH.
+You can download *pyCardDAV* either from the above download link or check it
+out at github_.  Move pc_query and pycardsyncer to some folder in your PATH.
 Copy and edit the supplied pycard.conf.sample file (default location is
-~/.pycard/pycard.conf). Beware that only you can access this file, if you
-have untrusted users on your machine, since the password is stored in
-cleartext.
+~/.pycard/pycard.conf). Beware that only you can access this file, if you have
+untrusted users on your machine, since the password is stored in cleartext.
 
 Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
-Also *pyCardDAV* currently only works with python 2.7.
+Users of python versions < 2.7 will also need to install argparse.
+
+*pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
+NetBSD, Debian and Ubuntu with python 2.6 and 2.7.
+
+NetBSD/pkgsrc users can install *pyCardDAV* via pkgsrc_.
+
+.. _pkgsrc: http://pkgsrc.se/misc/py-carddav
 
 Usage
 -----
@@ -95,8 +108,6 @@ Example from .muttrc::
 
         set query_command="/home/username/bin/pc_query -m '%s'"
 
-*pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
-Debian and Ubuntu.
 
 Additional Information
 ----------------------
@@ -109,12 +120,6 @@ if it doesn't. You can reach me by email at pycarddav@lostpackets.de , by
 jabber/XMPP at geier@jabber.ccc.de or via github_
 
 .. _github: https://github.com/geier/pycarddav/
-
-Download
---------
-Get the latest version of pyCardDAV from http://pycarddav.lostpackets.de/
-or check out it out at https://github.com/geier/pycarddav .
-
 
 License
 -------

@@ -242,6 +242,16 @@ class PcQuery(object):
         else:
             return card_to_edit
 
+<<<<<<< HEAD
+=======
+        print_bold(unicode("Name: " + contact.name()).encode(self.encoding))
+        for prop in ("Email", "Tel",):
+            self.print_prop(contact, prop)
+        if self.display_all == True:
+            for prop in contact.get_props():
+                if not prop in ("EMAIL", "TEL"):
+                    self.print_prop(contact, prop)
+>>>>>>> doc
 
 
 def signal_handler(signal, frame):
@@ -262,7 +272,7 @@ def main(argv):
         "-c", "--config", action = "store", dest = "configfile",
         default = "~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
-    parser.add_argument("-v", "--version", action = "version", version = "0.3.1")
+    parser.add_argument("-v", "--version", action = "version", version = "0.3.2")
     parser.add_argument("-a", action = "store_true", dest = "display_all",
             default = "False", help = "prints the whole card, not only name, "
             "telephone numbers and email addresses")
