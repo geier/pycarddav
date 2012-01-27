@@ -50,124 +50,11 @@ except:
 ###########################}}}
 
 
-def smartencode(s):
-    unicode(s).encode("utf-8", "strict")
+def smartencode(string):
+    unicode(string).encode("utf-8", "strict")
 
 
 
-def checkNewEtag(vRef, vEtag):
-    """returns True when the etag has been updated, otherwise False"""
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    t = (vRef,)
-    c.execute('SELECT etag FROM vcardtable WHERE href=(?);',t)
-    if vEtag==c.fetchall()[0][0]:
-        returnCode=False
-    else:
-        returnCode=True
-    conn.commit()
-    c.close()
-    return returnCode
-
-def checkVRefExists(vRef):
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    t=(vRef,)
-    c.execute('SELECT count(*) FROM vcardtable WHERE href=(?);',t)
-    if c.fetchall()==[(1,)]:
-        returnCode=False
-    else:
-        returnCode=True
-    conn.commit()
-    c.close()
-    return returnCode
-
-def insertVRef(vRef):
-    """inserts vRef into the vcardtable"""
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    t =(vRef,)
-    c.execute('INSERT INTO vcardtable (href) VALUES (?);', t)
-    conn.commit()
-    c.close()
-
-def updateEtag(vRef, vEtag):
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    t =(vEtag,vRef,)
-    c.execute('UPDATE vcardtable SET etag=(?) WHERE href=(?);',t)
-    conn.commit()
-    c.close()
-    return True
-
-def insertName(vRef,name):
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    t =(name, vRef)
-    c.execute('UPDATE vcardtable SET name=(?) WHERE href=(?)',t) 
-    conn.commit()
-    c.close()
-
-def deleteVcardFromDb(vRef):
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    t =(vRef,)
-    c.execute('DELETE from properties WHERE href=(?)',t) 
-    conn.commit()
-    c.close()
-
-def getVcard(vRef):
-    response=StringIO.StringIO()
-    header=StringIO.StringIO()
-    c = pycurl.Curl()
-    c.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_SSLv3)
-    c.setopt(pycurl.WRITEFUNCTION, response.write)
-    c.setopt(pycurl.HEADERFUNCTION, header.write)
-    c.setopt(pycurl.USERPWD, user+":"+passwd)
-    c.setopt(pycurl.URL, baseUrl+vRef)
-    if (insecureSSL == 1):
-        c.setopt(pycurl.SSL_VERIFYPEER, 0)
-    c.perform()
-    c.close
-
-    header =  header.getvalue()
-    vCard = response.getvalue()
-    if (header.find("addressbook") == -1):
-        print "URL is not a CardDAV resource"
-        sys.exit(1)
-
-    return vCard
-
-def insertVcardInDb(vRef,v):
-    if v.name == "VCARD":
-        v.prettyPrint()
-        for line in v.getChildren():
-            try:
-                line.transformFromNative()
-            except:
-                pass
-
-            propertyName = line.name
-            propertyValue = line.value
-            if (propertyName == "PHOTO"): # for now, we cannot handle photos
-                pass
-            else:
-                conn = sqlite3.connect(dbPath)
-                c = conn.cursor()
-                t =(unicode(propertyName), unicode(propertyValue),vRef,)
-
-                c.execute('INSERT INTO properties (property, value, href) VALUES (?,?,?);', t)
-                lastrowid = c.lastrowid
-                if line.params:
-                    for key in line.params.keys():
-                        for keyValue in line.params[key]:
-                            t =(key, keyValue,vRef,lastrowid)
-                            c.execute('INSERT INTO parameters (parameter, value, href,property_id) VALUES (?,?,?,?);', t)
-                            #print key + ": " + i
-                conn.commit()
-                c.close()
-    else:
-        return -1 # this is not a vcard
 
 
 def signal_handler(signal, frame):
@@ -187,9 +74,30 @@ class PyCardDAV:
         abook = self._process_xml_props(xml)
         return abook
 
+    def get_vcard(self, vref):
+        response = StringIO.StringIO()
+        header = StringIO.StringIO()
+        cursor = pycurl.Curl()
+        cursor.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_SSLv3)
+        cursor.setopt(pycurl.WRITEFUNCTION, response.write)
+        cursor.setopt(pycurl.HEADERFUNCTION, header.write)
+        cursor.setopt(pycurl.USERPWD, self.user+":"+self.passwd)
+        cursor.setopt(pycurl.URL, self.base_url+vref)
+        if (self.insecure_ssl == 1):
+            cursor.setopt(pycurl.SSL_VERIFYPEER, 0)
+        cursor.perform()
+        cursor.close()
+
+        header =  header.getvalue()
+        vcard = response.getvalue()
+        if (header.find("addressbook") == -1):
+            print "URL is not a CardDAV resource"
+            sys.exit(1)
+        return vcard
+
     def _get_xml_props(self):
-        response=StringIO.StringIO()
-        header=StringIO.StringIO()
+        response = StringIO.StringIO()
+        header = StringIO.StringIO()
         curl = pycurl.Curl()
         curl.setopt(pycurl.WRITEFUNCTION, response.write)
         curl.setopt(pycurl.HEADERFUNCTION, header.write)
@@ -200,7 +108,7 @@ class PyCardDAV:
         curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_SSLv3)
         curl.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
         curl.perform()
-        curl.close
+        curl.close()
         header = header.getvalue()
         xml = response.getvalue()
         if (header.find("addressbook") == -1):
@@ -209,7 +117,7 @@ class PyCardDAV:
         return xml
 
     def _process_xml_props(self, xml):
-        namespace="{DAV:}"
+        namespace = "{DAV:}"
         element = ET.XML(xml)
         abook = dict()
         for response in element.iterchildren():
@@ -247,11 +155,11 @@ class DbTool:
             if self.debug:
                 print detail
         except:
-                sys.stderr.write('Failed to connect to database, Unknown Error')
+            sys.stderr.write('Failed to connect to database, Unknown Error')
         conn.commit()
         # VERSION information
-        t = (2,) # database version db Version
-        cursor.execute('INSERT INTO version (version) VALUES (?)',t)
+        stuple = (2,) # database version db Version
+        cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
         conn.commit()
         try:
             cursor.execute('''CREATE TABLE vcardtable (
@@ -266,44 +174,130 @@ class DbTool:
             if self.debug:
                 print detail
         except:
-                sys.stderr.write('Failed to connect to database, Unknown Error')
+            sys.stderr.write('Failed to connect to database, Unknown Error')
         conn.commit()
         # properties table
         try:
-                cursor.execute('''CREATE TABLE properties (
-                id INTEGER PRIMARY KEY NOT NULL,
-                property TEXT NOT NULL,
-                value TEXT,
-                href TEXT NOT NULL,
-                FOREIGN KEY(href) REFERENCES vcardtable(href)
-                )''')
-                if self.debug:
-                        print "created properties table"
+            cursor.execute('''CREATE TABLE properties (
+            id INTEGER PRIMARY KEY NOT NULL,
+            property TEXT NOT NULL,
+            value TEXT,
+            href TEXT NOT NULL,
+            FOREIGN KEY(href) REFERENCES vcardtable(href)
+            )''')
+            if self.debug:
+                print "created properties table"
         except sqlite3.OperationalError as detail:
-                if self.debug:
-                        print detail
+            if self.debug:
+                print detail
         except:
-                sys.stderr.write('Failed to connect to database, Unknown Error')
+            sys.stderr.write('Failed to connect to database, Unknown Error')
         conn.commit()
         # parameter table
         try:
-                cursor.execute('''CREATE TABLE parameters(
-                parameter TEXT NOT NULL,
-                value TEXT,
-                href TEXT NOT NULL,
-                property_id INTEGER NOT NULL,
-                FOREIGN KEY(href) REFERENCES vcardtable(href),
-                FOREIGN KEY(property_id) REFERENCES properties(id)
-                )''')
-                if self.debug:
-                        print "created parameters table"
+            cursor.execute('''CREATE TABLE parameters(
+            parameter TEXT NOT NULL,
+            value TEXT,
+            href TEXT NOT NULL,
+            property_id INTEGER NOT NULL,
+            FOREIGN KEY(href) REFERENCES vcardtable(href),
+            FOREIGN KEY(property_id) REFERENCES properties(id)
+            )''')
+            if self.debug:
+                print "created parameters table"
         except sqlite3.OperationalError as detail:
-               if self.debug:
-                        print detail
+            if self.debug:
+                print detail
         except:
-                sys.stderr.write('Failed to connect to database, Unknown Error')
+            sys.stderr.write('Failed to connect to database, Unknown Error')
         conn.commit()
         cursor.close()
+
+    def check_new_etag(self, vref, v_etag):
+        """returns True when the etag has been updated, otherwise False"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (vref,)
+        cursor.execute('SELECT etag FROM vcardtable WHERE href=(?);', stuple)
+        if v_etag == cursor.fetchall()[0][0]:
+            return_code = False
+        else:
+            return_code = True
+        conn.commit()
+        cursor.close()
+        return return_code
+
+    def check_vref_exists(self, vref):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (vref,)
+        cursor.execute('SELECT count(*) FROM vcardtable WHERE href=(?);', stuple)
+        if cursor.fetchall() == [(1,)]:
+            return_code = False
+        else:
+            return_code = True
+        conn.commit()
+        cursor.close()
+        return return_code
+
+    def insert_vref(self, vref):
+        """inserts vref into the vcardtable"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (vref,)
+        cursor.execute('INSERT INTO vcardtable (href) VALUES (?);', stuple)
+        conn.commit()
+        cursor.close()
+
+    def update_etag(self, vref, v_etag):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (v_etag, vref)
+        cursor.execute('UPDATE vcardtable SET etag=(?) WHERE href=(?);', stuple)
+        conn.commit()
+        cursor.close()
+        return True
+
+    def delete_vcard_from_db(self, vref):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (vref,)
+        cursor.execute('DELETE from properties WHERE href=(?)', stuple)
+        conn.commit()
+        cursor.close()
+
+    def insert_vcard_in_db(self, vref, vcard):
+        if vcard.name == "VCARD":
+            vcard.prettyPrint()
+            for line in vcard.getChildren():
+                try:
+                    line.transformFromNative()
+                except:
+                    pass
+
+                property_name = line.name
+                property_value = line.value
+                # for now, we cannot handle photos (or any other binary data):
+                if (property_name == "PHOTO"):
+                    pass
+                else:
+                    conn = sqlite3.connect(self.db_path)
+                    cursor = conn.cursor()
+                    stuple = (unicode(property_name), unicode(property_value), vref)
+
+                    cursor.execute('INSERT INTO properties (property, value, href) VALUES (?,?,?);', stuple)
+                    lastrowid = cursor.lastrowid
+                    if line.params:
+                        for key in line.params.keys():
+                            for key_value in line.params[key]:
+                                stuple = (key, key_value, vref, lastrowid)
+                                cursor.execute('INSERT INTO parameters (parameter, value, href,property_id) VALUES (?,?,?,?);', stuple)
+                                #print key + ": " + i
+                    conn.commit()
+                    cursor.close()
+        else:
+            return -1 # this is not a vcard
+
 
 
 def main(argv):
@@ -312,10 +306,6 @@ def main(argv):
 
     my_dbtool = DbTool()
     syncer = PyCardDAV()
-
-    configfile="~/.pycard/pycard.conf"
-    global user, passwd, resource, baseUrl, insecureSSL, dbPath
-    dbPath="~/.pycard/pycard.conf"
 
     arg_parser = argparse.ArgumentParser(
             description = "syncs the local db to the CardDAV server")
@@ -327,10 +317,9 @@ def main(argv):
     arg_parser.add_argument("--debug", action = "store_true", dest = "debug",
             default = "False", help = "enable debugging")
     args = arg_parser.parse_args()
-    
 
     #config file foo
-    configfile = path.expanduser(configfile)
+    configfile = path.expanduser(args.configfile)
     if args.debug:
         print "reading config from ", configfile
     conf_parser = SafeConfigParser()
@@ -338,7 +327,7 @@ def main(argv):
     syncer.user = conf_parser.get('default', 'user')
     syncer.passwd = conf_parser.get('default', 'passwd')
     syncer.resource = conf_parser.get('default', 'resource')
-    syncer.baseUrl = conf_parser.get('default', 'base_url')
+    syncer.base_url = conf_parser.get('default', 'base_url')
     syncer.insecure_ssl = conf_parser.getint('default', 'insecure_ssl')
     my_dbtool.db_path = path.expanduser(conf_parser.get('default', 'db_path'))
     my_dbtool.debug = conf_parser.getint('default', 'DEBUG')
@@ -347,41 +336,37 @@ def main(argv):
     syncer.debug = args.debug #argument overrides config file
     if my_dbtool.debug:
         print "using remote options:"
-        print "  user: ", syncer.user
-        print "  passwd: ", syncer.passwd
-        print "  resource: ", syncer.resource
-        print "  baseUrl: ", syncer.baseUrl
-        print "  insecureSSL: ", syncer.insecure_ssl
+        print "  user:", syncer.user
+        print "  passwd:", syncer.passwd
+        print "  resource:", syncer.resource
+        print "  base_url:", syncer.base_url
+        print "  insecureSSL:", syncer.insecure_ssl
         print "using local options:"
-        print "  dbPath: ", my_dbtool.db_path
+        print "  db_path:", my_dbtool.db_path
         print "\n"
 
     my_dbtool.make_tables()
-
     abook = syncer.get_abook()
 
-    for vRef,vEtag  in abook.iteritems():
-        if checkVRefExists(vRef):
-            insertVRef(vRef)
+
+    for vref, v_etag  in abook.iteritems():
+        if my_dbtool.check_vref_exists(vref):
+            my_dbtool.insert_vref(vref)
         
-        if checkNewEtag(vRef,vEtag):
-            deleteVcardFromDb(vRef)
+        if my_dbtool.check_new_etag(vref, v_etag):
+            my_dbtool.delete_vcard_from_db(vref)
             if args.debug:
-                print "getting ", vRef, " etag: ", vEtag
-
-            vcard = getVcard(vRef)
-            v = vobject.readOne(vcard)
-
+                print "getting ", vref, " etag: ", v_etag
+            vcard = syncer.get_vcard(vref)
+            vcard = vobject.readOne(vcard)
 
             # this is the important part
             try:
-                insertVcardInDb(vRef,v)
-                updateEtag(vRef, vEtag)
+                my_dbtool.insert_vcard_in_db(vref, vcard)
+                my_dbtool.update_etag(vref, v_etag)
             except Exception, err:
-                sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db" % str(vRef))
+                sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db\n" % str(vref))
                 sys.stderr.write('%s\n' % str(err))
-
-
 
 
 if __name__ == "__main__":
