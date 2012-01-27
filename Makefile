@@ -11,7 +11,10 @@ ifeq ($(UNAME), FreeBSD)
 endif
 
 doc: README.rst
-	$(RSTHTML) --link-stylesheet --template=template.txt --stylesheet=http://pycarddav.lostpackets.de/css/main.css --no-generator README.rst > README.html
+	$(RSTHTML) --link-stylesheet --template=template.txt --stylesheet=css/bootstrap.min.css --no-generator README.rst > README.html
+	sed -i 's#<strong>Attention</strong>#<span class=\"label warning\">Attention</span>#g' README.html
+	sed -i 's#<strong>New</strong>#<span class=\"label success\">New</span>#g' README.html
+	sed -i 's#<strong>Warning</strong>#<span class=\"label important\">Warning</span>#g' README.html
 
 tar:
 	echo "\n##################################\n make doc und danach eingecheckt?\n##################################\n"

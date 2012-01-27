@@ -18,6 +18,14 @@ import argparse
 from ConfigParser import SafeConfigParser
 
 try:
+    from termcolor import colored, cprint
+    def print_bold(text):
+        cprint(text, attrs=['bold'])
+except:
+    def print_bold(text):
+        print(text)
+
+try:
     import sqlite3
 except ImportError:
     print "pysqlite3 not installed"
@@ -151,7 +159,7 @@ class PcQuery(object):
         """new style contact card information printing"""
         contact = VCard(contact_href, self.db_path)
 
-        print unicode("Name: " + contact.name()).encode(self.encoding)
+        print_bold(unicode("Name: " + contact.name()).encode(self.encoding))
         for prop in ("Email", "Tel",):
             self.print_prop(contact, prop)
         if self.display_all == True:
