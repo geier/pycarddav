@@ -51,7 +51,7 @@ except:
 
 
 def smartencode(string):
-    unicode(string).encode("utf-8", "strict")
+    return unicode(string).encode("utf-8", "strict")
 
 
 def signal_handler(signal, frame):
@@ -259,9 +259,34 @@ class DbTool:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref,)
-        cursor.execute('DELETE from properties WHERE href=(?)', stuple)
+        cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
         conn.commit()
         cursor.close()
+
+
+    def get_vcard_from_db(self, vref):
+        """ returns a vobject.vCard()"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (vref,)
+        cursor.execute('SELECT id, property, value FROM properties WHERE href=(?)', stuple)
+        result = cursor.fetchall()
+        conn.close()
+
+        card = vobject.vCard()
+        for uid, prop, value in result:
+            # atm we need to treat N and ADR properties differently #FIXME
+            tmp = card.add(prop)
+            if prop == u"N":
+                name = value.split(";")
+                tmp.value = vobject.vcard.Name( family=name[0], given=name[1], additional=name[2], prefix=name[3], suffix=name[4] )
+            elif prop == u"ADR":
+                adr = value.split(";")
+                tmp.value = vobject.vcard.Address( street=adr[0], city=adr[1], region=adr[2], code=adr[3], country=adr[4], box=adr[5], extended=adr[6])
+            else:
+                tmp.value = value
+            return card
+
 
     def insert_vcard_in_db(self, vref, vcard):
         if vcard.name == "VCARD":
