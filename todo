@@ -5,3 +5,7 @@ WRITE SUPPORT
 fix vcard creation from db (ORGs are broken)
 read password from command line
 gnome-keychain support
+use distutils
+test against other servers (radicale, fruux)
+use ssl public cert
+fix that href vref h_ref mess
