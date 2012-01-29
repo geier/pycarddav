@@ -121,6 +121,8 @@ class VCard(list):
             if card_prop[4] == 1: # value changed
                 cursor.execute('UPDATE properties SET value = ? WHERE id == ?',(card_prop[1], card_prop[3],))
         conn.commit()
+        cursor.execute('UPDATE vcardtable SET edited = 1 WHERE href = ?', (self.h_ref,))
+        conn.commit()
         conn.close()
         print "saving the changes you made... NOT"
 
@@ -244,8 +246,6 @@ class PcQuery(object):
         else:
             return card_to_edit
 
-<<<<<<< HEAD
-=======
         print_bold(unicode("Name: " + contact.name()).encode(self.encoding))
         for prop in ("Email", "Tel",):
             self.print_prop(contact, prop)
@@ -253,7 +253,6 @@ class PcQuery(object):
             for prop in contact.get_props():
                 if not prop in ("EMAIL", "TEL"):
                     self.print_prop(contact, prop)
->>>>>>> doc
 
 
 def signal_handler(signal, frame):
