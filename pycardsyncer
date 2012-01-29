@@ -92,6 +92,11 @@ class PyCardDAV:
             sys.exit(1)
         return vcard
 
+    def update_vcard(self, card, vref):
+        # TODO
+        print "uploading your changes... NOT"
+        pass
+
     def _get_xml_props(self):
         response = StringIO.StringIO()
         header = StringIO.StringIO()
@@ -298,6 +303,14 @@ class DbTool:
                 tmp.value = value
         return card
 
+    def get_local_edited_hrefs(self):
+        """returns list of hrefs of locally edited vcards"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT href FROM vcardtable where edited == 1')
+        result = cursor.fetchall()
+        return [row[0] for row in result]
+
 
     def insert_vcard_in_db(self, vref, vcard):
         if vcard.name == "VCARD":
@@ -381,12 +394,16 @@ def main(argv):
         print "\n"
 
     my_dbtool.make_tables()
+
+    # backup:
     if args.backup:
         vcf_file = open(args.backup, 'w')
         hreflist = my_dbtool.get_all_vref_from_db()
         for href in hreflist:
             card = my_dbtool.get_vcard_from_db(href)
             vcf_file.write(card.serialize())
+
+    # sync:
     else:
         abook = syncer.get_abook()
 
@@ -408,6 +425,11 @@ def main(argv):
                 except Exception, err:
                     sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db\n" % str(vref))
                     sys.stderr.write('%s\n' % str(err))
+        # for now local changes overwritten by remote changes
+        hrefs = my_dbtool.get_local_edited_hrefs()
+        for href in hrefs:
+            card = my_dbtool.get_vcard_from_db(href)
+            syncer.update_vcard(card.serialize(), href)
 
 
 if __name__ == "__main__":
