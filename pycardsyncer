@@ -255,6 +255,7 @@ class DbTool:
         cursor.close()
         return True
 
+
     def delete_vcard_from_db(self, vref):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -262,6 +263,15 @@ class DbTool:
         cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
         conn.commit()
         cursor.close()
+
+
+    def get_all_vref_from_db(self):
+        """returns a list with all vrefs"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT href FROM vcardtable')
+        result = cursor.fetchall()
+        return [row[0] for row in result]
 
 
     def get_vcard_from_db(self, vref):
@@ -276,6 +286,7 @@ class DbTool:
         card = vobject.vCard()
         for uid, prop, value in result:
             # atm we need to treat N and ADR properties differently #FIXME
+            # BUG: ORG should be treated differently, too
             tmp = card.add(prop)
             if prop == u"N":
                 name = value.split(";")
@@ -285,7 +296,7 @@ class DbTool:
                 tmp.value = vobject.vcard.Address( street=adr[0], city=adr[1], region=adr[2], code=adr[3], country=adr[4], box=adr[5], extended=adr[6])
             else:
                 tmp.value = value
-            return card
+        return card
 
 
     def insert_vcard_in_db(self, vref, vcard):
@@ -338,6 +349,8 @@ def main(argv):
     arg_parser.add_argument("-v", "--version", action = "version", version = "0.3.1")
     arg_parser.add_argument("--debug", action = "store_true", dest = "debug",
             default = "False", help = "enable debugging")
+    arg_parser.add_argument("-b", "--backup", action = "store", dest = "backup",
+            help = "backup the local db to BACKUP")
     args = arg_parser.parse_args()
 
     #config file foo
@@ -368,27 +381,33 @@ def main(argv):
         print "\n"
 
     my_dbtool.make_tables()
-    abook = syncer.get_abook()
+    if args.backup:
+        vcf_file = open(args.backup, 'w')
+        hreflist = my_dbtool.get_all_vref_from_db()
+        for href in hreflist:
+            card = my_dbtool.get_vcard_from_db(href)
+            vcf_file.write(card.serialize())
+    else:
+        abook = syncer.get_abook()
 
+        for vref, v_etag  in abook.iteritems():
+            if my_dbtool.check_vref_exists(vref):
+                my_dbtool.insert_vref(vref)
+            
+            if my_dbtool.check_new_etag(vref, v_etag):
+                my_dbtool.delete_vcard_from_db(vref)
+                if args.debug:
+                    print "getting ", vref, " etag: ", v_etag
+                vcard = syncer.get_vcard(vref)
+                vcard = vobject.readOne(vcard)
 
-    for vref, v_etag  in abook.iteritems():
-        if my_dbtool.check_vref_exists(vref):
-            my_dbtool.insert_vref(vref)
-        
-        if my_dbtool.check_new_etag(vref, v_etag):
-            my_dbtool.delete_vcard_from_db(vref)
-            if args.debug:
-                print "getting ", vref, " etag: ", v_etag
-            vcard = syncer.get_vcard(vref)
-            vcard = vobject.readOne(vcard)
-
-            # this is the important part
-            try:
-                my_dbtool.insert_vcard_in_db(vref, vcard)
-                my_dbtool.update_etag(vref, v_etag)
-            except Exception, err:
-                sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db\n" % str(vref))
-                sys.stderr.write('%s\n' % str(err))
+                # this is the important part
+                try:
+                    my_dbtool.insert_vcard_in_db(vref, vcard)
+                    my_dbtool.update_etag(vref, v_etag)
+                except Exception, err:
+                    sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db\n" % str(vref))
+                    sys.stderr.write('%s\n' % str(err))
 
 
 if __name__ == "__main__":
