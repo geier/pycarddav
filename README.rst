@@ -1,6 +1,5 @@
 pyCardDAV
 =========
-News_ About_ Features_ Installation_ Usage_ Feedback_ License_
 
 News
 ----
