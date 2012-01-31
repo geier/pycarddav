@@ -78,7 +78,9 @@ Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
 Users of python versions < 2.7 will also need to install argparse.
 
 *pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
-NetBSD, Debian and Ubuntu with python 2.6 and 2.7.
+NetBSD, Debian and Ubuntu with python 2.6 and 2.7 and against davical 0.9.9.4 -
+0.9.9.7 (later versions should be ok, too, but 0.9.9.3 and earlier don't seem
+to work).
 
 NetBSD/pkgsrc users can install *pyCardDAV* via pkgsrc_.
 

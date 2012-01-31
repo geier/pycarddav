@@ -112,7 +112,7 @@ together <a class="reference external" href="http://vobject.skyhouseconsulting.c
 <li><em>pyCardDAV</em> can only use one addressbook resource at the moment</li>
 <li><em>pyCardDAV</em> is read-only for now</li>
 <li><em>pyCardDAV</em> is only tested against davical</li>
-<li><span class="label important">Warning</span> your password is stored in cleartext in the config file</li>
+<li><strong>Warning</strong> your password is stored in cleartext in the config file</li>
 </ul>
 </div>
 <div class="section" id="installation">
