@@ -5,16 +5,18 @@ VERSION := $(shell cat VERSION)
 UNAME := $(shell uname)
 ifeq ($(UNAME), Linux)
 	 RSTHTML = rst2html
+	 SED = sed -i
 endif
 ifeq ($(UNAME), FreeBSD)
 	RSTHTML = rst2html.py
+	SED = sed -i .bk
 endif
 
 doc: README.rst
 	$(RSTHTML) --link-stylesheet --template=template.txt --stylesheet=css/bootstrap.min.css --no-generator README.rst > README.html
-	sed -i 's#<strong>Attention</strong>#<span class=\"label warning\">Attention</span>#g' README.html
-	sed -i 's#<strong>New</strong>#<span class=\"label success\">New</span>#g' README.html
-	sed -i 's#<strong>Warning</strong>#<span class=\"label important\">Warning</span>#g' README.html
+	$(SED) 's#<strong>Attention</strong>#<span class=\"label warning\">Attention</span>#g' README.html
+	$(SED) 's#<strong>New</strong>#<span class=\"label success\">New</span>#g' README.html
+	$(SED) 's#<strong>Warning</strong>#<span class=\"label important\">Warning</span>#g' README.html
 
 tar:
 	echo "\n##################################\n make doc und danach eingecheckt?\n##################################\n"
