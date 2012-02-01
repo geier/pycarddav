@@ -154,9 +154,26 @@ class DbTool:
             sys.stderr.write('Failed to connect to database, Unknown Error')
         conn.commit()
         # VERSION information
-        stuple = (2,) # database version db Version
-        cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
-        conn.commit()
+
+        # testing for database version
+        database_version = 2
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('SELECT version FROM version')
+            result =  cursor.fetchone()
+            if result == None:
+                stuple = (database_version,) # database version db Version
+                cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
+                conn.commit()
+            elif not cursor.fetchone()[0] == database_version:
+                sys.exit(str(self.db_path) + " is probably not a valid or an outdated database.\nYou should consider to remove it and sync again using pycardsyncer.")
+        except:
+            sys.stderr.write('Failed to connect to database, Unknown Error')
+
+
+
+
         try:
             cursor.execute('''CREATE TABLE vcardtable (
                     href TEXT PRIMARY KEY NOT NULL,
