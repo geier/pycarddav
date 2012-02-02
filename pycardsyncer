@@ -157,8 +157,8 @@ class DbTool:
         except sqlite3.OperationalError as detail:
             if self.debug:
                 print detail
-        except:
-            sys.stderr.write('Failed to connect to database, Unknown Error')
+        except Exception, error:
+            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
         conn.commit()
 
         # testing for database version
@@ -167,15 +167,15 @@ class DbTool:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute('SELECT version FROM version')
-            result =  cursor.fetchone()
+            result = cursor.fetchone()
             if result == None:
                 stuple = (database_version,) # database version db Version
                 cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
                 conn.commit()
-            elif not cursor.fetchone()[0] == database_version:
-                sys.exit(str(self.db_path) + " is probably not a valid or an outdated database.\nYou should consider to remove it and sync again using pycardsyncer.")
-        except:
-            sys.stderr.write('Failed to connect to database, Unknown Error')
+            elif not result[0] == database_version:
+                sys.exit(str(self.db_path) + " is probably not a valid or an outdated database.\nYou should consider to remove it and sync again using pycardsyncer.\n")
+        except Exception, error:
+            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
 
 
 
@@ -192,8 +192,8 @@ class DbTool:
         except sqlite3.OperationalError as detail:
             if self.debug:
                 print detail
-        except:
-            sys.stderr.write('Failed to connect to database, Unknown Error')
+        except Exception, error:
+            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
         conn.commit()
         # properties table
         try:
@@ -209,8 +209,8 @@ class DbTool:
         except sqlite3.OperationalError as detail:
             if self.debug:
                 print detail
-        except:
-            sys.stderr.write('Failed to connect to database, Unknown Error')
+        except Exception, error:
+            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
         conn.commit()
         # parameter table
         try:
@@ -227,8 +227,8 @@ class DbTool:
         except sqlite3.OperationalError as detail:
             if self.debug:
                 print detail
-        except:
-            sys.stderr.write('Failed to connect to database, Unknown Error')
+        except Exception, error:
+            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
         conn.commit()
         cursor.close()
 

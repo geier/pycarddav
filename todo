@@ -9,5 +9,7 @@ use distutils
 test against other servers (radicale, fruux)
 
 BUGS:
-creating the dbs
 fix that href vref h_ref mess
+
+DONE:
+creating the dbs
