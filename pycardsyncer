@@ -18,6 +18,7 @@ import sys
 import argparse
 import signal
 from os import path
+import util
 
 from ConfigParser import SafeConfigParser
 
@@ -89,9 +90,15 @@ class PyCardDAV:
         return vcard
 
     def update_vcard(self, card, vref):
+        """
+        pushes vcard to the server
+        card: vcard as unicode string
+         """
         # TODO
         print "uploading your changes... NOT"
-        pass
+        self._curl_reset()
+        self.curl.setopt(pycurl.CUSTOMREQUEST, "PUT")
+        self.curl.setopt(pycurl.URL, self.resource)
 
     def _curl_reset(self):
         self.response = StringIO.StringIO()
@@ -153,7 +160,6 @@ class DbTool:
         except:
             sys.stderr.write('Failed to connect to database, Unknown Error')
         conn.commit()
-        # VERSION information
 
         # testing for database version
         database_version = 2
@@ -322,7 +328,6 @@ class DbTool:
 
     def insert_vcard_in_db(self, vref, vcard):
         if vcard.name == "VCARD":
-            vcard.prettyPrint()
             for line in vcard.getChildren():
                 try:
                     line.transformFromNative()
@@ -332,7 +337,14 @@ class DbTool:
                 property_name = line.name
                 property_value = line.value
                 # for now, we cannot handle photos (or any other binary data):
+                # FIXME
+                try:
+                    if line.ENCODING_paramlist == [u'b']:
+                            print "found binary"
+                except:
+                    pass
                 if (property_name == "PHOTO"):
+                    import ipdb; ipdb.set_trace()
                     pass
                 else:
                     conn = sqlite3.connect(self.db_path)
