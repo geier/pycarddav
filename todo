@@ -1,9 +1,13 @@
+FEATURES:
 handle photos etc (base64 encoded)
 fix vcard creation from db (ORGs are broken)
 use ssl public cert
-handle more than one search string
 WRITE SUPPORT
+handle more than one search string
 gnome-keychain support
 use distutils
 test against other servers (radicale, fruux)
+
+BUGS:
+creating the dbs
 fix that href vref h_ref mess
