@@ -263,7 +263,7 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 # MAIN
-def main(argv):
+def main():
     """main function, everything starts  here"""
     configfile = "~/.pycard/pycard.conf"
 
@@ -346,4 +346,4 @@ def main(argv):
     return 0
 
 if __name__ == "__main__":
-    main(sys.argv[1:0])
+    main()

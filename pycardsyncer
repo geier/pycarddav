@@ -59,7 +59,7 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 
-class PyCardDAV:
+class PyCardDAV(object):
     def __init__(self):
         self.debug = ""
         self.user = ""
@@ -142,7 +142,7 @@ class PyCardDAV:
         return abook
 
 
-class DbTool:
+class DbTool(object):
     def __init__(self):
         self.db_path = ""
         self.debug = 0
@@ -344,7 +344,7 @@ class DbTool:
                 except:
                     pass
                 if (property_name == "PHOTO"):
-                    import ipdb; ipdb.set_trace()
+                    #import ipdb; ipdb.set_trace()
                     pass
                 else:
                     conn = sqlite3.connect(self.db_path)
@@ -459,5 +459,5 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
 
