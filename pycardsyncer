@@ -52,6 +52,7 @@ except:
 
 
 def smartencode(string):
+    """convert everything to utf-8"""
     return unicode(string).encode("utf-8", "strict")
 
 
@@ -60,6 +61,7 @@ def signal_handler(signal, frame):
 
 
 class PyCardDAV(object):
+    """interacts with CardDAV server"""
     def __init__(self):
         self.debug = ""
         self.user = ""
@@ -77,6 +79,10 @@ class PyCardDAV(object):
         return abook
 
     def get_vcard(self, vref):
+        """
+        pulls vcard from server
+        returns vcard
+        """
         self._curl_reset()
         self.curl.setopt(pycurl.CUSTOMREQUEST, "GET")
         self.curl.setopt(pycurl.URL, self.base_url+vref)
@@ -101,12 +107,17 @@ class PyCardDAV(object):
         self.curl.setopt(pycurl.URL, self.resource)
 
     def _curl_reset(self):
+        """
+        resets the connection, called from within the other
+        functions interacting with the CardDAV server
+        """
         self.response = StringIO.StringIO()
         self.header = StringIO.StringIO()
         self.curl.setopt(pycurl.WRITEFUNCTION, self.response.write)
         self.curl.setopt(pycurl.HEADERFUNCTION, self.header.write)
 
     def _get_xml_props(self):
+        """returns xml (str)"""
         self._curl_reset()
         self.curl.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
         self.curl.setopt(pycurl.URL, self.resource)
@@ -119,6 +130,7 @@ class PyCardDAV(object):
         return xml
 
     def _process_xml_props(self, xml):
+        """returns abook (dict())"""
         namespace = "{DAV:}"
         element = ET.XML(xml)
         abook = dict()
@@ -143,11 +155,13 @@ class PyCardDAV(object):
 
 
 class DbTool(object):
+    """interacts with the local db"""
     def __init__(self):
         self.db_path = ""
         self.debug = 0
 
     def make_tables(self):
+        """creates tables, also checks existing tables for version number"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         try:
@@ -176,9 +190,6 @@ class DbTool(object):
                 sys.exit(str(self.db_path) + " is probably not a valid or an outdated database.\nYou should consider to remove it and sync again using pycardsyncer.\n")
         except Exception, error:
             sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
-
-
-
 
         try:
             cursor.execute('''CREATE TABLE vcardtable (
@@ -247,6 +258,10 @@ class DbTool(object):
         return return_code
 
     def check_vref_exists(self, vref):
+        """
+        returns False if vref already exists in db
+        returns True otherwise
+        """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref,)
@@ -260,7 +275,10 @@ class DbTool(object):
         return return_code
 
     def insert_vref(self, vref):
-        """inserts vref into the vcardtable"""
+        """
+        inserts vref into the vcardtable
+        returns nothing
+        """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref,)
@@ -269,15 +287,16 @@ class DbTool(object):
         cursor.close()
 
     def update_etag(self, vref, v_etag):
+        """returns nothing"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (v_etag, vref)
         cursor.execute('UPDATE vcardtable SET etag=(?) WHERE href=(?);', stuple)
         conn.commit()
         cursor.close()
-        return True
 
     def delete_vcard_from_db(self, vref):
+        """returns nothing"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref,)
@@ -295,7 +314,7 @@ class DbTool(object):
 
 
     def get_vcard_from_db(self, vref):
-        """ returns a vobject.vCard()"""
+        """returns a vobject.vCard()"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref,)
@@ -327,6 +346,10 @@ class DbTool(object):
         return [row[0] for row in result]
 
     def insert_vcard_in_db(self, vref, vcard):
+        """
+        vcard: vobject.Vcard()
+        returns nothing
+        """
         if vcard.name == "VCARD":
             for line in vcard.getChildren():
                 try:
@@ -366,7 +389,8 @@ class DbTool(object):
 
 
 
-def main(argv):
+def main():
+    """this should probably be seperated from the class definitions"""
     # trying to hide some ugly python code on pressing Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -384,6 +408,8 @@ def main(argv):
             default = "False", help = "enable debugging")
     arg_parser.add_argument("-b", "--backup", action = "store", dest = "backup",
             help = "backup the local db to BACKUP")
+    arg_parser.add_argument('-i', '--import', default=sys.stdin, type=argparse.FileType('r'),
+            dest = 'importing', help='import vcard from file or STDIN')
     args = arg_parser.parse_args()
 
     #config file foo
@@ -427,16 +453,21 @@ def main(argv):
         for href in hreflist:
             card = my_dbtool.get_vcard_from_db(href)
             vcf_file.write(card.serialize())
+        sys.exit()
+
+    #import:
+    if args.importing:
+        # TODO
+        print "sorry, nothing to see here..."
 
     # sync:
     else:
         abook = syncer.get_abook()
 
-
         for vref, v_etag  in abook.iteritems():
             if my_dbtool.check_vref_exists(vref):
                 my_dbtool.insert_vref(vref)
-            
+
             if my_dbtool.check_new_etag(vref, v_etag):
                 my_dbtool.delete_vcard_from_db(vref)
                 if args.debug:
