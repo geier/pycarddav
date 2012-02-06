@@ -1,11 +1,15 @@
+FEATURES:
 handle photos etc (base64 encoded)
-handle more than one search string
-use argparse DONE
-WRITE SUPPORT
 fix vcard creation from db (ORGs are broken)
-read password from command line
+use ssl public cert
+WRITE SUPPORT
+handle more than one search string
 gnome-keychain support
 use distutils
 test against other servers (radicale, fruux)
-use ssl public cert
+
+BUGS:
 fix that href vref h_ref mess
+
+DONE:
+creating the dbs
