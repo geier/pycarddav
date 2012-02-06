@@ -108,6 +108,11 @@ Example from .muttrc::
 
         set query_command="/home/username/bin/pc_query -m '%s'"
 
+SSL
+---
+*pyCardDAV* uses liburl for all interaction with the CardDAV server, so, by
+default, it uses curl's ssl trust files. You can configure pyCardDAV/curl's
+behaviour; look in pycard.conf.sample for more information.
 
 Additional Information
 ----------------------

@@ -70,6 +70,7 @@ class PyCardDAV(object):
         self.resource = ""
         self.base_url = ""
         self.insecure_ssl = 0
+        self.ssl_cacert_file = None
         self.curl = pycurl.Curl()
         self.response = StringIO.StringIO()
         self.header = StringIO.StringIO()
@@ -140,6 +141,8 @@ class PyCardDAV(object):
         self.curl.setopt(pycurl.USERPWD, self.user + ":" + self.passwd)
         if (self.insecure_ssl == 1):
             self.curl.setopt(pycurl.SSL_VERIFYPEER, 0)
+        if self.ssl_cacert_file:
+            self.curl.setopt(pycurl.CAINFO, path.expanduser(self.ssl_cacert_file))
 
     def _get_xml_props(self):
         """returns xml (str)"""
@@ -458,10 +461,18 @@ def main():
         syncer.passwd = getpass.getpass(prompt='CardDAV password: ')
     syncer.resource = conf_parser.get('default', 'resource')
     syncer.base_url = conf_parser.get('default', 'base_url')
-    syncer.insecure_ssl = conf_parser.getint('default', 'insecure_ssl')
     my_dbtool.db_path = path.expanduser(conf_parser.get('default', 'db_path'))
     my_dbtool.debug = conf_parser.getint('default', 'DEBUG')
     my_dbtool.debug = args.debug #argument overrides config file
+    # ssl:
+    try:
+        syncer.insecure_ssl = conf_parser.getint('default', 'insecure_ssl')
+    except:
+        pass
+    try:
+        syncer.ssl_cacert_file = conf_parser.getint('default', 'ssl_cacert_file')
+    except:
+       pass
     syncer.debug = conf_parser.getint('default', 'DEBUG')
     syncer.debug = args.debug #argument overrides config file
 

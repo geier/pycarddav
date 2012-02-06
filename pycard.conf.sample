@@ -3,6 +3,14 @@ user: username
 passwd: yourpassword
 resource: https://carddav.server.tld/davical/caldav.php/username/addressbook/
 base_url: https://carddav.serer.tld
-insecure_ssl: 0
 db_path: /home/localuser/.pycard/abook.db
 DEBUG: 0
+
+# SSL:
+# you can check your SSL configuration with `curl https://carddav.server.tld/anyfile`
+# and the appropriate command line options
+# setting this to 1 disables ALL SSL cert checking and is NOT recommended
+# this corresponds to curl's -k/--insecure flag
+#insecure_ssl: 0
+# corrpesonds to curl's --cacert
+#ssl_cacert_file = /path/to/cacert.pem
