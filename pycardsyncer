@@ -17,6 +17,7 @@ import StringIO
 import sys
 import argparse
 import signal
+import getpass
 from os import path
 
 from ConfigParser import SafeConfigParser
@@ -352,7 +353,7 @@ def main(argv):
         help="defaults to ~/.pycard/pycard.conf")
     arg_parser.add_argument("-v", "--version", action = "version", version = "0.3.1")
     arg_parser.add_argument("--debug", action = "store_true", dest = "debug",
-            default = "False", help = "enable debugging")
+            default = "False", help = "enable debugging; WARNING: shows your password in cleartext")
     arg_parser.add_argument("-b", "--backup", action = "store", dest = "backup",
             help = "backup the local db to BACKUP")
     args = arg_parser.parse_args()
@@ -364,7 +365,10 @@ def main(argv):
     conf_parser = SafeConfigParser()
     conf_parser.read(configfile)
     syncer.user = conf_parser.get('default', 'user')
-    syncer.passwd = conf_parser.get('default', 'passwd')
+    try:
+        syncer.passwd = conf_parser.get('default', 'passwd')
+    except:
+        syncer.passwd = getpass.getpass(prompt='CardDAV password: ')
     syncer.resource = conf_parser.get('default', 'resource')
     syncer.base_url = conf_parser.get('default', 'base_url')
     syncer.insecure_ssl = conf_parser.getint('default', 'insecure_ssl')
