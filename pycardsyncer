@@ -19,7 +19,7 @@ import argparse
 import signal
 import getpass
 from os import path
-import util
+import StringIO
 
 from ConfigParser import SafeConfigParser
 
@@ -104,18 +104,42 @@ class PyCardDAV(object):
         # TODO
         print "uploading your changes... NOT"
         self._curl_reset()
-        self.curl.setopt(pycurl.CUSTOMREQUEST, "PUT")
-        self.curl.setopt(pycurl.URL, self.resource)
+        remotepath = str(self.base_url + vref)
+
+        headers = [ "Content-Type: application/plain"]
+        self.curl.setopt(pycurl.HTTPHEADER, headers)
+        self.response = StringIO.StringIO()
+        self.header = StringIO.StringIO()
+        self.curl.setopt(pycurl.VERBOSE, 1)
+        self.curl.setopt(pycurl.UPLOAD, 1)
+        self.curl.setopt(pycurl.URL, remotepath)
+        tempfile = StringIO.StringIO(card)
+        self.curl.setopt(pycurl.READFUNCTION, tempfile.read)
+        self.curl.setopt(pycurl.INFILESIZE, tempfile.len)
+
+        self.curl.perform()
+        #cleanup
+        tempfile.close()
+        self.curl.close()
+        print "######HEADER#######"
+        print self.header.read()
+        print "#######BODY########"
+        print self.response.read()
 
     def _curl_reset(self):
         """
         resets the connection, called from within the other
         functions interacting with the CardDAV server
         """
+        self.curl = pycurl.Curl()
         self.response = StringIO.StringIO()
         self.header = StringIO.StringIO()
         self.curl.setopt(pycurl.WRITEFUNCTION, self.response.write)
         self.curl.setopt(pycurl.HEADERFUNCTION, self.header.write)
+        self.curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_SSLv3)
+        self.curl.setopt(pycurl.USERPWD, self.user + ":" + self.passwd)
+        if (self.insecure_ssl == 1):
+            self.curl.setopt(pycurl.SSL_VERIFYPEER, 0)
 
     def _get_xml_props(self):
         """returns xml (str)"""
@@ -388,6 +412,14 @@ class DbTool(object):
         else:
             return -1 # this is not a vcard
 
+    def reset_flag(self, href):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (href, )
+
+        cursor.execute('UPDATE vcardtable SET edited = 0 WHERE href = ?', stuple)
+        conn.commit()
+        conn.close()
 
 
 def main():
@@ -409,7 +441,7 @@ def main():
             default = "False", help = "enable debugging; WARNING: shows your password in cleartext")
     arg_parser.add_argument("-b", "--backup", action = "store", dest = "backup",
             help = "backup the local db to BACKUP")
-    arg_parser.add_argument('-i', '--import', default=sys.stdin, type=argparse.FileType('r'),
+    arg_parser.add_argument('-i', '--import', type=argparse.FileType('r'),
             dest = 'importing', help='import vcard from file or STDIN')
     args = arg_parser.parse_args()
 
@@ -433,10 +465,6 @@ def main():
     syncer.debug = conf_parser.getint('default', 'DEBUG')
     syncer.debug = args.debug #argument overrides config file
 
-    syncer.curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_SSLv3)
-    syncer.curl.setopt(pycurl.USERPWD, syncer.user+":"+syncer.passwd)
-    if (syncer.insecure_ssl == 1):
-        syncer.curl.setopt(pycurl.SSL_VERIFYPEER, 0)
     if my_dbtool.debug:
         print "using remote options:"
         print "  user:", syncer.user
@@ -487,10 +515,14 @@ def main():
                     sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db\n" % str(vref))
                     sys.stderr.write('%s\n' % str(err))
         # for now local changes overwritten by remote changes
+        print "getting changed vcards from db"
         hrefs = my_dbtool.get_local_edited_hrefs()
+        print "got changed vcards from db"
         for href in hrefs:
+            print "uploading " + href
             card = my_dbtool.get_vcard_from_db(href)
             syncer.update_vcard(card.serialize(), href)
+            my_dbtool.reset_flag(href)
 
 
 if __name__ == "__main__":
