@@ -346,7 +346,6 @@ class DbTool(object):
         stuple = (vref,)
         cursor.execute('SELECT id, property, value FROM properties WHERE href=(?)', stuple)
         result = cursor.fetchall()
-        conn.close()
 
         card = vobject.vCard()
         for uid, prop, value in result:
@@ -361,6 +360,15 @@ class DbTool(object):
                 tmp.value = vobject.vcard.Address( street=adr[0], city=adr[1], region=adr[2], code=adr[3], country=adr[4], box=adr[5], extended=adr[6])
             else:
                 tmp.value = value
+            stuple = (uid,)
+            cursor.execute('SELECT * from parameters WHERE property_id=(?)', stuple)
+            parameter_result = cursor.fetchall()
+            tmp.params = dict()
+            for parameter in parameter_result:
+                if not tmp.params.has_key(parameter[0]):
+                    tmp.params[parameter[0]] = list()
+                tmp.params[parameter[0]].append(parameter[1])
+        conn.close()
         return card
 
     def get_local_edited_hrefs(self):
