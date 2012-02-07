@@ -470,7 +470,7 @@ def main():
     except:
         pass
     try:
-        syncer.ssl_cacert_file = conf_parser.getint('default', 'ssl_cacert_file')
+        syncer.ssl_cacert_file = conf_parser.get('default', 'ssl_cacert_file')
     except:
        pass
     syncer.debug = conf_parser.getint('default', 'DEBUG')

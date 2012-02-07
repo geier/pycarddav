@@ -1,7 +1,6 @@
 FEATURES:
 handle photos etc (base64 encoded)
 fix vcard creation from db (ORGs are broken)
-use ssl public cert
 WRITE SUPPORT
 handle more than one search string
 gnome-keychain support
@@ -13,3 +12,4 @@ fix that href vref h_ref mess
 
 DONE:
 creating the dbs
+use ssl public cert
