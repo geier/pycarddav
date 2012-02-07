@@ -124,7 +124,7 @@ class VCard(list):
         cursor.execute('UPDATE vcardtable SET edited = 1 WHERE href = ?', (self.h_ref,))
         conn.commit()
         conn.close()
-        print "saving the changes you made... NOT"
+        print "saving the changes you made..."
 
 class CardProperty(list):
     """
@@ -241,7 +241,7 @@ class PcQuery(object):
         edit = "foo"
         while (edit != "y") and (edit != "N") and (edit != ""):
             edit = raw_input("Is this the entry you want to edit [y/N]? ")
-        if (edit == "N") or (edit == ""):
+        if (edit == u"N") or (edit == ""):
             sys.exit()
         else:
             return card_to_edit

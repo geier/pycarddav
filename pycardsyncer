@@ -109,9 +109,9 @@ class PyCardDAV(object):
 
         headers = [ "Content-Type: application/plain"]
         self.curl.setopt(pycurl.HTTPHEADER, headers)
-        self.response = StringIO.StringIO()
-        self.header = StringIO.StringIO()
-        self.curl.setopt(pycurl.VERBOSE, 1)
+        #self.response = StringIO.StringIO()
+        #self.header = StringIO.StringIO()
+        #self.curl.setopt(pycurl.VERBOSE, 1)
         self.curl.setopt(pycurl.UPLOAD, 1)
         self.curl.setopt(pycurl.URL, remotepath)
         tempfile = StringIO.StringIO(card)
@@ -122,10 +122,8 @@ class PyCardDAV(object):
         #cleanup
         tempfile.close()
         self.curl.close()
-        print "######HEADER#######"
-        print self.header.read()
-        print "#######BODY########"
-        print self.response.read()
+        #header = self.header.getvalue()
+        #if not header.find("")
 
     def _curl_reset(self):
         """
