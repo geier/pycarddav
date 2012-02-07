@@ -86,7 +86,7 @@ class VCard(list):
             collector.append(prop.prop())
         return list(set(collector))
 
-    def print_contact_info(self, display_all = False):
+    def print_contact_info(self, display_all = False, numbers = False):
         """new style contact card information printing"""
         print_bold(unicode("Name: " + self.name()).encode("utf-8"))
         for prop in ("EMAIL", "TEL",):
@@ -94,7 +94,7 @@ class VCard(list):
                 line.print_yourself()
         if display_all == True:
             for props in self.get_props():
-                if not props in ("EMAIL", "TEL"):
+                if not props in ("EMAIL", "TEL", "N", "FN"):
                     for line in self.get_prop(props):
                         line.print_yourself()
 
@@ -112,6 +112,15 @@ class VCard(list):
         """edits the contact card"""
         for line in self:
             line.edit()
+
+    def edit_new(self):
+        """proper edit"""
+        number = 1
+        for line in self:
+            if line.prop() not in ["N", "FN", "VERSION"]:
+                print number, " ", line.prop(), ": ", line.value()
+                number = number + 1
+
 
     def save(self):
         """saves the changed properties to the db"""
@@ -246,13 +255,13 @@ class PcQuery(object):
         else:
             return card_to_edit
 
-        print_bold(unicode("Name: " + contact.name()).encode(self.encoding))
-        for prop in ("Email", "Tel",):
-            self.print_prop(contact, prop)
-        if self.display_all == True:
-            for prop in contact.get_props():
-                if not prop in ("EMAIL", "TEL"):
-                    self.print_prop(contact, prop)
+        #print_bold(unicode("Name: " + contact.name()).encode(self.encoding))
+        #for prop in ("Email", "Tel",):
+            #self.print_prop(contact, prop)
+        #if self.display_all == True:
+            #for prop in contact.get_props():
+                #if not prop in ("EMAIL", "TEL"):
+                    #self.print_prop(contact, prop)
 
 
 def signal_handler(signal, frame):
@@ -324,15 +333,15 @@ def main():
     if (args.edit == True):
         contact = my_query.select_entry()
         while True:
-            contact.edit()
+            contact.edit_new()
             print ""
             contact.print_contact_info(True)
             while 1:
-                edit = raw_input("Is this correct [y/N]?")
-                if edit == "y" or edit == u"y":
+                edit = raw_input("Is this correct [y/N]? ")
+                if edit in [u"y", "y", u"Y", "Y"]:
                     contact.save()
                     sys.exit()
-                if edit == "N" or edit == "n":
+                if edit in [u"n", "n", u"N", "N"]:
                     return 0
         return 0
 
