@@ -114,22 +114,40 @@ class VCard(list):
             line.edit()
 
     def edit_new(self):
+        print self
         """proper edit"""
         number = 1
+        print '{:>3}'.format("0"), "NAME", ":", self.name()
         for line in self:
             if line.prop() not in ["N", "FN", "VERSION"]:
-                print number, " ", line.prop(), ": ", line.value()
-                number = number + 1
+                print '{:>3}'.format(number), line.prop(), ":", line.value()
+            number = number + 1
+        input_string = raw_input("Edit ('n' for adding a property, 'e' number for editing the property number or 'd' number for deleting property number): ")
+        if input_string[0] in ["e", u"e"]:
+            #try
+                id_to_edit = int(input_string[2:])
+                if not id_to_edit == 0:
+                    self[id_to_edit - 1].edit_new()
+            #except:
+            #    pass
 
 
     def save(self):
         """saves the changed properties to the db"""
+        print self
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        for card_prop in self:
-            if card_prop[4] == 1: # value changed
-                cursor.execute('UPDATE properties SET value = ? WHERE id == ?',(card_prop[1], card_prop[3],))
+        # deleting all old params
+        stuple = (self[0][3],)
+        cursor.execute('DELETE FROM properties WHERE id == ?', stuple)
         conn.commit()
+        for card_prop in self:
+    
+            stuple = (card_prop[0], card_prop[1], card_prop[2])
+            print "#####"
+            print stuple
+            cursor.execute('INSERT INTO properties (property,value,href) VALUES (?,?,?);', stuple)
+            conn.commit()
         cursor.execute('UPDATE vcardtable SET edited = 1 WHERE href = ?', (self.h_ref,))
         conn.commit()
         conn.close()
@@ -176,6 +194,33 @@ class CardProperty(list):
         if not temp == unicode():
             self[1] = temp
             self[4] = 1 #marking this property as changed
+
+    def edit_new(self):
+        vcard_id = self[3]
+        temp = raw_input(u"Property [" + self[0] +  u"]: ")
+        if not temp == unicode():
+            self[0] = temp
+        temp = raw_input(u"Value [" + self[1] + u"]: ")
+        if not temp == unicode():
+            self[1] = temp
+        types = list()
+        other_params = list()
+        for line in self[2]:
+            if line[0] == u'TYPE':
+                types.append(line[1])
+            else:
+                other_params.append(line)
+        types  = ",".join(types)
+        temp = raw_input(u"Types [" + types + u"]: ")
+        if not temp == unicode():
+            types = temp
+        types = types.split(',')
+        print "#################"
+        print types
+        for one in types:
+            other_params.append((u'TYPE', one, vcard_id,))
+        self[2] = other_params
+        print self[2]
 
     def print_yourself(self):
         if self.value() != unicode():
