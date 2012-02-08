@@ -20,10 +20,12 @@ from ConfigParser import SafeConfigParser
 
 try:
     from termcolor import cprint
+
     def print_bold(text):
         """prints text bold"""
         cprint(text, attrs=['bold'])
 except:
+
     def print_bold(text):
         """prints text bold"""
         print(text)
@@ -33,7 +35,6 @@ try:
 except ImportError:
     print "pysqlite3 not installed"
     sys.exit(1)
-
 
 
 class VCard(list):
@@ -47,13 +48,14 @@ class VCard(list):
     def __init__(self, h_ref = "", db_path=""):
         self.h_ref = h_ref
         self.db_path = db_path
+        self.edited = 0
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
-        stuple = (h_ref,)
+        stuple = (h_ref, )
         cur.execute('SELECT * FROM properties WHERE href=(?)', stuple)
         result = cur.fetchall()
         for vcard_id, vcard_property, vcard_value, vcard_href, param_dict in result:
-            self.append(CardProperty(vcard_property, vcard_value, ast.literal_eval(param_dict), vcard_id),)
+            self.append(CardProperty(vcard_property, vcard_value, ast.literal_eval(param_dict), vcard_id), )
         conn.close()
 
     def get_prop(self, card_property):
@@ -87,7 +89,7 @@ class VCard(list):
     def print_contact_info(self, display_all = False, numbers = False):
         """new style contact card information printing"""
         print_bold(unicode("Name: " + self.name()).encode("utf-8"))
-        for prop in ("EMAIL", "TEL",):
+        for prop in ("EMAIL", "TEL", ):
             for line in self.get_prop(prop):
                 line.print_yourself()
         if display_all == True:
@@ -102,49 +104,43 @@ class VCard(list):
             print unicode(email.value + u"\t" + self.name() + u"\t" + email.type_list()).encode("utf-8")
 
     def edit(self):
-        """edits the contact card"""
-        for line in self:
-            line.edit()
-
-    def edit_new(self):
-        print self
         """proper edit"""
         number = 1
         print '{:>3}'.format("0"), "NAME", ":", self.name()
         for line in self:
-            if line.prop() not in ["N", "FN", "VERSION"]:
-                print '{:>3}'.format(number), line.prop(), ":", line.value()
+            if line.prop not in ["N", "FN", "VERSION"]:
+                print '{:>3}'.format(number), line.prop, ":", line.value
             number = number + 1
-        input_string = raw_input("Edit ('n' for adding a property, 'e' number for editing the property number or 'd' number for deleting property number): ")
-        if input_string[0] in ["e", u"e"]:
-            #try
-            id_to_edit = int(input_string[2:])
-            if not id_to_edit == 0:
-                self[id_to_edit - 1].edit_new()
-            #except:
-            #    pass
-
+        while True:
+            input_string = raw_input("Edit ('n' for adding a property, 'e' number for editing the property number, 'd' number for deleting property number, 's' for saving): ")
+            if input_string[0:2] in ["e ", u"e "]:
+                id_to_edit = int(input_string[2:])
+                if not id_to_edit == 0:
+                    self[id_to_edit - 1].edit()
+                    break
+            if input_string in ["s", u"s"]:
+                break
 
     def save(self):
         """saves the changed properties to the db"""
         print self
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        # deleting all old params
-        stuple = (self[0][3],)
-        cursor.execute('DELETE FROM properties WHERE id == ?', stuple)
+        for prop in self:
+            if prop.edited == 1:
+                if hasattr(prop, 'types'):
+                    prop.types = ast.literal_eval(prop.types)
+                else:
+                    prop.types = u"{}"
+                stuple = (prop.prop, prop.value, self.h_ref, prop.types, prop.uid)
+                print "#####"
+                print stuple
+                cursor.execute('UPDATE properties SET property = ? ,value = ?, href = ?, parameters = ? WHERE id = ?;', stuple)
         conn.commit()
-        for card_prop in self:
-    
-            stuple = (card_prop[0], card_prop[1], card_prop[2])
-            print "#####"
-            print stuple
-            cursor.execute('INSERT INTO properties (property,value,href) VALUES (?,?,?);', stuple)
-            conn.commit()
-        cursor.execute('UPDATE vcardtable SET edited = 1 WHERE href = ?', (self.h_ref,))
+        cursor.execute('UPDATE vcardtable SET edited = 1 WHERE href = ?', (self.h_ref, ))
         conn.commit()
         conn.close()
-        print "saving the changes you made..."
+        print "Saved your edits to the local db. They are NOT yet on the server."
 
 
 class CardProperty(list):
@@ -154,46 +150,35 @@ class CardProperty(list):
     self.value = the value of the property; type: unicode
     self.params = all associated parameters; type: dict
     """
-    def __init__(self, prop, value, params, uid=0, changed=0):
+
+    def __init__(self, prop, value, params, uid=0, edited=0):
         self.prop = prop
         self.value = value
         self.params = params
         self.uid = uid
-        self.changed = changed
+        self.edited = edited
 
     def type_list(self):
+        """returns all types parameters, separated by "," """
         try:
             params = unicode(", ".join(self.params[u'TYPE']))
         except:
             params = u""
         return params
 
-    def edit_new(self):
-        vcard_id = self[3]
-        temp = raw_input(u"Property [" + self[0] +  u"]: ")
+    def edit(self):
+        temp = raw_input(u"Property [" + self.prop + u"]: ")
         if not temp == unicode():
-            self[0] = temp
-        temp = raw_input(u"Value [" + self[1] + u"]: ")
+            self.prop = temp
+            self.edited = 1
+        temp = raw_input(u"Value [" + self.value + u"]: ")
         if not temp == unicode():
-            self[1] = temp
-        types = list()
-        other_params = list()
-        for line in self[2]:
-            if line[0] == u'TYPE':
-                types.append(line[1])
-            else:
-                other_params.append(line)
-        types  = ",".join(types)
-        temp = raw_input(u"Types [" + types + u"]: ")
+            self.value = temp
+            self.edited = 1
+        temp = raw_input(u"Types [" + self.type_list() + u"]: ")
         if not temp == unicode():
-            types = temp
-        types = types.split(',')
-        print "#################"
-        print types
-        for one in types:
-            other_params.append((u'TYPE', one, vcard_id,))
-        self[2] = other_params
-        print self[2]
+            self.types = temp
+            self.edited = 1
 
     def print_yourself(self):
         if self.value != unicode():
@@ -202,8 +187,10 @@ class CardProperty(list):
             else:
                 print unicode(self.prop.capitalize() + " (" + self.type_list() + u"): " + self.value).encode("utf-8")
 
+
 class PcQuery(object):
     """Querying the addressbook database"""
+
     def __init__(self, db_path = "~/.pycacard/abook.db",
                  encoding = "utf-8", errors = "strict", debug = False):
         self.db_path = path.expanduser(db_path)
@@ -226,7 +213,7 @@ class PcQuery(object):
             if self.print_function == "print_email":
                 VCard(contact_id[0], self.db_path).print_email()
             else:
-                VCard(contact_id[0], self.db_path).print_contact_info(self.display_all )
+                VCard(contact_id[0], self.db_path).print_contact_info(self.display_all)
                 if len(contact_ids) > 0:
                     print ""
 
@@ -234,7 +221,7 @@ class PcQuery(object):
         """returns list of ids from db matching search_string"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = ('%'+ self.search_string +'%',)
+        stuple = ('%'+ self.search_string +'%', )
         cursor.execute('SELECT href FROM properties WHERE value LIKE (?)', stuple)
         result = cursor.fetchall()
         result = list(set(result))
@@ -274,7 +261,6 @@ class PcQuery(object):
             return card_to_edit
 
 
-
 def signal_handler(signal, frame):
     """
     tries to hide some ugly python backtraces from the user after
@@ -282,7 +268,7 @@ def signal_handler(signal, frame):
     """
     sys.exit(0)
 
-# MAIN
+
 def main():
     """main function, everything starts  here"""
     configfile = "~/.pycard/pycard.conf"
@@ -344,7 +330,10 @@ def main():
     if (args.edit == True):
         contact = my_query.select_entry()
         while True:
-            contact.edit_new()
+            contact.edit()
+            for prop in contact:
+                if prop.edited == 1:
+                    contact.edited = 1
             print ""
             contact.print_contact_info(True)
             while 1:

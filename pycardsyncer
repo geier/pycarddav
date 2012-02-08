@@ -52,7 +52,6 @@ except:
 # /imports
 ###########################}}}
 
-
 def smartencode(string):
     """convert everything to utf-8"""
     return unicode(string).encode("utf-8", "strict")
@@ -64,6 +63,7 @@ def signal_handler(signal, frame):
 
 class PyCardDAV(object):
     """interacts with CardDAV server"""
+
     def __init__(self):
         self.debug = ""
         self.user = ""
@@ -91,7 +91,7 @@ class PyCardDAV(object):
         self.curl.setopt(pycurl.URL, self.base_url+vref)
         self.curl.perform()
 
-        header =  self.header.getvalue()
+        header = self.header.getvalue()
         vcard = self.response.getvalue()
         if (header.find("addressbook") == -1):
             print "URL is not a CardDAV resource"
@@ -108,7 +108,7 @@ class PyCardDAV(object):
         self._curl_reset()
         remotepath = str(self.base_url + vref)
 
-        headers = [ "Content-Type: application/plain"]
+        headers = ["Content-Type: application/plain"]
         self.curl.setopt(pycurl.HTTPHEADER, headers)
         #self.response = StringIO.StringIO()
         #self.header = StringIO.StringIO()
@@ -121,10 +121,9 @@ class PyCardDAV(object):
 
         self.curl.perform()
         #cleanup
+        #header = self.header.getvalue()
         tempfile.close()
         self.curl.close()
-        #header = self.header.getvalue()
-        #if not header.find("")
 
     def _curl_reset(self):
         """
@@ -183,6 +182,7 @@ class PyCardDAV(object):
 
 class DbTool(object):
     """interacts with the local db"""
+
     def __init__(self):
         self.db_path = ""
         self.debug = 0
@@ -210,7 +210,7 @@ class DbTool(object):
             cursor.execute('SELECT version FROM version')
             result = cursor.fetchone()
             if result == None:
-                stuple = (database_version,) # database version db Version
+                stuple = (database_version, ) # database version db Version
                 cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
                 conn.commit()
             elif not result[0] == database_version:
@@ -259,7 +259,7 @@ class DbTool(object):
         """returns True when the etag has been updated, otherwise False"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref,)
+        stuple = (vref, )
         cursor.execute('SELECT etag FROM vcardtable WHERE href=(?);', stuple)
         if v_etag == cursor.fetchall()[0][0]:
             return_code = False
@@ -276,9 +276,9 @@ class DbTool(object):
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref,)
+        stuple = (vref, )
         cursor.execute('SELECT count(*) FROM vcardtable WHERE href=(?);', stuple)
-        if cursor.fetchall() == [(1,)]:
+        if cursor.fetchall() == [(1, )]:
             return_code = False
         else:
             return_code = True
@@ -293,7 +293,7 @@ class DbTool(object):
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref,)
+        stuple = (vref, )
         cursor.execute('INSERT INTO vcardtable (href) VALUES (?);', stuple)
         conn.commit()
         cursor.close()
@@ -311,7 +311,7 @@ class DbTool(object):
         """returns nothing"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref,)
+        stuple = (vref, )
         cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
         conn.commit()
         cursor.close()
@@ -324,12 +324,11 @@ class DbTool(object):
         result = cursor.fetchall()
         return [row[0] for row in result]
 
-
     def get_vcard_from_db(self, vref):
         """returns a vobject.vCard()"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref,)
+        stuple = (vref, )
         cursor.execute('SELECT id, property, value, parameters FROM properties WHERE href=(?)', stuple)
         result = cursor.fetchall()
 
@@ -340,10 +339,10 @@ class DbTool(object):
             tmp = card.add(prop)
             if prop == u"N":
                 name = value.split(";")
-                tmp.value = vobject.vcard.Name( family=name[0], given=name[1], additional=name[2], prefix=name[3], suffix=name[4] )
+                tmp.value = vobject.vcard.Name(family=name[0], given=name[1], additional=name[2], prefix=name[3], suffix=name[4])
             elif prop == u"ADR":
                 adr = value.split(";")
-                tmp.value = vobject.vcard.Address( street=adr[0], city=adr[1], region=adr[2], code=adr[3], country=adr[4], box=adr[5], extended=adr[6])
+                tmp.value = vobject.vcard.Address(street=adr[0], city=adr[1], region=adr[2], code=adr[3], country=adr[4], box=adr[5], extended=adr[6])
             else:
                 tmp.value = value
             tmp.params = ast.literal_eval(parameters)
@@ -486,7 +485,7 @@ def main():
     else:
         abook = syncer.get_abook()
 
-        for vref, v_etag  in abook.iteritems():
+        for vref, v_etag in abook.iteritems():
             if my_dbtool.check_vref_exists(vref):
                 my_dbtool.insert_vref(vref)
 
@@ -517,4 +516,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
