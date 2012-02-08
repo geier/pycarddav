@@ -19,6 +19,7 @@ import argparse
 import signal
 import getpass
 from os import path
+import ast
 import StringIO
 
 from ConfigParser import SafeConfigParser
@@ -202,7 +203,7 @@ class DbTool(object):
         conn.commit()
 
         # testing for database version
-        database_version = 2
+        database_version = 3
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -213,7 +214,9 @@ class DbTool(object):
                 cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
                 conn.commit()
             elif not result[0] == database_version:
-                sys.exit(str(self.db_path) + " is probably not a valid or an outdated database.\nYou should consider to remove it and sync again using pycardsyncer.\n")
+                sys.exit(str(self.db_path) + " is probably not a valid or an "
+                    "outdated database.\nYou should consider to remove it and "
+                    "sync again using pycardsyncer.\n")
         except Exception, error:
             sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
 
@@ -239,28 +242,11 @@ class DbTool(object):
             property TEXT NOT NULL,
             value TEXT,
             href TEXT NOT NULL,
+            parameters TEXT,
             FOREIGN KEY(href) REFERENCES vcardtable(href)
             )''')
             if self.debug:
                 print "created properties table"
-        except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
-        except Exception, error:
-            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
-        conn.commit()
-        # parameter table
-        try:
-            cursor.execute('''CREATE TABLE parameters(
-            parameter TEXT NOT NULL,
-            value TEXT,
-            href TEXT NOT NULL,
-            property_id INTEGER NOT NULL,
-            FOREIGN KEY(href) REFERENCES vcardtable(href),
-            FOREIGN KEY(property_id) REFERENCES properties(id)
-            )''')
-            if self.debug:
-                print "created parameters table"
         except sqlite3.OperationalError as detail:
             if self.debug:
                 print detail
@@ -344,11 +330,11 @@ class DbTool(object):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref,)
-        cursor.execute('SELECT id, property, value FROM properties WHERE href=(?)', stuple)
+        cursor.execute('SELECT id, property, value, parameters FROM properties WHERE href=(?)', stuple)
         result = cursor.fetchall()
 
         card = vobject.vCard()
-        for uid, prop, value in result:
+        for uid, prop, value, parameters in result:
             # atm we need to treat N and ADR properties differently #FIXME
             # BUG: ORG should be treated differently, too
             tmp = card.add(prop)
@@ -360,15 +346,9 @@ class DbTool(object):
                 tmp.value = vobject.vcard.Address( street=adr[0], city=adr[1], region=adr[2], code=adr[3], country=adr[4], box=adr[5], extended=adr[6])
             else:
                 tmp.value = value
-            stuple = (uid,)
-            cursor.execute('SELECT * from parameters WHERE property_id=(?)', stuple)
-            parameter_result = cursor.fetchall()
-            tmp.params = dict()
-            for parameter in parameter_result:
-                if not tmp.params.has_key(parameter[0]):
-                    tmp.params[parameter[0]] = list()
-                tmp.params[parameter[0]].append(parameter[1])
+            tmp.params = ast.literal_eval(parameters)
         conn.close()
+        #import ipdb; ipdb.set_trace()
         return card
 
     def get_local_edited_hrefs(self):
@@ -397,25 +377,18 @@ class DbTool(object):
                 # FIXME
                 try:
                     if line.ENCODING_paramlist == [u'b']:
-                            print "found binary"
+                        print "found binary"
                 except:
                     pass
                 if (property_name == "PHOTO"):
-                    #import ipdb; ipdb.set_trace()
                     pass
                 else:
                     conn = sqlite3.connect(self.db_path)
                     cursor = conn.cursor()
-                    stuple = (unicode(property_name), unicode(property_value), vref)
+                    stuple = (unicode(property_name), unicode(property_value), vref, unicode(line.params), )
+                    #import ipdb; ipdb.set_trace()
 
-                    cursor.execute('INSERT INTO properties (property, value, href) VALUES (?,?,?);', stuple)
-                    lastrowid = cursor.lastrowid
-                    if line.params:
-                        for key in line.params.keys():
-                            for key_value in line.params[key]:
-                                stuple = (key, key_value, vref, lastrowid)
-                                cursor.execute('INSERT INTO parameters (parameter, value, href,property_id) VALUES (?,?,?,?);', stuple)
-                                #print key + ": " + i
+                    cursor.execute('INSERT INTO properties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
                     conn.commit()
                     cursor.close()
         else:
@@ -478,7 +451,7 @@ def main():
     try:
         syncer.ssl_cacert_file = conf_parser.get('default', 'ssl_cacert_file')
     except:
-       pass
+        pass
     syncer.debug = conf_parser.getint('default', 'DEBUG')
     syncer.debug = args.debug #argument overrides config file
 
@@ -524,13 +497,13 @@ def main():
                 vcard = syncer.get_vcard(vref)
                 vcard = vobject.readOne(vcard)
 
-                # this is the important part
-                try:
-                    my_dbtool.insert_vcard_in_db(vref, vcard)
-                    my_dbtool.update_etag(vref, v_etag)
-                except Exception, err:
-                    sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db\n" % str(vref))
-                    sys.stderr.write('%s\n' % str(err))
+                #try:
+               # import ipdb; ipdb.set_trace()
+                my_dbtool.insert_vcard_in_db(vref, vcard)
+                my_dbtool.update_etag(vref, v_etag)
+                #except Exception as err:
+                #    sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db\n" % str(vref))
+                #    sys.stderr.write('%s\n' % str(err))
         # for now local changes overwritten by remote changes
         print "getting changed vcards from db"
         hrefs = my_dbtool.get_local_edited_hrefs()
