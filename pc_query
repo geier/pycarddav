@@ -248,17 +248,18 @@ class PcQuery(object):
                 print "Please only type a number between 1 and", len(ids)
         elif len(ids) != 0:
             href_to_edit = ids[0][0]
+        elif len(ids) == 0:
+            sys.exit("No matching entry found.")
         print ""
         card_to_edit = VCard(href_to_edit, self.db_path)
         card_to_edit.print_contact_info()
         print ""
-        edit = "foo"
-        while (edit != "y") and (edit != "N") and (edit != ""):
-            edit = raw_input("Is this the entry you want to edit [y/N]? ")
-        if (edit == u"N") or (edit == ""):
-            sys.exit()
-        else:
-            return card_to_edit
+        #while (edit != "y") and (edit != "N") and (edit != ""):
+            #edit = raw_input("Is this the entry you want to edit [y/N]? ")
+        #if (edit == u"N") or (edit == ""):
+            #sys.exit()
+        #else:
+        return card_to_edit
 
 
 def signal_handler(signal, frame):
