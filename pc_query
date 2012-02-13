@@ -132,7 +132,7 @@ class VCard(list):
                     prop.types = ast.literal_eval(prop.types)
                 else:
                     prop.types = u"{}"
-                stuple = (prop.prop, prop.value, self.h_ref, prop.types, prop.uid)
+                stuple = (unicode(prop.prop), unicode(prop.value), unicode(self.h_ref), unicode(prop.types), unicode(prop.uid))
                 print "#####"
                 print stuple
                 cursor.execute('UPDATE properties SET property = ? ,value = ?, href = ?, parameters = ? WHERE id = ?;', stuple)

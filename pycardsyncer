@@ -104,7 +104,7 @@ class PyCardDAV(object):
         card: vcard as unicode string
          """
         # TODO
-        print "uploading your changes... NOT"
+        print "uploading your changes..."
         self._curl_reset()
         remotepath = str(self.base_url + vref)
 
