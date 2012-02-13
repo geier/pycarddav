@@ -60,6 +60,16 @@ def smartencode(string):
 def signal_handler(signal, frame):
     sys.exit(0)
 
+def get_random_href():
+    import random
+    tmp_list = list()
+    for _ in xrange(3):
+        rand_number = random.randint(0, 0x100000000)
+        tmp_list.append("{0:x}".format(rand_number))
+    return "-".join(tmp_list).upper()
+
+no_strings = [u"n", "n", u"no", "no"]
+yes_strings = [u"y", "y", u"yes", "yes"]
 
 class PyCardDAV(object):
     """interacts with CardDAV server"""
@@ -286,15 +296,15 @@ class DbTool(object):
         cursor.close()
         return return_code
 
-    def insert_vref(self, vref):
+    def insert_vref(self, vref, new=0):
         """
         inserts vref into the vcardtable
         returns nothing
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref, )
-        cursor.execute('INSERT INTO vcardtable (href) VALUES (?);', stuple)
+        stuple = (vref, new,)
+        cursor.execute('INSERT INTO vcardtable (href, edited) VALUES (?, ?);', stuple)
         conn.commit()
         cursor.close()
 
@@ -360,6 +370,7 @@ class DbTool(object):
 
     def insert_vcard_in_db(self, vref, vcard):
         """
+        vref: ref to remote vcf file, if =="": new card created locally
         vcard: vobject.Vcard()
         returns nothing
         """
@@ -384,7 +395,7 @@ class DbTool(object):
                 else:
                     conn = sqlite3.connect(self.db_path)
                     cursor = conn.cursor()
-                    stuple = (unicode(property_name), unicode(property_value), vref, unicode(line.params), )
+                    stuple = (unicode(property_name), unicode(property_value), "", unicode(line.params),)
                     #import ipdb; ipdb.set_trace()
 
                     cursor.execute('INSERT INTO properties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
@@ -478,12 +489,20 @@ def main():
 
     #import:
     if args.importing:
-        # TODO
-        infile = args.importing.readlines()
-        vcard = vobject.readOne("".join(infile))
-        print vcard
-        print "sorry, nothing to see here..."
-        import ipdb; ipdb.set_trace()
+        for vcard in vobject.readComponents(args.importing):
+            vcard.prettyPrint()
+            while True:
+                answer = raw_input("Import this card [y/n]? ")
+                if answer.lower() in no_strings:
+                    break
+                if answer.lower() in yes_strings:
+                    while True:
+                        tmp_vref = get_random_href()
+                        if my_dbtool.check_vref_exists(tmp_vref):
+                            my_dbtool.insert_vref(tmp_vref, 2)
+                            break
+                    break
+                    my_dbtool.insert_vcard_in_db(tmp_vref, vcard)
         sys.exit()
 
     # sync:
@@ -509,9 +528,11 @@ def main():
                 #    sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db\n" % str(vref))
                 #    sys.stderr.write('%s\n' % str(err))
         # for now local changes overwritten by remote changes
-        print "getting changed vcards from db"
+        if args.debug:
+            print "getting changed vcards from db"
         hrefs = my_dbtool.get_local_edited_hrefs()
-        print "got changed vcards from db"
+        if args.debug:
+            print "got changed vcards from db"
         for href in hrefs:
             print "uploading " + href
             card = my_dbtool.get_vcard_from_db(href)
