@@ -259,23 +259,12 @@ class PcQuery(object):
         #else:
         return card_to_edit
 
-    def make_tables(self):
-        """creates tables, also checks existing tables for version number"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        try:
-            cursor.execute('''CREATE TABLE version ( version INTEGER )''')
-            if self.debug:
-                print "created version table"
-        except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
-        except Exception, error:
-            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
-        conn.commit()
-
-        # testing for database version
-        database_version = 3
+    def check_table_version(self):
+        """
+        tests for curent db Version
+        if the table is still empty, insert db_version
+        """
+        database_version = 3 # the current db VERSION
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -291,6 +280,23 @@ class PcQuery(object):
                     "sync again using pycardsyncer.\n")
         except Exception, error:
             sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
+
+
+    def make_tables(self):
+        """creates tables, also checks existing tables for version number"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''CREATE TABLE version ( version INTEGER )''')
+            if self.debug:
+                print "created version table"
+        except sqlite3.OperationalError as detail:
+            if self.debug:
+                print detail
+        except Exception, error:
+            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
+        conn.commit()
+        self.check_table_version()
 
         try:
             cursor.execute('''CREATE TABLE vcardtable (

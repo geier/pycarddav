@@ -80,20 +80,7 @@ def main():
     if not path.exists(db_path):
         sys.exit(str(db_path) + " file does not exist, please sync with "
                 "pycardsyncer first.")
-    # testing for database version
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        cursor.execute('SELECT version FROM version')
-        database_version = 3
-        if not cursor.fetchone()[0] == database_version:
-            sys.exit(str(db_path) + " is probably not a valid or an "
-                    "outdated database.\nYou should consider to remove "
-                    "it and sync again using pycardsyncer.")
-    except sqlite3.OperationalError:
-        sys.exit(str(db_path) + " is probably not a valid or an outdated "
-                "database.\nYou should consider to remove it and sync "
-                "again using pycardsyncer.")
+
 
     my_query = pycard.PcQuery()
     my_query.db_path = path.expanduser(db_path)
