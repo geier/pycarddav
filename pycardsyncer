@@ -9,18 +9,13 @@
 # ----------------------------------------------------------------------------
 
 
-##############################
-# imports {{{
-
 #from IPython.Debugger import Tracer; debug_here = Tracer()
-import StringIO
 import sys
 import argparse
 import signal
 import getpass
 from os import path
-import ast
-import StringIO
+import pycard
 
 from ConfigParser import SafeConfigParser
 
@@ -30,27 +25,6 @@ except ImportError:
     print "py-vobject not installed"
     sys.exit(1)
 
-try:
-    import lxml.etree as ET
-except:
-    print "py-lxml not installad"
-    sys.exit(1)
-
-try:
-    import pycurl
-except:
-    print "pycurl not installed"
-    sys.exit(1)
-
-
-try:
-    import sqlite3
-except:
-    print "pysqlite3 not installed"
-    sys.exit(1)
-
-# /imports
-###########################}}}
 
 def smartencode(string):
     """convert everything to utf-8"""
@@ -60,367 +34,17 @@ def smartencode(string):
 def signal_handler(signal, frame):
     sys.exit(0)
 
-def get_random_href():
-    import random
-    tmp_list = list()
-    for _ in xrange(3):
-        rand_number = random.randint(0, 0x100000000)
-        tmp_list.append("{0:x}".format(rand_number))
-    return "-".join(tmp_list).upper()
 
 no_strings = [u"n", "n", u"no", "no"]
 yes_strings = [u"y", "y", u"yes", "yes"]
-
-class PyCardDAV(object):
-    """interacts with CardDAV server"""
-
-    def __init__(self):
-        self.debug = ""
-        self.user = ""
-        self.passwd = ""
-        self.resource = ""
-        self.base_url = ""
-        self.insecure_ssl = 0
-        self.ssl_cacert_file = None
-        self.curl = pycurl.Curl()
-        self.response = StringIO.StringIO()
-        self.header = StringIO.StringIO()
-
-    def get_abook(self):
-        xml = self._get_xml_props()
-        abook = self._process_xml_props(xml)
-        return abook
-
-    def get_vcard(self, vref):
-        """
-        pulls vcard from server
-        returns vcard
-        """
-        self._curl_reset()
-        self.curl.setopt(pycurl.CUSTOMREQUEST, "GET")
-        self.curl.setopt(pycurl.URL, self.base_url+vref)
-        self.curl.perform()
-
-        header = self.header.getvalue()
-        vcard = self.response.getvalue()
-        if (header.find("addressbook") == -1):
-            print "URL is not a CardDAV resource"
-            sys.exit(1)
-        return vcard
-
-    def update_vcard(self, card, vref):
-        """
-        pushes vcard to the server
-        card: vcard as unicode string
-         """
-        # TODO
-        print "uploading your changes..."
-        self._curl_reset()
-        remotepath = str(self.base_url + vref)
-
-        headers = ["Content-Type: application/plain"]
-        self.curl.setopt(pycurl.HTTPHEADER, headers)
-        #self.response = StringIO.StringIO()
-        #self.header = StringIO.StringIO()
-        #self.curl.setopt(pycurl.VERBOSE, 1)
-        self.curl.setopt(pycurl.UPLOAD, 1)
-        self.curl.setopt(pycurl.URL, remotepath)
-        tempfile = StringIO.StringIO(card)
-        self.curl.setopt(pycurl.READFUNCTION, tempfile.read)
-        self.curl.setopt(pycurl.INFILESIZE, tempfile.len)
-
-        self.curl.perform()
-        #cleanup
-        #header = self.header.getvalue()
-        tempfile.close()
-        self.curl.close()
-
-    def _curl_reset(self):
-        """
-        resets the connection, called from within the other
-        functions interacting with the CardDAV server
-        """
-        self.curl = pycurl.Curl()
-        self.response = StringIO.StringIO()
-        self.header = StringIO.StringIO()
-        self.curl.setopt(pycurl.WRITEFUNCTION, self.response.write)
-        self.curl.setopt(pycurl.HEADERFUNCTION, self.header.write)
-        self.curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_SSLv3)
-        self.curl.setopt(pycurl.USERPWD, self.user + ":" + self.passwd)
-        if (self.insecure_ssl == 1):
-            self.curl.setopt(pycurl.SSL_VERIFYPEER, 0)
-        if self.ssl_cacert_file:
-            self.curl.setopt(pycurl.CAINFO, path.expanduser(self.ssl_cacert_file))
-
-    def _get_xml_props(self):
-        """returns xml (str)"""
-        self._curl_reset()
-        self.curl.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
-        self.curl.setopt(pycurl.URL, self.resource)
-        self.curl.perform()
-        header = self.header.getvalue()
-        xml = self.response.getvalue()
-        if (header.find("addressbook") == -1):
-            print "URL is not a CardDAV resource"
-            sys.exit(1)
-        return xml
-
-    def _process_xml_props(self, xml):
-        """returns abook (dict())"""
-        namespace = "{DAV:}"
-        element = ET.XML(xml)
-        abook = dict()
-        for response in element.iterchildren():
-            if (response.tag == namespace+"response"):
-                href = ""
-                etag = ""
-                insert = False
-                for refprop in response.iterchildren():
-                    if (refprop.tag == namespace+"href"):
-                        href = refprop.text
-                    for prop in refprop.iterchildren():
-                        for props in prop.iterchildren():
-                            if (props.tag == namespace+"getcontenttype" and props.text == "text/vcard"):
-                                insert = True
-                            if (props.tag == namespace+"getetag"):
-                                etag = props.text
-                            #print("%s - %s" % (props.tag, props.text))
-                        if insert:
-                            abook[href] = etag
-        return abook
-
-
-class DbTool(object):
-    """interacts with the local db"""
-
-    def __init__(self):
-        self.db_path = ""
-        self.debug = 0
-
-    def make_tables(self):
-        """creates tables, also checks existing tables for version number"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        try:
-            cursor.execute('''CREATE TABLE version ( version INTEGER )''')
-            if self.debug:
-                print "created version table"
-        except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
-        except Exception, error:
-            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
-        conn.commit()
-
-        # testing for database version
-        database_version = 3
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute('SELECT version FROM version')
-            result = cursor.fetchone()
-            if result == None:
-                stuple = (database_version, ) # database version db Version
-                cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
-                conn.commit()
-            elif not result[0] == database_version:
-                sys.exit(str(self.db_path) + " is probably not a valid or an "
-                    "outdated database.\nYou should consider to remove it and "
-                    "sync again using pycardsyncer.\n")
-        except Exception, error:
-            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
-
-        try:
-            cursor.execute('''CREATE TABLE vcardtable (
-                    href TEXT PRIMARY KEY NOT NULL,
-                    etag TEXT,
-                    name TEXT,
-                    edited INT
-                    )''')
-            if self.debug:
-                print "created vcardtable"
-        except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
-        except Exception, error:
-            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
-        conn.commit()
-        # properties table
-        try:
-            cursor.execute('''CREATE TABLE properties (
-            id INTEGER PRIMARY KEY NOT NULL,
-            property TEXT NOT NULL,
-            value TEXT,
-            href TEXT NOT NULL,
-            parameters TEXT,
-            FOREIGN KEY(href) REFERENCES vcardtable(href)
-            )''')
-            if self.debug:
-                print "created properties table"
-        except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
-        except Exception, error:
-            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
-        conn.commit()
-        cursor.close()
-
-    def check_new_etag(self, vref, v_etag):
-        """returns True when the etag has been updated, otherwise False"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (vref, )
-        cursor.execute('SELECT etag FROM vcardtable WHERE href=(?);', stuple)
-        if v_etag == cursor.fetchall()[0][0]:
-            return_code = False
-        else:
-            return_code = True
-        conn.commit()
-        cursor.close()
-        return return_code
-
-    def check_vref_exists(self, vref):
-        """
-        returns False if vref already exists in db
-        returns True otherwise
-        """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (vref, )
-        cursor.execute('SELECT count(*) FROM vcardtable WHERE href=(?);', stuple)
-        if cursor.fetchall() == [(1, )]:
-            return_code = False
-        else:
-            return_code = True
-        conn.commit()
-        cursor.close()
-        return return_code
-
-    def insert_vref(self, vref, new=0):
-        """
-        inserts vref into the vcardtable
-        returns nothing
-        """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (vref, new,)
-        cursor.execute('INSERT INTO vcardtable (href, edited) VALUES (?, ?);', stuple)
-        conn.commit()
-        cursor.close()
-
-    def update_etag(self, vref, v_etag):
-        """returns nothing"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (v_etag, vref)
-        cursor.execute('UPDATE vcardtable SET etag=(?) WHERE href=(?);', stuple)
-        conn.commit()
-        cursor.close()
-
-    def delete_vcard_from_db(self, vref):
-        """returns nothing"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (vref, )
-        cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
-        conn.commit()
-        cursor.close()
-
-    def get_all_vref_from_db(self):
-        """returns a list with all vrefs"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute('SELECT href FROM vcardtable')
-        result = cursor.fetchall()
-        return [row[0] for row in result]
-
-    def get_vcard_from_db(self, vref):
-        """returns a vobject.vCard()"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (vref, )
-        cursor.execute('SELECT id, property, value, parameters FROM properties WHERE href=(?)', stuple)
-        result = cursor.fetchall()
-
-        card = vobject.vCard()
-        for uid, prop, value, parameters in result:
-            # atm we need to treat N and ADR properties differently #FIXME
-            # BUG: ORG should be treated differently, too
-            tmp = card.add(prop)
-            if prop == u"N":
-                name = value.split(";")
-                tmp.value = vobject.vcard.Name(family=name[0], given=name[1], additional=name[2], prefix=name[3], suffix=name[4])
-            elif prop == u"ADR":
-                adr = value.split(";")
-                tmp.value = vobject.vcard.Address(street=adr[0], city=adr[1], region=adr[2], code=adr[3], country=adr[4], box=adr[5], extended=adr[6])
-            else:
-                tmp.value = value
-            tmp.params = ast.literal_eval(parameters)
-        conn.close()
-        #import ipdb; ipdb.set_trace()
-        return card
-
-    def get_local_edited_hrefs(self):
-        """returns list of hrefs of locally edited vcards"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute('SELECT href FROM vcardtable where edited == 1')
-        result = cursor.fetchall()
-        return [row[0] for row in result]
-
-    def insert_vcard_in_db(self, vref, vcard):
-        """
-        vref: ref to remote vcf file, if =="": new card created locally
-        vcard: vobject.Vcard()
-        returns nothing
-        """
-        if vcard.name == "VCARD":
-            for line in vcard.getChildren():
-                try:
-                    line.transformFromNative()
-                except:
-                    pass
-
-                property_name = line.name
-                property_value = line.value
-                # for now, we cannot handle photos (or any other binary data):
-                # FIXME
-                try:
-                    if line.ENCODING_paramlist == [u'b']:
-                        print "found binary"
-                except:
-                    pass
-                if (property_name == "PHOTO"):
-                    pass
-                else:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-                    stuple = (unicode(property_name), unicode(property_value), "", unicode(line.params),)
-                    #import ipdb; ipdb.set_trace()
-
-                    cursor.execute('INSERT INTO properties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
-                    conn.commit()
-                    cursor.close()
-        else:
-            return -1 # this is not a vcard
-
-    def reset_flag(self, href):
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (href, )
-
-        cursor.execute('UPDATE vcardtable SET edited = 0 WHERE href = ?', stuple)
-        conn.commit()
-        conn.close()
-
 
 def main():
     """this should probably be seperated from the class definitions"""
     # trying to hide some ugly python code on pressing Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
 
-    my_dbtool = DbTool()
-    syncer = PyCardDAV()
+    my_dbtool = pycard.PcQuery()
+    syncer = pycard.PyCardDAV()
 
     arg_parser = argparse.ArgumentParser(
             description = "syncs the local db to the CardDAV server")
@@ -497,12 +121,12 @@ def main():
                     break
                 if answer.lower() in yes_strings:
                     while True:
-                        tmp_vref = get_random_href()
+                        tmp_vref = pycard.get_random_href()
                         if my_dbtool.check_vref_exists(tmp_vref):
                             my_dbtool.insert_vref(tmp_vref, 2)
                             break
-                    break
                     my_dbtool.insert_vcard_in_db(tmp_vref, vcard)
+                    break
         sys.exit()
 
     # sync:
