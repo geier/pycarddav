@@ -190,22 +190,23 @@ class CardProperty(list):
 class PcQuery(object):
     """Querying the addressbook database"""
 
-    def __init__(self, db_path = "~/.pycacard/abook.db",
+    def __init__(self, db_path = "~/.pycard/abook.db",
                  encoding = "utf-8", errors = "strict", debug = False):
         self.db_path = path.expanduser(db_path)
         self.encoding = encoding
         self.errors = errors
         self.debug = debug
         self.display_all = False
-        self.search_string = ""
         self.print_function = "print_contact_info"
+        self._make_tables()
+        self._check_table_version()
 
-    def search(self):
+    def search(self, search_string):
         """
         first we get the list of contact_ids matching the search string
         then these are printed using the different print functions
         """
-        contact_ids = self.get_contact_id_from_string()
+        contact_ids = self.get_contact_id_from_string(search_string)
         while len(contact_ids) != 0:
             contact_id = contact_ids.pop()
             if self.print_function == "print_email":
@@ -215,20 +216,20 @@ class PcQuery(object):
                 if len(contact_ids) > 0:
                     print ""
 
-    def get_contact_id_from_string(self):
+    def get_contact_id_from_string(self, search_string):
         """returns list of ids from db matching search_string"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = ('%'+ self.search_string +'%', )
+        stuple = ('%'+ search_string +'%', )
         cursor.execute('SELECT href FROM properties WHERE value LIKE (?)', stuple)
         result = cursor.fetchall()
         result = list(set(result))
         conn.close()
         return result
 
-    def select_entry(self):
+    def select_entry(self, search_string):
         """select a single entry from a list matching the search_string"""
-        ids = self.get_contact_id_from_string()
+        ids = self.get_contact_id_from_string(search_string)
         if len(ids) > 1:
             print "There are several cards matching your search string:"
             for i, j in enumerate(ids):
@@ -259,7 +260,7 @@ class PcQuery(object):
         #else:
         return card_to_edit
 
-    def check_table_version(self):
+    def _check_table_version(self):
         """
         tests for curent db Version
         if the table is still empty, insert db_version
@@ -282,7 +283,7 @@ class PcQuery(object):
             sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
 
 
-    def make_tables(self):
+    def _make_tables(self):
         """creates tables, also checks existing tables for version number"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -296,7 +297,6 @@ class PcQuery(object):
         except Exception, error:
             sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
         conn.commit()
-        self.check_table_version()
 
         try:
             cursor.execute('''CREATE TABLE vcardtable (

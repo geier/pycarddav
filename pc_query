@@ -84,13 +84,11 @@ def main():
 
     my_query = pycard.PcQuery()
     my_query.db_path = path.expanduser(db_path)
-    my_query.search_string = args.search_string.decode(my_query.encoding,
-                                                       my_query.errors)
     my_query.debug = args.debug
 
     # editing a card:
     if (args.edit == True):
-        contact = my_query.select_entry()
+        contact = my_query.select_entry(args.search_string.decode("utf-8"))
         while True:
             contact.edit()
             for prop in contact:
@@ -111,7 +109,7 @@ def main():
     my_query.display_all = args.display_all
 
     print "searching for " + args.search_string + "..."
-    my_query.search()
+    my_query.search(args.search_string.decode("utf-8"))
 
     return 0
 
