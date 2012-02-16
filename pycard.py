@@ -265,7 +265,7 @@ class PcQuery(object):
         tests for curent db Version
         if the table is still empty, insert db_version
         """
-        database_version = 3 # the current db VERSION
+        database_version = 4 # the current db VERSION
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
