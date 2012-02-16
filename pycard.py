@@ -6,16 +6,15 @@
 # can do whatever you want with this stuff. If we meet some day, and you think
 # this stuff is worth it, you can buy me a beer in return Christian Geier
 # ----------------------------------------------------------------------------
-
+"""
+classes and methods for pycarddav, the carddav class could/should be moved
+to another module for better reusing
+"""
 
 import sys
-import signal
 from os import path
-import argparse
 import ast
 import StringIO
-import sys
-import getpass
 
 try:
     from termcolor import cprint
@@ -23,7 +22,7 @@ try:
     def print_bold(text):
         """prints text bold"""
         cprint(text, attrs=['bold'])
-except:
+except ImportError:
 
     def print_bold(text):
         """prints text bold"""
@@ -33,6 +32,23 @@ try:
     import sqlite3
 except ImportError:
     print "pysqlite3 not installed"
+    sys.exit(1)
+try:
+    import pycurl
+except ImportError:
+    print "pycurl not installed"
+    sys.exit(1)
+
+try:
+    import vobject
+except ImportError:
+    print "py-vobject not installed"
+    sys.exit(1)
+
+try:
+    import lxml.etree as ET
+except ImportError:
+    print "py-lxml not installad"
     sys.exit(1)
 
 
@@ -166,6 +182,7 @@ class CardProperty(list):
         return params
 
     def edit(self):
+        """edits this card property"""
         temp = raw_input(u"Property [" + self.prop + u"]: ")
         if not temp == unicode():
             self.prop = temp
@@ -180,6 +197,10 @@ class CardProperty(list):
             self.edited = 1
 
     def print_yourself(self):
+        """
+        prints the cardproperty,
+        couldn't get __str__ to work, becaus of too many \n
+        """
         if self.value != unicode():
             if self.params == dict():
                 print unicode(self.prop.capitalize() + u": " + self.value).encode("utf-8")
@@ -265,22 +286,22 @@ class PcQuery(object):
         tests for curent db Version
         if the table is still empty, insert db_version
         """
-        database_version = 3 # the current db VERSION
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute('SELECT version FROM version')
-            result = cursor.fetchone()
-            if result == None:
-                stuple = (database_version, ) # database version db Version
-                cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
-                conn.commit()
-            elif not result[0] == database_version:
-                sys.exit(str(self.db_path) + " is probably not a valid or an "
-                    "outdated database.\nYou should consider to remove it and "
-                    "sync again using pycardsyncer.\n")
-        except Exception, error:
-            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
+        database_version = 4 # the current db VERSION
+        #try:
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT version FROM version')
+        result = cursor.fetchone()
+        if result == None:
+            stuple = (database_version, ) # database version db Version
+            cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
+            conn.commit()
+        elif not result[0] == database_version:
+            sys.exit(str(self.db_path) + " is probably not a valid or an "
+                "outdated database.\nYou should consider to remove it and "
+                "sync again using pycardsyncer.\n")
+        #except Exception, error:
+        #    sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
 
 
     def _make_tables(self):
@@ -325,6 +346,24 @@ class PcQuery(object):
             )''')
             if self.debug:
                 print "created properties table"
+        except sqlite3.OperationalError as detail:
+            if self.debug:
+                print detail
+        except Exception, error:
+            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
+        conn.commit()
+        # create blob table
+        try:
+            cursor.execute('''CREATE TABLE blobproperties (
+            id INTEGER PRIMARY KEY NOT NULL,
+            property TEXT NOT NULL,
+            value TEXT,
+            href TEXT NOT NULL,
+            parameters TEXT,
+            FOREIGN KEY(href) REFERENCES vcardtable(href)
+            )''')
+            if self.debug:
+                print "created blobproperties table"
         except sqlite3.OperationalError as detail:
             if self.debug:
                 print detail
@@ -453,18 +492,22 @@ class PcQuery(object):
                 property_value = line.value
                 # for now, we cannot handle photos (or any other binary data):
                 # FIXME
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
                 try:
                     if line.ENCODING_paramlist == [u'b']:
                         print "found binary"
-                except:
-                    pass
-                if (property_name == "PHOTO"):
-                    pass
-                else:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
+                        #import ipdb; ipdb.set_trace()
+                        try:
+                            stuple = (unicode(property_name), sqlite3.Binary(property_value), vref, unicode(line.params),)
+                            cursor.execute('INSERT INTO blobproperties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
+                            conn.commit()
+                        except:
+                            print "didnt work"
+
+
+                except AttributeError:
                     stuple = (unicode(property_name), unicode(property_value), vref, unicode(line.params),)
-                    #import ipdb; ipdb.set_trace()
 
                     cursor.execute('INSERT INTO properties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
                     conn.commit()
@@ -473,6 +516,9 @@ class PcQuery(object):
             return -1 # this is not a vcard
 
     def reset_flag(self, href):
+        """
+        resets the edited flag for a given href to 0 (=not edited locally)
+        """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (href, )
@@ -490,51 +536,13 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 
-
-
-##############################
-# imports {{{
-
-#from IPython.Debugger import Tracer; debug_here = Tracer()
-
-
-try:
-    import vobject
-except ImportError:
-    print "py-vobject not installed"
-    sys.exit(1)
-
-try:
-    import lxml.etree as ET
-except:
-    print "py-lxml not installad"
-    sys.exit(1)
-
-try:
-    import pycurl
-except:
-    print "pycurl not installed"
-    sys.exit(1)
-
-
-try:
-    import sqlite3
-except:
-    print "pysqlite3 not installed"
-    sys.exit(1)
-
-# /imports
-###########################}}}
-
 def smartencode(string):
     """convert everything to utf-8"""
     return unicode(string).encode("utf-8", "strict")
 
 
-def signal_handler(signal, frame):
-    sys.exit(0)
-
 def get_random_href():
+    """returns a random href"""
     import random
     tmp_list = list()
     for _ in xrange(3):

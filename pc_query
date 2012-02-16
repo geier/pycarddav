@@ -24,17 +24,12 @@ try:
     def print_bold(text):
         """prints text bold"""
         cprint(text, attrs=['bold'])
-except:
+except ImportError:
 
     def print_bold(text):
         """prints text bold"""
         print(text)
 
-try:
-    import sqlite3
-except ImportError:
-    print "pysqlite3 not installed"
-    sys.exit(1)
 
 def signal_handler(signal, frame):
     """

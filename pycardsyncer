@@ -17,7 +17,7 @@ import getpass
 from os import path
 import pycard
 
-from ConfigParser import SafeConfigParser
+from ConfigParser import SafeConfigParser, NoOptionError
 
 try:
     import vobject
@@ -43,7 +43,6 @@ def main():
     # trying to hide some ugly python code on pressing Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
 
-    my_dbtool = pycard.PcQuery()
     syncer = pycard.PyCardDAV()
 
     arg_parser = argparse.ArgumentParser(
@@ -54,7 +53,7 @@ def main():
         help="defaults to ~/.pycard/pycard.conf")
     arg_parser.add_argument("-v", "--version", action = "version", version = "0.3.1")
     arg_parser.add_argument("--debug", action = "store_true", dest = "debug",
-            default = "False", help = "enable debugging; WARNING: shows your password in cleartext")
+            help = "enable debugging; WARNING: shows your password in cleartext")
     arg_parser.add_argument("-b", "--backup", action = "store", dest = "backup",
             help = "backup the local db to BACKUP")
     arg_parser.add_argument('-i', '--import', type=argparse.FileType('r'),
@@ -74,22 +73,22 @@ def main():
         syncer.passwd = getpass.getpass(prompt='CardDAV password: ')
     syncer.resource = conf_parser.get('default', 'resource')
     syncer.base_url = conf_parser.get('default', 'base_url')
-    my_dbtool.db_path = path.expanduser(conf_parser.get('default', 'db_path'))
-    my_dbtool.debug = conf_parser.getint('default', 'DEBUG')
-    my_dbtool.debug = args.debug #argument overrides config file
+    debug = bool(conf_parser.getint('default', 'DEBUG'))
+    if args.debug: #argument overrides config file
+        debug = bool(args.debug)
+    db_path = conf_parser.get('default', 'db_path')
     # ssl:
     try:
         syncer.insecure_ssl = conf_parser.getint('default', 'insecure_ssl')
-    except:
+    except NoOptionError:
         pass
     try:
         syncer.ssl_cacert_file = conf_parser.get('default', 'ssl_cacert_file')
-    except:
+    except NoOptionError:
         pass
-    syncer.debug = conf_parser.getint('default', 'DEBUG')
-    syncer.debug = args.debug #argument overrides config file
+    syncer.debug = debug
 
-    if my_dbtool.debug:
+    if debug:
         print "using remote options:"
         print "  user:", syncer.user
         print "  passwd:", syncer.passwd
@@ -97,10 +96,11 @@ def main():
         print "  base_url:", syncer.base_url
         print "  insecureSSL:", syncer.insecure_ssl
         print "using local options:"
-        print "  db_path:", my_dbtool.db_path
+        print "  db_path:", db_path
         print "\n"
 
-    my_dbtool.make_tables()
+    my_dbtool = pycard.PcQuery(db_path, "utf-8", "stricts", debug)
+
 
     # backup:
     if args.backup:
@@ -139,7 +139,7 @@ def main():
 
             if my_dbtool.check_new_etag(vref, v_etag):
                 my_dbtool.delete_vcard_from_db(vref)
-                if args.debug:
+                if debug:
                     print "getting ", vref, " etag: ", v_etag
                 vcard = syncer.get_vcard(vref)
                 vcard = vobject.readOne(vcard)
@@ -152,10 +152,10 @@ def main():
                 #    sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db\n" % str(vref))
                 #    sys.stderr.write('%s\n' % str(err))
         # for now local changes overwritten by remote changes
-        if args.debug:
+        if debug:
             print "getting changed vcards from db"
         hrefs = my_dbtool.get_local_edited_hrefs()
-        if args.debug:
+        if debug:
             print "got changed vcards from db"
         for href in hrefs:
             print "uploading " + href
