@@ -60,7 +60,7 @@ class VCard(list):
     db_path: database file from which to initialize the VCard
     """
 
-    def __init__(self, h_ref = "", db_path=""):
+    def __init__(self, h_ref = "", db_path = ""):
         self.h_ref = h_ref
         self.db_path = db_path
         self.edited = 0
@@ -241,7 +241,7 @@ class PcQuery(object):
         """returns list of ids from db matching search_string"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = ('%'+ search_string +'%', )
+        stuple = ('%' + search_string + '%', )
         cursor.execute('SELECT href FROM properties WHERE value LIKE (?)', stuple)
         result = cursor.fetchall()
         result = list(set(result))
@@ -255,12 +255,12 @@ class PcQuery(object):
             print "There are several cards matching your search string:"
             for i, j in enumerate(ids):
                 contact = VCard(j[0], self.db_path)
-                print (i+1), contact.name()
-            while True: # should break if input not convertible to int
+                print (i + 1), contact.name()
+            while True:  # should break if input not convertible to int
                 id_to_edit = raw_input("Which one do you want to edit: ")
                 try:
                     id_to_edit = int(id_to_edit)
-                    if (id_to_edit > 0) and (id_to_edit <= len(ids)): #FIXME
+                    if (id_to_edit > 0) and (id_to_edit <= len(ids)):  #FIXME
                         href_to_edit = ids[id_to_edit - 1][0]
                         break
                 except:
@@ -286,7 +286,7 @@ class PcQuery(object):
         tests for curent db Version
         if the table is still empty, insert db_version
         """
-        database_version = 4 # the current db VERSION
+        database_version = 4  # the current db VERSION
         #try:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -302,7 +302,6 @@ class PcQuery(object):
                 "sync again using pycardsyncer.\n")
         #except Exception, error:
         #    sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
-
 
     def _make_tables(self):
         """creates tables, also checks existing tables for version number"""
@@ -463,6 +462,12 @@ class PcQuery(object):
             else:
                 tmp.value = value
             tmp.params = ast.literal_eval(parameters)
+        cursor.execute('SELECT id, property, value, parameters FROM blobproperties WHERE href=(?)', stuple)
+        result = cursor.fetchall()
+        for uid, prop, value, parameters in result:
+            tmp = card.add(prop)
+            tmp.value = str(value)
+            tmp.params = ast.literal_eval(parameters)
         conn.close()
         #import ipdb; ipdb.set_trace()
         return card
@@ -552,6 +557,7 @@ def get_random_href():
 
 no_strings = [u"n", "n", u"no", "no"]
 yes_strings = [u"y", "y", u"yes", "yes"]
+
 
 class PyCardDAV(object):
     """interacts with CardDAV server"""
