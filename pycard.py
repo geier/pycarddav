@@ -60,7 +60,7 @@ class VCard(list):
     db_path: database file from which to initialize the VCard
     """
 
-    def __init__(self, h_ref = "", db_path = ""):
+    def __init__(self, h_ref="", db_path=""):
         self.h_ref = h_ref
         self.db_path = db_path
         self.edited = 0
@@ -101,7 +101,7 @@ class VCard(list):
             collector.append(prop.prop)
         return list(set(collector))
 
-    def print_contact_info(self, display_all = False, numbers = False):
+    def print_contact_info(self, display_all=False, numbers=False):
         """new style contact card information printing"""
         print_bold(unicode("Name: " + self.name()).encode("utf-8"))
         for prop in ("EMAIL", "TEL", ):
@@ -211,8 +211,8 @@ class CardProperty(list):
 class PcQuery(object):
     """Querying the addressbook database"""
 
-    def __init__(self, db_path = "~/.pycard/abook.db",
-                 encoding = "utf-8", errors = "strict", debug = False):
+    def __init__(self, db_path="~/.pycard/abook.db",
+                 encoding="utf-8", errors="strict", debug=False):
         self.db_path = path.expanduser(db_path)
         self.encoding = encoding
         self.errors = errors
@@ -260,7 +260,7 @@ class PcQuery(object):
                 id_to_edit = raw_input("Which one do you want to edit: ")
                 try:
                     id_to_edit = int(id_to_edit)
-                    if (id_to_edit > 0) and (id_to_edit <= len(ids)):  #FIXME
+                    if (id_to_edit > 0) and (id_to_edit <= len(ids)):  # FIXME
                         href_to_edit = ids[id_to_edit - 1][0]
                         break
                 except:
@@ -293,7 +293,7 @@ class PcQuery(object):
         cursor.execute('SELECT version FROM version')
         result = cursor.fetchone()
         if result == None:
-            stuple = (database_version, ) # database version db Version
+            stuple = (database_version, )  # database version db Version
             cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
             conn.commit()
         elif not result[0] == database_version:
@@ -315,7 +315,8 @@ class PcQuery(object):
             if self.debug:
                 print detail
         except Exception, error:
-            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
+            sys.stderr.write('Failed to connect to database,'
+                'Unknown Error: ' + str(error) + "\n")
         conn.commit()
 
         try:
@@ -331,7 +332,8 @@ class PcQuery(object):
             if self.debug:
                 print detail
         except Exception, error:
-            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
+            sys.stderr.write('Failed to connect to database,'
+                'Unknown Error: ' + str(error) + "\n")
         conn.commit()
         # properties table
         try:
@@ -349,7 +351,8 @@ class PcQuery(object):
             if self.debug:
                 print detail
         except Exception, error:
-            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
+            sys.stderr.write('Failed to connect to database,'
+                'Unknown Error: ' + str(error) + "\n")
         conn.commit()
         # create blob table
         try:
@@ -367,7 +370,8 @@ class PcQuery(object):
             if self.debug:
                 print detail
         except Exception, error:
-            sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
+            sys.stderr.write('Failed to connect to database,'
+                'Unknown Error: ' + str(error) + "\n")
         conn.commit()
         cursor.close()
 
@@ -420,6 +424,18 @@ class PcQuery(object):
         cursor = conn.cursor()
         stuple = (v_etag, vref)
         cursor.execute('UPDATE vcardtable SET etag=(?) WHERE href=(?);', stuple)
+        conn.commit()
+        cursor.close()
+
+    def update_vref(self, old_vref, new_vref):
+        """
+        updates vref
+        returns: nothing
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (new_vref, old_vref)
+        cursor.execute('UPDATE vcardtable SET href=(?) WHERE href=(?);', stuple)
         conn.commit()
         cursor.close()
 
@@ -480,6 +496,14 @@ class PcQuery(object):
         result = cursor.fetchall()
         return [row[0] for row in result]
 
+    def get_local_new_hrefs(self):
+        """returns list of hrefs of locally added vcards"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT href FROM vcardtable where edited == 2')
+        result = cursor.fetchall()
+        return [row[0] for row in result]
+
     def insert_vcard_in_db(self, vref, vcard):
         """
         vref: ref to remote vcf file
@@ -508,8 +532,8 @@ class PcQuery(object):
                             cursor.execute('INSERT INTO blobproperties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
                             conn.commit()
                         except:
+                            # FIXME
                             print "didnt work"
-
 
                 except AttributeError:
                     stuple = (unicode(property_name), unicode(property_value), vref, unicode(line.params),)
@@ -518,7 +542,7 @@ class PcQuery(object):
                     conn.commit()
                     cursor.close()
         else:
-            return -1 # this is not a vcard
+            return -1  # this is not a vcard
 
     def reset_flag(self, href):
         """
@@ -579,6 +603,13 @@ class PyCardDAV(object):
         abook = self._process_xml_props(xml)
         return abook
 
+    def perform_curl(self):
+        try:
+            self.curl.perform()
+        except pycurl.error, errorstring:
+            sys.stderr.write( str(errorstring[1])+"\n")
+            sys.exit(1)
+
     def get_vcard(self, vref):
         """
         pulls vcard from server
@@ -586,7 +617,7 @@ class PyCardDAV(object):
         """
         self._curl_reset()
         self.curl.setopt(pycurl.CUSTOMREQUEST, "GET")
-        self.curl.setopt(pycurl.URL, self.base_url+vref)
+        self.curl.setopt(pycurl.URL, self.base_url + vref)
         self.curl.perform()
 
         header = self.header.getvalue()
@@ -598,7 +629,7 @@ class PyCardDAV(object):
 
     def update_vcard(self, card, vref):
         """
-        pushes vcard to the server
+        pushes changed vcard to the server
         card: vcard as unicode string
          """
         # TODO
@@ -623,6 +654,30 @@ class PyCardDAV(object):
         tempfile.close()
         self.curl.close()
 
+    def upload_new_card(self, card):
+        # FIXME
+        """
+        upload new card to the server
+        card: vcard as unicode string
+        """
+        rand_string = get_random_href()
+        remotepath = str(self.resource + rand_string + ".vcf")
+
+        self._curl_reset()
+        # doesn't work without escape of *
+        headers = ["If-None-Match: \*", "Content-Type: text/vcard"]
+        self.curl.setopt(pycurl.HTTPHEADER, headers)
+        self.curl.setopt(pycurl.UPLOAD, 1)
+        self.curl.setopt(pycurl.URL, remotepath)
+        self.curl.setopt(pycurl.VERBOSE, 1)
+        tempfile = StringIO.StringIO(card)
+        self.curl.setopt(pycurl.READFUNCTION, tempfile.read)
+        self.curl.setopt(pycurl.INFILESIZE, tempfile.len)
+        import ipdb; ipdb.set_trace()
+        self.perform_curl()
+        # FIXME: remotepath still contains whole url
+        return remotepath
+
     def _curl_reset(self):
         """
         resets the connection, called from within the other
@@ -645,7 +700,8 @@ class PyCardDAV(object):
         self._curl_reset()
         self.curl.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
         self.curl.setopt(pycurl.URL, self.resource)
-        self.curl.perform()
+        #self.curl.perform()
+        self.perform_curl()
         header = self.header.getvalue()
         xml = self.response.getvalue()
         if (header.find("addressbook") == -1):
@@ -659,18 +715,18 @@ class PyCardDAV(object):
         element = ET.XML(xml)
         abook = dict()
         for response in element.iterchildren():
-            if (response.tag == namespace+"response"):
+            if (response.tag == namespace + "response"):
                 href = ""
                 etag = ""
                 insert = False
                 for refprop in response.iterchildren():
-                    if (refprop.tag == namespace+"href"):
+                    if (refprop.tag == namespace + "href"):
                         href = refprop.text
                     for prop in refprop.iterchildren():
                         for props in prop.iterchildren():
-                            if (props.tag == namespace+"getcontenttype" and props.text == "text/vcard"):
+                            if (props.tag == namespace + "getcontenttype" and props.text == "text/vcard"):
                                 insert = True
-                            if (props.tag == namespace+"getetag"):
+                            if (props.tag == namespace + "getetag"):
                                 etag = props.text
                             #print("%s - %s" % (props.tag, props.text))
                         if insert:

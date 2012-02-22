@@ -31,12 +31,14 @@ def smartencode(string):
     return unicode(string).encode("utf-8", "strict")
 
 
-def signal_handler(signal, frame):
+def signal_handler(*_):
+    """this should hide ugly backtraces when hitting ctrl-c"""
     sys.exit(0)
 
 
 no_strings = [u"n", "n", u"no", "no"]
 yes_strings = [u"y", "y", u"yes", "yes"]
+
 
 def main():
     """this should probably be seperated from the class definitions"""
@@ -46,18 +48,19 @@ def main():
     syncer = pycard.PyCardDAV()
 
     arg_parser = argparse.ArgumentParser(
-            description = "syncs the local db to the CardDAV server")
+            description="syncs the local db to the CardDAV server")
     arg_parser.add_argument(
-        "-c", "--config", action = "store", dest = "configfile",
-        default = "~/.pycard/pycard.conf",
+        "-c", "--config", action="store", dest="configfile",
+        default="~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
-    arg_parser.add_argument("-v", "--version", action = "version", version = "0.3.1")
-    arg_parser.add_argument("--debug", action = "store_true", dest = "debug",
-            help = "enable debugging; WARNING: shows your password in cleartext")
-    arg_parser.add_argument("-b", "--backup", action = "store", dest = "backup",
-            help = "backup the local db to BACKUP")
+    arg_parser.add_argument("-v", "--version", action="version",
+            version="0.3.1")
+    arg_parser.add_argument("--debug", action="store_true", dest="debug",
+            help="enable debugging; WARNING: shows passwords in cleartext")
+    arg_parser.add_argument("-b", "--backup", action="store",
+            dest="backup", help="backup the local db to BACKUP")
     arg_parser.add_argument('-i', '--import', type=argparse.FileType('r'),
-            dest = 'importing', help='import vcard from file or STDIN')
+            dest='importing', help='import vcard from file or STDIN')
     args = arg_parser.parse_args()
 
     #config file foo
@@ -69,12 +72,12 @@ def main():
     syncer.user = conf_parser.get('default', 'user')
     try:
         syncer.passwd = conf_parser.get('default', 'passwd')
-    except:
+    except NoOptionError:
         syncer.passwd = getpass.getpass(prompt='CardDAV password: ')
     syncer.resource = conf_parser.get('default', 'resource')
     syncer.base_url = conf_parser.get('default', 'base_url')
     debug = bool(conf_parser.getint('default', 'DEBUG'))
-    if args.debug: #argument overrides config file
+    if args.debug:   # argument overrides config file
         debug = bool(args.debug)
     db_path = conf_parser.get('default', 'db_path')
     # ssl:
@@ -100,7 +103,6 @@ def main():
         print "\n"
 
     my_dbtool = pycard.PcQuery(db_path, "utf-8", "stricts", debug)
-
 
     # backup:
     if args.backup:
@@ -149,18 +151,26 @@ def main():
                 my_dbtool.insert_vcard_in_db(vref, vcard)
                 my_dbtool.update_etag(vref, v_etag)
                 #except Exception as err:
-                #    sys.stderr.write("ERROR: something went wrong while inserting VCard %s into the db\n" % str(vref))
+                #    sys.stderr.write("ERROR: something went wrong while "
+                #    "inserting VCard %s into the db\n" % str(vref))
                 #    sys.stderr.write('%s\n' % str(err))
         # for now local changes overwritten by remote changes
         if debug:
             print "getting changed vcards from db"
         hrefs = my_dbtool.get_local_edited_hrefs()
-        if debug:
-            print "got changed vcards from db"
         for href in hrefs:
-            print "uploading " + href
+            if debug:
+                print "updating " + href
             card = my_dbtool.get_vcard_from_db(href)
             syncer.update_vcard(card.serialize(), href)
+            my_dbtool.reset_flag(href)
+        hrefs = my_dbtool.get_local_new_hrefs()
+        for href in hrefs:
+            if debug:
+                print "uploading new card " + href
+            card = my_dbtool.get_vcard_from_db(href)
+            href_new = syncer.upload_new_card(card.serialize())
+            my_dbtool.update_vref(href, href_new)
             my_dbtool.reset_flag(href)
 
 
