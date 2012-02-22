@@ -1,11 +1,11 @@
 FEATURES
 ========
-handle photos etc (base64 encoded)
 **WRITE SUPPORT**
 create new vcards
 handle more than one search string
 gnome-keychain support
 use distutils
+display only certain x-properties
 test against other servers (radicale, fruux)
 
 BUGS
@@ -20,6 +20,7 @@ TODO fix that href vref h_ref mess
 
 DONE
 ====
+DONE: handle photos etc (base64 encoded)
 DONE: creating the dbs
 DONE: use ssl public cert
 DONE: vcard importing
