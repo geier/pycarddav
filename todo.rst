@@ -4,7 +4,6 @@ FEATURES
 create new vcards
 handle more than one search string
 gnome-keychain support
-use distutils
 display only certain x-properties
 test against other servers (radicale, fruux)
 
@@ -24,3 +23,4 @@ DONE: handle photos etc (base64 encoded)
 DONE: creating the dbs
 DONE: use ssl public cert
 DONE: vcard importing
+DONE: use distutils

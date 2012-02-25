@@ -1,3 +1,4 @@
 basic backup support
 use argparse in pycardsyncer
 read password from command line
+distutils for installing
