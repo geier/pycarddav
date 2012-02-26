@@ -145,15 +145,9 @@ def main():
                     print "getting ", vref, " etag: ", v_etag
                 vcard = syncer.get_vcard(vref)
                 vcard = vobject.readOne(vcard)
-
-                #try:
-               # import ipdb; ipdb.set_trace()
+                # import ipdb; ipdb.set_trace()
                 my_dbtool.insert_vcard_in_db(vref, vcard)
                 my_dbtool.update_etag(vref, v_etag)
-                #except Exception as err:
-                #    sys.stderr.write("ERROR: something went wrong while "
-                #    "inserting VCard %s into the db\n" % str(vref))
-                #    sys.stderr.write('%s\n' % str(err))
         # for now local changes overwritten by remote changes
         if debug:
             print "getting changed vcards from db"

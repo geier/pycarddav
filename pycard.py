@@ -418,6 +418,15 @@ class PcQuery(object):
         conn.commit()
         cursor.close()
 
+    def update_name(self, vref, name):
+        """ updates the name field in the vcardtable"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (name, vref)
+        cursor.execute('UPDATE vcardtable SET name=(?) WHERE href=(?);', stuple)
+        conn.commit()
+        cursor.close()
+
     def update_etag(self, vref, v_etag):
         """returns nothing"""
         conn = sqlite3.connect(self.db_path)
@@ -440,7 +449,11 @@ class PcQuery(object):
         cursor.close()
 
     def delete_vcard_from_db(self, vref):
-        """returns nothing"""
+        """
+        does NOT actually remove the whole vcard, only the lines
+        from the property table
+        returns nothing
+        """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref, )
@@ -541,6 +554,7 @@ class PcQuery(object):
                     cursor.execute('INSERT INTO properties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
                     conn.commit()
                     cursor.close()
+                    self.update_name(vref, vcard.FN)
         else:
             return -1  # this is not a vcard
 
