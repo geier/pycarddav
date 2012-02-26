@@ -45,7 +45,6 @@ def main():
     # trying to hide some ugly python code on pressing Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
 
-    syncer = pycard.PyCardDAV()
 
     arg_parser = argparse.ArgumentParser(
             description="syncs the local db to the CardDAV server")
@@ -69,12 +68,14 @@ def main():
         print "reading config from ", configfile
     conf_parser = SafeConfigParser()
     conf_parser.read(configfile)
+
+    resource = conf_parser.get('default', 'resource')
+    syncer = pycard.PyCardDAV(resource)
     syncer.user = conf_parser.get('default', 'user')
     try:
         syncer.passwd = conf_parser.get('default', 'passwd')
     except NoOptionError:
         syncer.passwd = getpass.getpass(prompt='CardDAV password: ')
-    syncer.resource = conf_parser.get('default', 'resource')
     syncer.base_url = conf_parser.get('default', 'base_url')
     debug = bool(conf_parser.getint('default', 'DEBUG'))
     if args.debug:   # argument overrides config file
@@ -165,7 +166,7 @@ def main():
             card = my_dbtool.get_vcard_from_db(href)
             href_new = syncer.upload_new_card(card.serialize())
             my_dbtool.update_vref(href, href_new)
-            my_dbtool.reset_flag(href)
+            my_dbtool.reset_flag(href_new)
 
 
 if __name__ == "__main__":

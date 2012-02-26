@@ -15,6 +15,7 @@ import sys
 from os import path
 import ast
 import StringIO
+import urlparse
 
 try:
     from termcolor import cprint
@@ -376,7 +377,14 @@ class PcQuery(object):
         cursor.close()
 
     def check_new_etag(self, vref, v_etag):
-        """returns True when the etag has been updated, otherwise False"""
+        """returns True when the etag has been updated, otherwise False
+
+        :param vref: vref
+        :type vref: str
+        :param v_etag: etag
+        :type v_etag: str
+        :rtype: bool, True when etags do not match, otherwise False
+        """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref, )
@@ -593,6 +601,54 @@ def get_random_href():
         tmp_list.append("{0:x}".format(rand_number))
     return "-".join(tmp_list).upper()
 
+
+def header_parser(header_string):
+    """
+    parses the HTTP header returned by the server
+
+    Args:
+        header_string: HTTP header as a string
+
+    Returns:
+        A dict, whose keywords correspond to the ones from the http header, the
+        values a list of strings.
+
+    example::
+
+        {'Content-Length:': ['134'],
+         'Content-Type:': ['text/xml; charset="utf-8"'],
+         'DAV:': ['1',
+                  '2',
+                  '3',
+                  'access-control',
+                  'calendar-access',
+                  'calendar-schedule',
+                  'extended-mkcol',
+                  'calendar-proxy',
+                  'bind',
+                  'addressbook',
+                  'calendar-auto-schedule'],
+         'Date:': ['Thu', '23 Feb 2012 00:03:11 GMT'],
+         'HTTP/1.1': ['100 Continue', '412 Precondition Failed'],
+         'Server:': ['Apache'],
+         'X-DAViCal-Version:': ['DAViCal/1.0.2; DB/1.2.11'],
+         'X-Powered-By:': ['PHP/5.3.10']}
+
+    beware: not all keywords are followed by a ':'
+    """
+
+    head = dict()
+    for line in header_string.split("\r\n"):
+        test = line.split(" ", 1)
+        if not head.has_key(test[0]):
+            head[test[0]] = list()
+        try:
+            for one in test[1].split(', '):
+                head[test[0]].append(one)
+        except IndexError:
+            pass
+    return head
+
 no_strings = [u"n", "n", u"no", "no"]
 yes_strings = [u"y", "y", u"yes", "yes"]
 
@@ -600,12 +656,14 @@ yes_strings = [u"y", "y", u"yes", "yes"]
 class PyCardDAV(object):
     """interacts with CardDAV server"""
 
-    def __init__(self):
+    def __init__(self, resource):
         self.debug = ""
         self.user = ""
         self.passwd = ""
-        self.resource = ""
-        self.base_url = ""
+        self.resource = resource
+        split_url = urlparse.urlparse(resource)
+        self.base_url = split_url.scheme + '://'  + split_url.netloc
+        self.path = split_url.path
         self.insecure_ssl = 0
         self.ssl_cacert_file = None
         self.curl = pycurl.Curl()
@@ -669,28 +727,33 @@ class PyCardDAV(object):
         self.curl.close()
 
     def upload_new_card(self, card):
-        # FIXME
         """
         upload new card to the server
-        card: vcard as unicode string
-        """
-        rand_string = get_random_href()
-        remotepath = str(self.resource + rand_string + ".vcf")
 
-        self._curl_reset()
-        # doesn't work without escape of *
-        headers = ["If-None-Match: \*", "Content-Type: text/vcard"]
-        self.curl.setopt(pycurl.HTTPHEADER, headers)
-        self.curl.setopt(pycurl.UPLOAD, 1)
-        self.curl.setopt(pycurl.URL, remotepath)
-        self.curl.setopt(pycurl.VERBOSE, 1)
-        tempfile = StringIO.StringIO(card)
-        self.curl.setopt(pycurl.READFUNCTION, tempfile.read)
-        self.curl.setopt(pycurl.INFILESIZE, tempfile.len)
-        import ipdb; ipdb.set_trace()
-        self.perform_curl()
-        # FIXME: remotepath still contains whole url
-        return remotepath
+        :param card: vcard to be uploaded
+        :type card: unicode
+        :rtype: string, path of the vcard on the server
+        """
+        for _ in range(0,5):
+            rand_string = get_random_href()
+            remotepath = str(self.resource + rand_string + ".vcf")
+            self._curl_reset()
+            # doesn't work without escape of *
+            headers = ["If-None-Match: \*", "Content-Type: text/vcard"]
+            self.curl.setopt(pycurl.HTTPHEADER, headers)
+            self.curl.setopt(pycurl.UPLOAD, 1)
+            self.curl.setopt(pycurl.URL, remotepath)
+            #self.curl.setopt(pycurl.VERBOSE, 1)
+            tempfile = StringIO.StringIO(card)
+            self.curl.setopt(pycurl.READFUNCTION, tempfile.read)
+            self.curl.setopt(pycurl.INFILESIZE, tempfile.len)
+            #import ipdb; ipdb.set_trace()
+            self.perform_curl()
+            header = header_parser(self.header.getvalue())
+            if header['HTTP/1.1'][-1] == '201 Created':
+                parsed_url = urlparse.urlparse(remotepath)
+                return parsed_url.path
+            # TODO: should raise an exception if this is ever reached
 
     def _curl_reset(self):
         """
