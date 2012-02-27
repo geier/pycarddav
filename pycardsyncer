@@ -69,8 +69,17 @@ def makeTables():
     conn.commit()
 
     # VERSION information
-    t = (1,)
-    c.execute('INSERT INTO version (version) VALUES (?)',t)
+    database_version = 1
+    c.execute('SELECT version FROM version')
+    result = c.fetchone()
+    if result == None:
+        t = (database_version,)
+        c.execute('INSERT INTO version (version) VALUES (?)',t)
+        conn.commit()
+    elif not result[0] == database_version:
+         sys.exit(str(dbPath) + " is probably not a valid or an "
+            "outdated database.\nYou should consider to remove it and "
+            "sync again using pycardsyncer.\n")
 
     try:
             c.execute('''CREATE TABLE vcardtable        (
@@ -144,7 +153,7 @@ options:
   --debug show some debugging output"""
 
 def version():
-    print "0.3.2"
+    print "0.3.3"
 
 def getXMLProps():
     response=StringIO.StringIO()
@@ -286,7 +295,7 @@ def getVcard(vRef):
 
 def insertVcardInDb(vRef,v):
     if v.name == "VCARD":
-        v.prettyPrint()
+    #    v.prettyPrint()
         for line in v.getChildren():
             try:
                 line.transformFromNative()
@@ -301,11 +310,11 @@ def insertVcardInDb(vRef,v):
                 conn = sqlite3.connect(dbPath)
                 c = conn.cursor()
                 t =(unicode(propertyName), unicode(propertyValue),vRef,)
-                if DEBUG:
-                    print "unicode(propertyName): ", unicode(propertyName), " type: ", type(unicode(propertyName))
-                    print "unicode(propertyValue): ", unicode(propertyValue), " type: ", type(unicode(propertyValue))
-                    print "vRef: ", vRef, " type: ", type(vRef)
-                    print "t: ", t, " type: ", type(t)
+                #if DEBUG:
+                    #print "unicode(propertyName): ", unicode(propertyName), " type: ", type(unicode(propertyName))
+                    #print "unicode(propertyValue): ", unicode(propertyValue), " type: ", type(unicode(propertyValue))
+                    #print "vRef: ", vRef, " type: ", type(vRef)
+                    #print "t: ", t, " type: ", type(t)
 
                 c.execute('INSERT INTO properties (property, value, href) VALUES (?,?,?);', t)
                 lastrowid = c.lastrowid
