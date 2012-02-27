@@ -176,12 +176,16 @@ def processXMLProps(xml):
             href = ""
             etag = ""
             insert = False
+            text = {
+                'davical' : "text/vcard",
+                'sabredav' : "text/x-vcard"
+            }[davserver]
             for refprop in response.iterchildren():
                 if (refprop.tag == namespace+"href"):
                     href = refprop.text
                 for prop in refprop.iterchildren():
                     for props in prop.iterchildren():
-                        if (props.tag == namespace+"getcontenttype" and props.text == "text/vcard"):
+                        if (props.tag == namespace+"getcontenttype" and props.text == text):
                             insert = True
                         if (props.tag == namespace+"getetag"):
                             etag = props.text
@@ -268,7 +272,13 @@ def getVcard(vRef):
 
     header =  header.getvalue()
     vCard = response.getvalue()
-    if (header.find("addressbook") == -1):
+    
+    find = {
+        'davical' : "addressbook",
+        'sabredav' : "text/x-vcard"
+    }[davserver]
+
+    if (header.find(find) == -1):
         print "URL is not a CardDAV resource"
         sys.exit(1)
 
@@ -316,7 +326,7 @@ def signal_handler(signal, frame):
 
 def main(argv):
     configfile="~/.pycard/pycard.conf"
-    global user, passwd, resource, baseUrl, insecureSSL, dbPath, DEBUG
+    global user, passwd, resource, baseUrl, insecureSSL, dbPath, davserver, DEBUG
     DEBUG=0
     dbPath="~/.pycard/pycard.conf"
     try:
@@ -353,6 +363,7 @@ def main(argv):
     baseUrl = parser.get('default', 'base_url')
     insecureSSL = parser.getint('default', 'insecure_ssl')
     dbPath = path.expanduser(parser.get('default', 'db_path'))
+    davserver = parser.get('default', 'davserver')
     DEBUG = parser.getint('default', 'DEBUG')
     if DEBUG:
         print "using config:"
