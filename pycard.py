@@ -547,7 +547,6 @@ class PcQuery(object):
                 try:
                     if line.ENCODING_paramlist == [u'b']:
                         print "found binary"
-                        #import ipdb; ipdb.set_trace()
                         try:
                             stuple = (unicode(property_name), sqlite3.Binary(property_value), vref, unicode(line.params),)
                             cursor.execute('INSERT INTO blobproperties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
@@ -562,7 +561,8 @@ class PcQuery(object):
                     cursor.execute('INSERT INTO properties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
                     conn.commit()
                     cursor.close()
-                    self.update_name(vref, vcard.FN)
+                    #import ipdb; ipdb.set_trace()
+                    self.update_name(vref, vcard.fn.value)
         else:
             return -1  # this is not a vcard
 
