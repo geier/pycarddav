@@ -5,7 +5,11 @@ News
 ----
 27.01.2012: pyCardDAV v0.3.3_ released:
   **New** sabredav/owncloud support, thanks Davide Gerhard.
+
+  Fixes a bug where properties with no type parameters were not printed.
+
   This release also fixes a small database bug.
+
   The config file has a new entry (*davserver*) which you can set to
   either davical or sabredav (depending on your CardDAV server).
 

@@ -154,6 +154,8 @@ class PcQuery(object):
         for line in contact.get_prop(prop.upper()):
             if len(line.type_list()) != 0:
                 print unicode(prop.capitalize() + line.type_list_pretty() + u": " + line.value()).encode(self.encoding)
+            else:
+                print unicode(prop.capitalize() + u": " + line.value()).encode(self.encoding)
 
     def print_contact_info(self, contact_href):
         """new style contact card information printing"""
