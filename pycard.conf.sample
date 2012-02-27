@@ -2,6 +2,10 @@
 user: username
 passwd: yourpassword
 resource: https://carddav.server.tld/davical/caldav.php/username/addressbook/
+# or for owncload
+#resource:  https://[server]/owncloud/apps/contacts/carddav.php/addressbooks/[user]/[addressbook name]/
+# sabredav:
+#resource: https://[server]/sabredav/carddav.php/addressbooks/[user]/[addressbook name]/
 base_url: https://carddav.serer.tld
 insecure_ssl: 0
 db_path: /home/localuser/.pycard/abook.db
