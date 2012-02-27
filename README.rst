@@ -7,13 +7,15 @@ News
   **New** sabredav/owncloud support, thanks Davide Gerhard.
   This release also fixes a small database bug.
   The config file has a new entry (*davserver*) which you can set to
-  either davical or sabredav.
+  either davical or sabredav (depending on your CardDAV server).
 
-  Plans for the future:
+  Future:
   The source code has been cleaned up quite a bit (nearly every line of code
   has been touched) and some features have been added. Write support is nearly
   finished in the backend (but will probably not be included in the next
-  release yet), but the frontend is still really buggy and a pain to use.
+  release yet), but the frontend is still really buggy and a pain to use. If
+  you want to have a look, check the repository out at github and check the
+  branch *write_support* (but it might me broken).
 
 06.01.2012: pyCardDAV v0.3.2_ released:
   this is a minor bugfix update, db deleting should not be necessary. If
