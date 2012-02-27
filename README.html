@@ -70,6 +70,17 @@
 <div class="section" id="news">
 <h1>News</h1>
 <dl class="docutils">
+<dt>27.01.2012: pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.3.3.tgz">v0.3.3</a> released:</dt>
+<dd><p class="first"><span class="label success">New</span> sabredav/owncloud support, thanks Davide Gerhard.
+This release also fixes a small database bug.
+The config file has a new entry (<em>davserver</em>) which you can set to
+either davical or sabredav.</p>
+<p class="last">Plans for the future:
+The source code has been cleaned up quite a bit (nearly every line of code
+has been touched) and some features have been added. Write support is nearly
+finished in the backend (but will probably not be included in the next
+release yet), but the frontend is still really buggy and a pain to use.</p>
+</dd>
 <dt>06.01.2012: pyCardDAV <a class="reference external" href="http://pycarddav.lostpackets.de/download/pycarddav0.3.2.tgz">v0.3.2</a> released:</dt>
 <dd>this is a minor bugfix update, db deleting should not be necessary. If
 everything is working fine at the moment, there is no need to upgrade.</dd>
@@ -111,7 +122,7 @@ together <a class="reference external" href="http://vobject.skyhouseconsulting.c
 <ul class="simple">
 <li><em>pyCardDAV</em> can only use one addressbook resource at the moment</li>
 <li><em>pyCardDAV</em> is read-only for now</li>
-<li><em>pyCardDAV</em> is only tested against davical</li>
+<li><em>pyCardDAV</em> is only tested against davical and owncloud/sabredav</li>
 <li><span class="label important">Warning</span> your password is stored in cleartext in the config file</li>
 </ul>
 </div>
@@ -127,7 +138,7 @@ Users of python versions &lt; 2.7 will also need to install argparse.</p>
 <p><em>pyCardDAV</em> has so far been successfully tested on recent versions of FreeBSD,
 NetBSD, Debian and Ubuntu with python 2.6 and 2.7 and against davical 0.9.9.4 -
 1.0.1 (later versions should be ok, too, but 0.9.9.3 and earlier don't seem
-to work).</p>
+to work) and owncloud (which uses sabredav).</p>
 <p>NetBSD/pkgsrc users can install <em>pyCardDAV</em> via <a class="reference external" href="http://pkgsrc.se/misc/py-carddav">pkgsrc</a>.</p>
 </div>
 <div class="section" id="usage">
