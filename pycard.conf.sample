@@ -1,8 +1,7 @@
 [default]
 user: username
 passwd: yourpassword
-resource: https://carddav.server.tld/davical/caldav.php/username/addressbook/
-base_url: https://carddav.serer.tld
+resource: https://carddav.server.tld:80/davical/caldav.php/username/addressbook/
 db_path: /home/localuser/.pycard/abook.db
 DEBUG: 0
 

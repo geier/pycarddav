@@ -76,7 +76,7 @@ def main():
         syncer.passwd = conf_parser.get('default', 'passwd')
     except NoOptionError:
         syncer.passwd = getpass.getpass(prompt='CardDAV password: ')
-    syncer.base_url = conf_parser.get('default', 'base_url')
+    #syncer.base_url = conf_parser.get('default', 'base_url')
     debug = bool(conf_parser.getint('default', 'DEBUG'))
     if args.debug:   # argument overrides config file
         debug = bool(args.debug)
