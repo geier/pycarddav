@@ -36,9 +36,6 @@ def signal_handler(*_):
     sys.exit(0)
 
 
-no_strings = [u"n", "n", u"no", "no"]
-yes_strings = [u"y", "y", u"yes", "yes"]
-
 
 def main():
     """this should probably be seperated from the class definitions"""
@@ -120,9 +117,9 @@ def main():
             vcard.prettyPrint()
             while True:
                 answer = raw_input("Import this card [y/n]? ")
-                if answer.lower() in no_strings:
+                if answer.lower() in pycard.NOSTRINGS:
                     break
-                if answer.lower() in yes_strings:
+                if answer.lower() in pycard.YESSTRINGS:
                     while True:
                         tmp_vref = pycard.get_random_href()
                         if my_dbtool.check_vref_exists(tmp_vref):

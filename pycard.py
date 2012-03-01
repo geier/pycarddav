@@ -102,7 +102,7 @@ class VCard(list):
             collector.append(prop.prop)
         return list(set(collector))
 
-    def print_contact_info(self, display_all=False, numbers=False):
+    def print_contact_info(self, display_all=False):
         """new style contact card information printing"""
         print_bold(unicode("Name: " + self.name()).encode("utf-8"))
         for prop in ("EMAIL", "TEL", ):
@@ -194,7 +194,7 @@ class CardProperty(list):
             self.edited = 1
         temp = raw_input(u"Types [" + self.type_list() + u"]: ")
         if not temp == unicode():
-            self.types = temp
+            self.type_list = temp
             self.edited = 1
 
     def print_yourself(self):
@@ -243,7 +243,8 @@ class PcQuery(object):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = ('%' + search_string + '%', )
-        cursor.execute('SELECT href FROM properties WHERE value LIKE (?)', stuple)
+        cursor.execute('SELECT href FROM properties WHERE value LIKE (?)',
+                stuple)
         result = cursor.fetchall()
         result = list(set(result))
         conn.close()
@@ -302,7 +303,8 @@ class PcQuery(object):
                 "outdated database.\nYou should consider to remove it and "
                 "sync again using pycardsyncer.\n")
         #except Exception, error:
-        #    sys.stderr.write('Failed to connect to database, Unknown Error: ' + str(error)+"\n")
+        #    sys.stderr.write('Failed to connect to database,"
+        #            "Unknown Error: ' + str(error)+"\n")
 
     def _make_tables(self):
         """creates tables, also checks existing tables for version number"""
@@ -556,7 +558,8 @@ class PcQuery(object):
                             print "didnt work"
 
                 except AttributeError:
-                    stuple = (unicode(property_name), unicode(property_value), vref, unicode(line.params),)
+                    stuple = (unicode(property_name), unicode(property_value),
+                              vref, unicode(line.params),)
 
                     cursor.execute('INSERT INTO properties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
                     conn.commit()
@@ -650,8 +653,12 @@ def header_parser(header_string):
             pass
     return head
 
-no_strings = [u"n", "n", u"no", "no"]
-yes_strings = [u"y", "y", u"yes", "yes"]
+NOSTRINGS = [u"n", "n", u"no", "no"]
+YESSTRINGS = [u"y", "y", u"yes", "yes"]
+
+DAVICAL = 'davical'
+SABREDAV = 'sabredav'
+UNKNOWN = 'unknown server'
 
 
 class PyCardDAV(object):
@@ -670,7 +677,7 @@ class PyCardDAV(object):
         self.curl = pycurl.Curl()
         self.response = StringIO.StringIO()
         self._header = StringIO.StringIO()
-        self.server_type = self._detect_server()
+        self.heade = dict()
 
 
     def _detect_server(self):
@@ -683,12 +690,21 @@ class PyCardDAV(object):
         self.curl.setopt(pycurl.CUSTOMREQUEST, "OPTIONS")
         self.curl.setopt(pycurl.URL, self.base_url)
         self.perform_curl()
+        print self.header
         if self.header.has_key("X-Sabre-Version:"):
-            return "sabredav"
-        if self.header.has_key("X-DAViCal-Version:"):
-            return "davical"
+            server =  SABREDAV
+        elif self.header.has_key("X-DAViCal-Version:"):
+            server = DAVICAL
+        else:
+            server = UNKNOWN
+        if self.debug:
+            print server + " detected"
+        return server
 
     def get_abook(self):
+        """
+        :rtype: list of hrefs to vcards
+        """
         xml = self._get_xml_props()
         abook = self._process_xml_props(xml)
         return abook
@@ -737,7 +753,7 @@ class PyCardDAV(object):
         :type card: unicode
         :rtype: string, path of the vcard on the server
         """
-        for _ in range(0,5):
+        for _ in range(0, 5):
             rand_string = get_random_href()
             remotepath = str(self.resource + rand_string + ".vcf")
             self._curl_reset()
@@ -817,7 +833,7 @@ class PyCardDAV(object):
                         href = refprop.text
                     for prop in refprop.iterchildren():
                         for props in prop.iterchildren():
-                            if (props.tag == namespace + "getcontenttype" and props.text == "text/vcard"):
+                            if (props.tag == namespace + "getcontenttype" and ( props.text == "text/vcard" or props.text == "text/x-vcard" )) :
                                 insert = True
                             if (props.tag == namespace + "getetag"):
                                 etag = props.text
