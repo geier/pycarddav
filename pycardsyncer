@@ -53,7 +53,7 @@ def main():
         default="~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
     arg_parser.add_argument("-v", "--version", action="version",
-            version="0.3.1")
+            version="0.4a")
     arg_parser.add_argument("--debug", action="store_true", dest="debug",
             help="enable debugging; WARNING: shows passwords in cleartext")
     arg_parser.add_argument("-b", "--backup", action="store",
@@ -76,6 +76,13 @@ def main():
         syncer.passwd = conf_parser.get('default', 'passwd')
     except NoOptionError:
         syncer.passwd = getpass.getpass(prompt='CardDAV password: ')
+    try:
+        temp = conf_parser.get('default', 'write_support')
+        if temp == 'YesPleaseIDoHaveABackupOfMyData':
+             syncer.write_support = True
+    except NoOptionError:
+        pass
+
     syncer.base_url = conf_parser.get('default', 'base_url')
     debug = bool(conf_parser.getint('default', 'DEBUG'))
     if args.debug:   # argument overrides config file
@@ -155,14 +162,14 @@ def main():
         hrefs = my_dbtool.get_local_edited_hrefs()
         for href in hrefs:
             if debug:
-                print "updating " + href
+                print "trying to update " + href
             card = my_dbtool.get_vcard_from_db(href)
             syncer.update_vcard(card.serialize(), href)
             my_dbtool.reset_flag(href)
         hrefs = my_dbtool.get_local_new_hrefs()
         for href in hrefs:
             if debug:
-                print "uploading new card " + href
+                print "trying to upload new card " + href
             card = my_dbtool.get_vcard_from_db(href)
             href_new = syncer.upload_new_card(card.serialize())
             my_dbtool.update_vref(href, href_new)

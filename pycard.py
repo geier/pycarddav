@@ -669,6 +669,12 @@ class PyCardDAV(object):
         self.curl = pycurl.Curl()
         self.response = StringIO.StringIO()
         self.header = StringIO.StringIO()
+        self.write_support = False
+
+    def check_write_support(self):
+        if not self.write_support:
+            sys.stderr.write("Sorry, no write support for you. Please check the documentation.\n")
+            sys.exit(1)
 
     def get_abook(self):
         xml = self._get_xml_props()
@@ -705,6 +711,7 @@ class PyCardDAV(object):
         card: vcard as unicode string
          """
         # TODO
+        self.check_write_support()
         print "uploading your changes..."
         self._curl_reset()
         remotepath = str(self.base_url + vref)
@@ -734,6 +741,7 @@ class PyCardDAV(object):
         :type card: unicode
         :rtype: string, path of the vcard on the server
         """
+        self.check_write_support()
         for _ in range(0,5):
             rand_string = get_random_href()
             remotepath = str(self.resource + rand_string + ".vcf")

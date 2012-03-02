@@ -49,7 +49,8 @@ def main():
         "-c", "--config", action = "store", dest = "configfile",
         default = "~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
-    parser.add_argument("-v", "--version", action = "version", version = "0.3.2")
+    parser.add_argument("-v", "--version", action = "version",
+            version = "0.4a")
     parser.add_argument("-a", action = "store_true", dest = "display_all",
             default = "False", help = "prints the whole card, not only name, "
             "telephone numbers and email addresses")
@@ -57,7 +58,11 @@ def main():
             const = "print_email", default = "print_contact_info",
             help = "only prints email addresses, in a mutt friendly format")
     parser.add_argument("-e", dest = "edit", action = "store_true",
-            default = "False", help="edit the contact file")
+            default = "False", help="edit the contact file.\n"
+            "NOTE: this feature is experimental and will probably corrupt "
+            "your *local* database. Your remote CardDAV resource will stay "
+            "untouched, as long as You don't enable write support for the "
+            "syncer.")
     parser.add_argument("--debug", action = "store_true", dest = "debug",
             default = "False", help = "enable debugging")
     parser.add_argument("search_string", metavar = "SEARCHSTRING",
