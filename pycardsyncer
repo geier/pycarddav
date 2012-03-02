@@ -83,7 +83,6 @@ def main():
     except NoOptionError:
         pass
 
-    syncer.base_url = conf_parser.get('default', 'base_url')
     debug = bool(conf_parser.getint('default', 'DEBUG'))
     if args.debug:   # argument overrides config file
         debug = bool(args.debug)

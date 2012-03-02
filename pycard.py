@@ -638,6 +638,7 @@ def header_parser(header_string):
     """
 
     head = dict()
+    #import ipdb; ipdb.set_trace()
     for line in header_string.split("\r\n"):
         test = line.split(" ", 1)
         if not head.has_key(test[0]):
@@ -670,23 +671,34 @@ class PyCardDAV(object):
         self.response = StringIO.StringIO()
         self.header = StringIO.StringIO()
         self.write_support = False
+        self._header = StringIO.StringIO()
+        self.server_type = self._detect_server()
 
     def check_write_support(self):
         if not self.write_support:
-            sys.stderr.write("Sorry, no write support for you. Please check the documentation.\n")
+            sys.stderr.write("Sorry, no write support for you. Please check the "
+                             "documentation.\n")
             sys.exit(1)
+
+    def _detect_server(self):
+        """detects CardDAV server type
+
+        currently supports davical and sabredav (same as owncloud)
+        :rtype: string "davical" or "sabredav"
+        """
+        self._curl_reset()
+        self.curl.setopt(pycurl.CUSTOMREQUEST, "OPTIONS")
+        self.curl.setopt(pycurl.URL, self.base_url)
+        self.perform_curl()
+        if self.header.has_key("X-Sabre-Version:"):
+            return "sabredav"
+        if self.header.has_key("X-DAViCal-Version:"):
+            return "davical"
 
     def get_abook(self):
         xml = self._get_xml_props()
         abook = self._process_xml_props(xml)
         return abook
-
-    def perform_curl(self):
-        try:
-            self.curl.perform()
-        except pycurl.error, errorstring:
-            sys.stderr.write( str(errorstring[1])+"\n")
-            sys.exit(1)
 
     def get_vcard(self, vref):
         """
@@ -698,11 +710,7 @@ class PyCardDAV(object):
         self.curl.setopt(pycurl.URL, self.base_url + vref)
         self.curl.perform()
 
-        header = self.header.getvalue()
         vcard = self.response.getvalue()
-        if (header.find("addressbook") == -1):
-            print "URL is not a CardDAV resource"
-            sys.exit(1)
         return vcard
 
     def update_vcard(self, card, vref):
@@ -718,9 +726,6 @@ class PyCardDAV(object):
 
         headers = ["Content-Type: application/plain"]
         self.curl.setopt(pycurl.HTTPHEADER, headers)
-        #self.response = StringIO.StringIO()
-        #self.header = StringIO.StringIO()
-        #self.curl.setopt(pycurl.VERBOSE, 1)
         self.curl.setopt(pycurl.UPLOAD, 1)
         self.curl.setopt(pycurl.URL, remotepath)
         tempfile = StringIO.StringIO(card)
@@ -729,7 +734,6 @@ class PyCardDAV(object):
 
         self.curl.perform()
         #cleanup
-        #header = self.header.getvalue()
         tempfile.close()
         self.curl.close()
 
@@ -757,8 +761,7 @@ class PyCardDAV(object):
             self.curl.setopt(pycurl.INFILESIZE, tempfile.len)
             #import ipdb; ipdb.set_trace()
             self.perform_curl()
-            header = header_parser(self.header.getvalue())
-            if header['HTTP/1.1'][-1] == '201 Created':
+            if self.header['HTTP/1.1'][-1] == '201 Created':
                 parsed_url = urlparse.urlparse(remotepath)
                 return parsed_url.path
             # TODO: should raise an exception if this is ever reached
@@ -770,9 +773,9 @@ class PyCardDAV(object):
         """
         self.curl = pycurl.Curl()
         self.response = StringIO.StringIO()
-        self.header = StringIO.StringIO()
+        self._header = StringIO.StringIO()
         self.curl.setopt(pycurl.WRITEFUNCTION, self.response.write)
-        self.curl.setopt(pycurl.HEADERFUNCTION, self.header.write)
+        self.curl.setopt(pycurl.HEADERFUNCTION, self._header.write)
         self.curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_SSLv3)
         self.curl.setopt(pycurl.USERPWD, self.user + ":" + self.passwd)
         if (self.insecure_ssl == 1):
@@ -780,19 +783,33 @@ class PyCardDAV(object):
         if self.ssl_cacert_file:
             self.curl.setopt(pycurl.CAINFO, path.expanduser(self.ssl_cacert_file))
 
+    def perform_curl(self):
+        try:
+            self.curl.perform()
+        except pycurl.error, errorstring:
+            sys.stderr.write( str(errorstring[1])+"\n")
+            sys.exit(1)
+        self.header = header_parser(self._header.getvalue())
+
     def _get_xml_props(self):
-        """returns xml (str)"""
+        """PROPFIND method
+
+        gets the xml file with all vcard hrefs
+
+        :rtype: str (an xml file)
+        """
         self._curl_reset()
         self.curl.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
         self.curl.setopt(pycurl.URL, self.resource)
-        #self.curl.perform()
         self.perform_curl()
-        header = self.header.getvalue()
-        xml = self.response.getvalue()
-        if (header.find("addressbook") == -1):
-            print "URL is not a CardDAV resource"
+        try:
+            if self.header['DAV:'].count('addressbook') == 0:
+                print "URL is not a CardDAV resource"
+                sys.exit(1)
+        except KeyError:
+            print "URL is not a DAV resource"
             sys.exit(1)
-        return xml
+        return self.response.getvalue()
 
     def _process_xml_props(self, xml):
         """returns abook (dict())"""
