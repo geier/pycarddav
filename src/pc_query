@@ -107,6 +107,9 @@ def main():
 
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
+    test = my_query.select_entry_urwid()
+    print test
+    #import ipdb; ipdb.set_trace()
 
     print "searching for " + args.search_string + "..."
     my_query.search(args.search_string.decode("utf-8"))

@@ -16,6 +16,9 @@ from os import path
 import ast
 import StringIO
 import urlparse
+import urwid
+
+import my_exceptions
 
 try:
     from termcolor import cprint
@@ -52,6 +55,18 @@ except ImportError:
     print "py-lxml not installad"
     sys.exit(1)
 
+class SelText(urwid.Text):
+    def __init__(self, text, href):
+        urwid.Text.__init__(self, text)
+        self.href = href
+
+    def selectable(self):
+        return True
+    def keypress(self, size, key):
+        return key
+
+class MessageException(Exception):
+    pass
 
 class VCard(list):
     """
@@ -282,6 +297,45 @@ class PcQuery(object):
         #else:
         return card_to_edit
 
+    def select_entry_urwid(self):
+
+        names = self.get_names_vref_from_db()
+
+        name_list = list()
+        for one in names:
+            name_list.append(SelText(one[0], one[1]))
+        palette = [('header', 'white', 'black'),
+            ('reveal focus', 'black', 'dark cyan', 'standout'),]
+        content = urwid.SimpleListWalker([
+            urwid.AttrMap(w, None, 'reveal focus') for w in name_list ])
+
+        #import ipdb; ipdb.set_trace()
+
+        listbox = urwid.ListBox(content)
+        show_key = urwid.Text(u"", wrap='clip')
+        head = urwid.AttrMap(show_key, 'header')
+        top = urwid.Frame(listbox, head)
+
+        def show_all_input(input, raw):
+            show_key.set_text(u"Pressed: " + u" ".join([
+                unicode(i) for i in input]))
+            return input
+
+        def keystroke(input):
+            if input == 'q':
+                raise urwid.ExitMainLoop()
+            if input is 'enter':
+                focus = listbox.get_focus()[0].original_widget
+                #sys.exit(focus.href)
+                raise my_exceptions.MessageException(focus.href)
+
+        loop = urwid.MainLoop(top, palette,
+            input_filter=show_all_input, unhandled_input=keystroke)
+        try:
+            loop.run()
+        except my_exceptions.MessageException as error:
+            return error
+
     def _check_table_version(self):
         """
         tests for curent db Version
@@ -476,6 +530,16 @@ class PcQuery(object):
         cursor.execute('SELECT href FROM vcardtable')
         result = cursor.fetchall()
         return [row[0] for row in result]
+
+    def get_names_vref_from_db(self):
+        """
+        :return: list of tuples(name, vref) of all entries from the db
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT name, href FROM vcardtable ORDER BY name')
+        result = cursor.fetchall()
+        return result
 
     def get_vcard_from_db(self, vref):
         """returns a vobject.vCard()"""
