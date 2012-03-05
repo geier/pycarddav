@@ -17,6 +17,7 @@ from os import path
 import argparse
 from ConfigParser import SafeConfigParser
 import pycard
+import vcard
 
 try:
     from termcolor import cprint
@@ -88,7 +89,10 @@ def main():
 
     # editing a card:
     if (args.edit == True):
-        contact = my_query.select_entry(args.search_string.decode("utf-8"))
+        href = my_query.select_entry_urwid(args.search_string.decode('utf-8'))
+        print href
+
+        contact = my_query.get_vcard_from_db(href)
         while True:
             contact.edit()
             for prop in contact:
@@ -107,8 +111,6 @@ def main():
 
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
-    test = my_query.select_entry_urwid()
-    print test
     #import ipdb; ipdb.set_trace()
 
     print "searching for " + args.search_string + "..."

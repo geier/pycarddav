@@ -17,6 +17,7 @@ import ast
 import StringIO
 import urlparse
 import urwid
+import vcard
 
 import my_exceptions
 
@@ -297,10 +298,12 @@ class PcQuery(object):
         #else:
         return card_to_edit
 
-    def select_entry_urwid(self):
+    def select_entry_urwid(self, search_string):
 
-        names = self.get_names_vref_from_db()
-
+        names = self.get_names_vref_from_db(search_string)
+        #import ipdb; ipdb.set_trace()
+        if names == list():
+            return None
         name_list = list()
         for one in names:
             name_list.append(SelText(one[0], one[1]))
@@ -309,7 +312,6 @@ class PcQuery(object):
         content = urwid.SimpleListWalker([
             urwid.AttrMap(w, None, 'reveal focus') for w in name_list ])
 
-        #import ipdb; ipdb.set_trace()
 
         listbox = urwid.ListBox(content)
         show_key = urwid.Text(u"", wrap='clip')
@@ -334,7 +336,7 @@ class PcQuery(object):
         try:
             loop.run()
         except my_exceptions.MessageException as error:
-            return error
+            return str(error)
 
     def _check_table_version(self):
         """
@@ -507,10 +509,11 @@ class PcQuery(object):
         cursor = conn.cursor()
         stuple = (new_vref, old_vref)
         cursor.execute('UPDATE vcardtable SET href=(?) WHERE href=(?);', stuple)
+        cursor.execute('UPDATE properties SET href=(?) WHERE href=(?);', stuple)
         conn.commit()
         cursor.close()
 
-    def delete_vcard_from_db(self, vref):
+    def delete_vcard_props_from_db(self, vref):
         """
         does NOT actually remove the whole vcard, only the lines
         from the property table
@@ -531,15 +534,34 @@ class PcQuery(object):
         result = cursor.fetchall()
         return [row[0] for row in result]
 
-    def get_names_vref_from_db(self):
+    def get_names_vref_from_db(self, searchstring=None):
         """
         :return: list of tuples(name, vref) of all entries from the db
         """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute('SELECT name, href FROM vcardtable ORDER BY name')
-        result = cursor.fetchall()
-        return result
+        if searchstring is None:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('SELECT name, href FROM vcardtable ORDER BY name')
+            result = cursor.fetchall()
+            return result
+        else:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            hrefs = self.get_contact_id_from_string(searchstring)
+            #import ipdb; ipdb.set_trace()
+
+            temp = list()
+            for href in hrefs:
+                try:
+                    #print href[0]
+                    stuple = (href[0],)
+                    cursor.execute('SELECT name, href FROM vcardtable WHERE href =(?)', stuple)
+                    temp.append(cursor.fetchall()[0])
+                except IndexError as e:
+                    print href
+                    print e
+            return temp
+
 
     def get_vcard_from_db(self, vref):
         """returns a vobject.vCard()"""
@@ -550,6 +572,7 @@ class PcQuery(object):
         result = cursor.fetchall()
 
         card = vobject.vCard()
+        import ipdb; ipdb.set_trace()
         for uid, prop, value, parameters in result:
             # atm we need to treat N and ADR properties differently #FIXME
             # BUG: ORG should be treated differently, too

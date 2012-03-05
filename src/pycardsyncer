@@ -147,7 +147,7 @@ def main():
                 my_dbtool.insert_vref(vref)
 
             if my_dbtool.check_new_etag(vref, v_etag):
-                my_dbtool.delete_vcard_from_db(vref)
+                my_dbtool.delete_vcard_props_from_db(vref)
                 if debug:
                     print "getting ", vref, " etag: ", v_etag
                 vcard = syncer.get_vcard(vref)
