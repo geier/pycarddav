@@ -81,7 +81,7 @@ class VCard(list):
             #    except:
             #        pass
             self.append(CardProperty(vcard_property,
-                        unicode(vcard_value),
+                        vcard_value,
                         ast.literal_eval(param_dict), vcard_id), )
         conn.close()
 
@@ -595,9 +595,8 @@ class PcQuery(object):
             #    cats = value.split(',')
             #    print cats
             #    tmp.value = cats
-            #else:
-            #   tmp.value = value
-            tmp.value = value
+            else:
+               tmp.value = value
             tmp.params = ast.literal_eval(parameters)
         cursor.execute('SELECT id, property, value, parameters FROM blobproperties WHERE href=(?)', stuple)
         result = cursor.fetchall()
