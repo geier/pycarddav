@@ -73,7 +73,16 @@ class VCard(list):
         cur.execute('SELECT * FROM properties WHERE href=(?)', stuple)
         result = cur.fetchall()
         for vcard_id, vcard_property, vcard_value, vcard_href, param_dict in result:
-            self.append(CardProperty(vcard_property, vcard_value, ast.literal_eval(param_dict), vcard_id), )
+            #PROPFUCK
+            #if vcard_property in [u"NICKNAMES", u"CATEGORIES"]:
+            #    try:
+            #        vcard_value = ast.literal_eval(unicode(vcard_value))
+            #        vcard_value = ','.join(vcard_value)
+            #    except:
+            #        pass
+            self.append(CardProperty(vcard_property,
+                        unicode(vcard_value),
+                        ast.literal_eval(param_dict), vcard_id), )
         conn.close()
 
     def get_prop(self, card_property):
@@ -537,7 +546,6 @@ class PcQuery(object):
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             hrefs = self.get_contact_id_from_string(searchstring)
-            #import ipdb; ipdb.set_trace()
 
             temp = list()
             for href in hrefs:
@@ -565,14 +573,31 @@ class PcQuery(object):
             # atm we need to treat N and ADR properties differently #FIXME
             # BUG: ORG should be treated differently, too
             tmp = card.add(prop)
-            if prop == u"N":
-                name = value.split(";")
-                tmp.value = vobject.vcard.Name(family=name[0], given=name[1], additional=name[2], prefix=name[3], suffix=name[4])
-            elif prop == u"ADR":
-                adr = value.split(";")
-                tmp.value = vobject.vcard.Address(street=adr[0], city=adr[1], region=adr[2], code=adr[3], country=adr[4], box=adr[5], extended=adr[6])
-            else:
-                tmp.value = value
+            if prop == u'N':
+                name = value.split(';')
+                tmp.value = vobject.vcard.Name(family=name[0],
+                                               given=name[1],
+                                               additional=name[2],
+                                               prefix=name[3],
+                                               suffix=name[4])
+            elif prop == u'ADR':
+                adr = value.split(';')
+                tmp.value = vobject.vcard.Address(street=adr[0],
+                                                  city=adr[1],
+                                                  region=adr[2],
+                                                  code=adr[3],
+                                                  country=adr[4],
+                                                  box=adr[5],
+                                                  extended=adr[6])
+            #PROPFUCK
+            #elif prop in [u'CATEGORIES', u'NICKNAMES'] :
+            #    print value
+            #    cats = value.split(',')
+            #    print cats
+            #    tmp.value = cats
+            #else:
+            #   tmp.value = value
+            tmp.value = value
             tmp.params = ast.literal_eval(parameters)
         cursor.execute('SELECT id, property, value, parameters FROM blobproperties WHERE href=(?)', stuple)
         result = cursor.fetchall()
@@ -631,8 +656,10 @@ class PcQuery(object):
                             print "didnt work"
 
                 except AttributeError:
+                    #PROPFUCK
+                    #if property_name in [u"NICKNAMES",u"CATEGORIES"]:
+                    #    print property_name, " ", property_value
                     stuple = (unicode(property_name), unicode(property_value), vref, unicode(line.params),)
-
                     cursor.execute('INSERT INTO properties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
                     conn.commit()
                     cursor.close()
