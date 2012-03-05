@@ -10,51 +10,33 @@
 classes and methods for pycarddav, the carddav class could/should be moved
 to another module for better reusing
 """
+try:
+    import sys
+    from os import path
+    import ast
+    import StringIO
+    import urlparse
+    import urwid
+    import sqlite3
+    import pycurl
+    import vobject
+    import lxml.etree as ET
 
-import sys
-from os import path
-import ast
-import StringIO
-import urlparse
-import urwid
-import vcard
-
-import my_exceptions
+    import my_exceptions
+except ImportError, error:
+    print error
+    sys.exit(1)
 
 try:
     from termcolor import cprint
-
     def print_bold(text):
         """prints text bold"""
         cprint(text, attrs=['bold'])
 except ImportError:
-
     def print_bold(text):
         """prints text bold"""
         print(text)
 
-try:
-    import sqlite3
-except ImportError:
-    print "pysqlite3 not installed"
-    sys.exit(1)
-try:
-    import pycurl
-except ImportError:
-    print "pycurl not installed"
-    sys.exit(1)
-
-try:
-    import vobject
-except ImportError:
-    print "py-vobject not installed"
-    sys.exit(1)
-
-try:
-    import lxml.etree as ET
-except ImportError:
-    print "py-lxml not installad"
-    sys.exit(1)
 
 class SelText(urwid.Text):
     def __init__(self, text, href):
@@ -68,6 +50,10 @@ class SelText(urwid.Text):
 
 class MessageException(Exception):
     pass
+
+
+NO_STRINGS = [u"n", "n", u"no", "no"]
+YES_STRINGS = [u"y", "y", u"yes", "yes"]
 
 class VCard(list):
     """
@@ -144,7 +130,9 @@ class VCard(list):
                 print '{:>3}'.format(number), line.prop, ":", line.value
             number = number + 1
         while True:
-            input_string = raw_input("Edit ('n' for adding a property, 'e' number for editing the property number, 'd' number for deleting property number, 's' for saving): ")
+            input_string = raw_input("Edit ('n' for adding a property, "
+                "'e' number for editing the property number, "
+                "'d' number for deleting property number, 's' for saving): ")
             if input_string[0:2] in ["e ", u"e "]:
                 id_to_edit = int(input_string[2:])
                 if not id_to_edit == 0:
@@ -155,7 +143,6 @@ class VCard(list):
 
     def save(self):
         """saves the changed properties to the db"""
-        print self
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         for prop in self:
@@ -164,7 +151,9 @@ class VCard(list):
                     prop.types = ast.literal_eval(prop.types)
                 else:
                     prop.types = u"{}"
-                stuple = (unicode(prop.prop), unicode(prop.value), unicode(self.h_ref), unicode(prop.types), unicode(prop.uid))
+                stuple = (unicode(prop.prop), unicode(prop.value),
+                          unicode(self.h_ref), unicode(prop.types),
+                          unicode(prop.uid))
                 print "#####"
                 print stuple
                 cursor.execute('UPDATE properties SET property = ? ,value = ?, href = ?, parameters = ? WHERE id = ?;', stuple)
@@ -200,11 +189,11 @@ class CardProperty(list):
 
     def edit(self):
         """edits this card property"""
-        temp = raw_input(u"Property [" + self.prop + u"]: ")
-        if not temp == unicode():
-            self.prop = temp
-            self.edited = 1
-        temp = raw_input(u"Value [" + self.value + u"]: ")
+    #    temp = raw_input(u"Property [" + self.prop + u"]: ")
+    #    if not temp == unicode():
+    #        self.prop = temp
+    #        self.edited = 1
+        temp = raw_input(self.prop + " [" + self.value + u"]: ")
         if not temp == unicode():
             self.value = temp
             self.edited = 1
@@ -248,9 +237,9 @@ class PcQuery(object):
         while len(contact_ids) != 0:
             contact_id = contact_ids.pop()
             if self.print_function == "print_email":
-                VCard(contact_id[0], self.db_path).print_email()
+                VCard(contact_id, self.db_path).print_email()
             else:
-                VCard(contact_id[0], self.db_path).print_contact_info(self.display_all)
+                VCard(contact_id, self.db_path).print_contact_info(self.display_all)
                 if len(contact_ids) > 0:
                     print ""
 
@@ -263,7 +252,7 @@ class PcQuery(object):
         result = cursor.fetchall()
         result = list(set(result))
         conn.close()
-        return result
+        return [row[0] for row in result]
 
     def select_entry(self, search_string):
         """select a single entry from a list matching the search_string"""
@@ -271,7 +260,7 @@ class PcQuery(object):
         if len(ids) > 1:
             print "There are several cards matching your search string:"
             for i, j in enumerate(ids):
-                contact = VCard(j[0], self.db_path)
+                contact = VCard(j, self.db_path)
                 print (i + 1), contact.name()
             while True:  # should break if input not convertible to int
                 id_to_edit = raw_input("Which one do you want to edit: ")
@@ -553,13 +542,12 @@ class PcQuery(object):
             temp = list()
             for href in hrefs:
                 try:
-                    #print href[0]
-                    stuple = (href[0],)
+                    stuple = (href,)
                     cursor.execute('SELECT name, href FROM vcardtable WHERE href =(?)', stuple)
                     temp.append(cursor.fetchall()[0])
-                except IndexError as e:
+                except IndexError as error:
                     print href
-                    print e
+                    print error
             return temp
 
 
@@ -572,7 +560,7 @@ class PcQuery(object):
         result = cursor.fetchall()
 
         card = vobject.vCard()
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         for uid, prop, value, parameters in result:
             # atm we need to treat N and ADR properties differently #FIXME
             # BUG: ORG should be treated differently, too
@@ -807,7 +795,7 @@ class PyCardDAV(object):
          """
         # TODO
         self.check_write_support()
-        print "uploading your changes..."
+        print str(vref), " uploading your changes..."
         self._curl_reset()
         remotepath = str(self.base_url + vref)
 
