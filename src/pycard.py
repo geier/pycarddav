@@ -590,11 +590,9 @@ class PcQuery(object):
                                                   box=adr[5],
                                                   extended=adr[6])
             #PROPFUCK
-            #elif prop in [u'CATEGORIES', u'NICKNAMES'] :
-            #    print value
-            #    cats = value.split(',')
-            #    print cats
-            #    tmp.value = cats
+            elif prop in [u'CATEGORIES', u'NICKNAMES'] :
+                cats = value.split(',')
+                tmp.value = cats
             else:
                tmp.value = value
             tmp.params = ast.literal_eval(parameters)
@@ -658,10 +656,12 @@ class PcQuery(object):
                     #PROPFUCK
                     #if property_name in [u"NICKNAMES",u"CATEGORIES"]:
                     #    print property_name, " ", property_value
-                    stuple = (unicode(property_name), unicode(property_value), vref, unicode(line.params),)
+                    if type(property_value) == list:
+                        property_value = (',').join(property_value)
+                    stuple = (unicode(property_name), property_value, vref, unicode(line.params),)
                     cursor.execute('INSERT INTO properties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
-                    conn.commit()
                     cursor.close()
+                    conn.commit()
                     #import ipdb; ipdb.set_trace()
                     self.update_name(vref, vcard.fn.value)
         else:
