@@ -39,16 +39,27 @@ except ImportError:
 
 
 class SelText(urwid.Text):
+    """
+    Selectable Text with an aditional href varibale
+    """
     def __init__(self, text, href):
         urwid.Text.__init__(self, text)
         self.href = href
 
     def selectable(self):
+        """needs to be implemented"""
         return True
-    def keypress(self, size, key):
+
+    def keypress(self, _, key):
+        """needs to be implemented"""
         return key
 
 class MessageException(Exception):
+    """
+    this is used for breaking out of urwid's main loop
+    and "returning" a string, this is probably not at all how it is supposed to
+    work. But it works (tm).
+    """
     pass
 
 
@@ -72,7 +83,8 @@ class VCard(list):
         stuple = (h_ref, )
         cur.execute('SELECT * FROM properties WHERE href=(?)', stuple)
         result = cur.fetchall()
-        for vcard_id, vcard_property, vcard_value, vcard_href, param_dict in result:
+        for (vcard_id, vcard_property, vcard_value,
+            vcard_href, param_dict) in result:
             #PROPFUCK
             #if vcard_property in [u"NICKNAMES", u"CATEGORIES"]:
             #    try:
@@ -128,7 +140,8 @@ class VCard(list):
     def print_email(self):
         """prints only name, email and type for use with mutt"""
         for email in self.get_prop('EMAIL'):
-            print unicode(email.value + u"\t" + self.name() + u"\t" + email.type_list()).encode("utf-8")
+            print unicode(email.value + u"\t" + self.name() + u"\t" 
+                          + email.type_list()).encode("utf-8")
 
     def edit(self):
         """proper edit"""
@@ -165,9 +178,12 @@ class VCard(list):
                           unicode(prop.uid))
                 print "#####"
                 print stuple
-                cursor.execute('UPDATE properties SET property = ? ,value = ?, href = ?, parameters = ? WHERE id = ?;', stuple)
+                cursor.execute('UPDATE properties SET property = ? ,'
+                                'value = ?, href = ?, parameters = ? '
+                                'WHERE id = ?;', stuple)
         conn.commit()
-        cursor.execute('UPDATE vcardtable SET edited = 1 WHERE href = ?', (self.h_ref, ))
+        cursor.execute('UPDATE vcardtable SET edited = 1 WHERE href = ?',
+                       (self.h_ref, ))
         conn.commit()
         conn.close()
         print "Saved your edits to the local db. They are NOT yet on the server."
@@ -218,9 +234,12 @@ class CardProperty(list):
         """
         if self.value != unicode():
             if self.params == dict():
-                print unicode(self.prop.capitalize() + u": " + self.value).encode("utf-8")
+                print unicode(self.prop.capitalize() + u": " 
+                              + self.value).encode("utf-8")
             else:
-                print unicode(self.prop.capitalize() + " (" + self.type_list() + u"): " + self.value).encode("utf-8")
+                print unicode(self.prop.capitalize() + " (" 
+                              + self.type_list() + u"): " 
+                              + self.value).encode("utf-8")
 
 
 class PcQuery(object):
@@ -476,7 +495,8 @@ class PcQuery(object):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref, new,)
-        cursor.execute('INSERT INTO vcardtable (href, edited) VALUES (?, ?);', stuple)
+        cursor.execute('INSERT INTO vcardtable (href, edited)'
+                       'VALUES (?, ?);', stuple)
         conn.commit()
         cursor.close()
 
@@ -594,7 +614,7 @@ class PcQuery(object):
                 cats = value.split(',')
                 tmp.value = cats
             else:
-               tmp.value = value
+                tmp.value = value
             tmp.params = ast.literal_eval(parameters)
         cursor.execute('SELECT id, property, value, parameters FROM blobproperties WHERE href=(?)', stuple)
         result = cursor.fetchall()
@@ -633,6 +653,7 @@ class PcQuery(object):
                 try:
                     line.transformFromNative()
                 except:
+                    #FIXME
                     pass
 
                 property_name = line.name
@@ -751,9 +772,6 @@ def header_parser(header_string):
             pass
     return head
 
-no_strings = [u"n", "n", u"no", "no"]
-yes_strings = [u"y", "y", u"yes", "yes"]
-
 
 class PyCardDAV(object):
     """interacts with CardDAV server"""
@@ -776,6 +794,7 @@ class PyCardDAV(object):
         self.server_type = self._detect_server()
 
     def check_write_support(self):
+        """checks if user really wants is data destroyed"""
         if not self.write_support:
             sys.stderr.write("Sorry, no write support for you. Please check the "
                              "documentation.\n")
@@ -797,6 +816,7 @@ class PyCardDAV(object):
             return "davical"
 
     def get_abook(self):
+        """does the propfind and processes what it returns"""
         xml = self._get_xml_props()
         abook = self._process_xml_props(xml)
         return abook
@@ -847,7 +867,7 @@ class PyCardDAV(object):
         :rtype: string, path of the vcard on the server
         """
         self.check_write_support()
-        for _ in range(0,5):
+        for _ in range(0, 5):
             rand_string = get_random_href()
             remotepath = str(self.resource + rand_string + ".vcf")
             self._curl_reset()
@@ -885,6 +905,7 @@ class PyCardDAV(object):
             self.curl.setopt(pycurl.CAINFO, path.expanduser(self.ssl_cacert_file))
 
     def perform_curl(self):
+        """performs curl request and exits gracefully on failure"""
         try:
             self.curl.perform()
         except pycurl.error, errorstring:
