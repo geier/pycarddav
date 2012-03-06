@@ -11,21 +11,24 @@
 utility for querying the database
 """
 
-import sys
-import signal
-from os import path
-import argparse
-from ConfigParser import SafeConfigParser
-import pycard
+try:
+    import sys
+    import signal
+    from os import path
+    import argparse
+    from ConfigParser import SafeConfigParser
+    import pycard
+    import vobject
+except ImportError, error:
+    print error
+    sys.exit(1)
 
 try:
     from termcolor import cprint
-
     def print_bold(text):
         """prints text bold"""
         cprint(text, attrs=['bold'])
 except ImportError:
-
     def print_bold(text):
         """prints text bold"""
         print(text)
@@ -49,7 +52,8 @@ def main():
         "-c", "--config", action = "store", dest = "configfile",
         default = "~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
-    parser.add_argument("-v", "--version", action = "version", version = "0.3.2")
+    parser.add_argument("-v", "--version", action = "version",
+            version = "0.4a")
     parser.add_argument("-a", action = "store_true", dest = "display_all",
             default = "False", help = "prints the whole card, not only name, "
             "telephone numbers and email addresses")
@@ -57,11 +61,20 @@ def main():
             const = "print_email", default = "print_contact_info",
             help = "only prints email addresses, in a mutt friendly format")
     parser.add_argument("-e", dest = "edit", action = "store_true",
-            default = "False", help="edit the contact file")
+            default = "False", help="edit the contact file.\n"
+            "NOTE: this feature is experimental and will probably corrupt "
+            "your *local* database. Your remote CardDAV resource will stay "
+            "untouched, as long as You don't enable write support for the "
+            "syncer.")
     parser.add_argument("--debug", action = "store_true", dest = "debug",
             default = "False", help = "enable debugging")
     parser.add_argument("search_string", metavar = "SEARCHSTRING",
-            help = "the string to search for")
+            help = "the string to search for", nargs = '?' ,default = "")
+    parser.add_argument("-b", "--backup", action="store",
+            dest="backup", help="backup the local db to BACKUP, "
+            "if a SEARCHSTRING is present, only backup cards matching it.")
+    parser.add_argument('-i', '--import', type=argparse.FileType('r'),
+            dest='importing', help='import vcard from file or STDIN')
     args = parser.parse_args()
 
     # let's try to hide some ugly python code, at least when hitting Ctrl-C
@@ -81,9 +94,45 @@ def main():
     my_query.db_path = path.expanduser(db_path)
     my_query.debug = args.debug
 
+    search_string = args.search_string.decode("utf-8")
+
+    my_dbtool = pycard.PcQuery(db_path, "utf-8", "stricts", False)
+
+    #import:
+    if args.importing:
+        for vcard in vobject.readComponents(args.importing):
+            vcard.prettyPrint()
+            while True:
+                answer = raw_input("Import this card [y/n]? ")
+                if answer.lower() in pycard.NO_STRINGS:
+                    break
+                if answer.lower() in pycard.YES_STRINGS:
+                    while True:
+                        tmp_vref = pycard.get_random_href()
+                        if my_dbtool.check_vref_exists(tmp_vref):
+                            my_dbtool.insert_vref(tmp_vref, 2)
+                            break
+                    my_dbtool.insert_vcard_in_db(tmp_vref, vcard)
+                    break
+        sys.exit()
+
+    # backup:
+    if args.backup:
+        vcf_file = open(args.backup, 'w')
+        if search_string == "":
+            hreflist = my_dbtool.get_all_vref_from_db()
+        else:
+            hreflist = my_dbtool.get_contact_id_from_string(search_string)
+        for href in hreflist:
+            card = my_dbtool.get_vcard_from_db(href)
+            vcf_file.write(card.serialize())
+        sys.exit()
+
     # editing a card:
     if (args.edit == True):
-        contact = my_query.select_entry(args.search_string.decode("utf-8"))
+        href = my_query.select_entry_urwid(args.search_string.decode('utf-8'))
+
+        contact = pycard.VCard(href, db_path)
         while True:
             contact.edit()
             for prop in contact:
@@ -102,6 +151,7 @@ def main():
 
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
+    #import ipdb; ipdb.set_trace()
 
     print "searching for " + args.search_string + "..."
     my_query.search(args.search_string.decode("utf-8"))

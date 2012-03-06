@@ -1,9 +1,26 @@
 pyCardDAV
 =========
-News_ About_ Features_ Installation_ Usage_ Feedback_ License_
 
 News
 ----
+27.01.2012: pyCardDAV v0.3.3_ released:
+  **New** sabredav/owncloud support, thanks Davide Gerhard.
+
+  Fixes a bug where properties with no type parameters were not printed.
+
+  This release also fixes a small database bug.
+
+  The config file has a new entry (*davserver*) which you can set to
+  either davical or sabredav (depending on your CardDAV server).
+
+  Future:
+  The source code has been cleaned up quite a bit (nearly every line of code
+  has been touched) and some features have been added. Write support is nearly
+  finished in the backend (but will probably not be included in the next
+  release yet), but the frontend is still really buggy and a pain to use. If
+  you want to have a look, check the repository out at github and check the
+  branch *write_support* (but it might me broken).
+
 06.01.2012: pyCardDAV v0.3.2_ released:
   this is a minor bugfix update, db deleting should not be necessary. If
   everything is working fine at the moment, there is no need to upgrade.
@@ -35,6 +52,7 @@ News
 12.08.2011: pyCardDAV v0.1_ released
   first public version
 
+.. _v0.3.3: http://pycarddav.lostpackets.de/download/pycarddav0.3.3.tgz
 .. _v0.3.2: http://pycarddav.lostpackets.de/download/pycarddav0.3.2.tgz
 .. _v0.3.1: http://pycarddav.lostpackets.de/download/pycarddav0.3.1.tgz
 .. _v0.3: http://pycarddav.lostpackets.de/download/pycarddav0.3.tgz
@@ -64,10 +82,7 @@ Features
 
 - *pyCardDAV* can only use one addressbook resource at the moment
 - *pyCardDAV* is read-only for now
-- *pyCardDAV* is only tested against davical
-- your password is stored in cleartext in the config file
-- *pyCardDAV* simply ignores embedded pictures and will crash on any other
-  embedded binary data
+- *pyCardDAV* is only tested against davical and owncloud/sabredav
 - **Warning** your password is stored in cleartext in the config file
 
 Installation
@@ -82,7 +97,9 @@ Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
 Users of python versions < 2.7 will also need to install argparse.
 
 *pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
-NetBSD, Debian and Ubuntu with python 2.6 and 2.7.
+NetBSD, Debian and Ubuntu with python 2.6 and 2.7 and against davical 0.9.9.4 -
+1.0.1 (later versions should be ok, too, but 0.9.9.3 and earlier don't seem
+to work) and owncloud (which uses sabredav).
 
 NetBSD/pkgsrc users can install *pyCardDAV* via pkgsrc_.
 
@@ -108,6 +125,14 @@ Example from .muttrc::
 
         set query_command="/home/username/bin/pc_query -m '%s'"
 
+The current version features some experimental write support. If you want to
+test this, first make sure **you have a backup of your data**, then you can put
+the line::
+
+        write_support = YesPleaseIDoHaveABackupOfMyData
+
+in your config file.
+
 SSL
 ---
 *pyCardDAV* uses liburl for all interaction with the CardDAV server, so, by
@@ -117,6 +142,7 @@ behaviour; look in pycard.conf.sample for more information.
 Additional Information
 ----------------------
 For now, VCard properties that have no value are not shown.
+
 
 Feedback
 --------

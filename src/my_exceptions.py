@@ -1,0 +1,3 @@
+class MessageException(Exception):
+    pass
+

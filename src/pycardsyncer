@@ -10,19 +10,18 @@
 
 
 #from IPython.Debugger import Tracer; debug_here = Tracer()
-import sys
-import argparse
-import signal
-import getpass
-from os import path
-import pycard
-
-from ConfigParser import SafeConfigParser, NoOptionError
-
 try:
+    import sys
+    import argparse
+    import signal
+    import getpass
+    from os import path
+    import pycard
+
+    from ConfigParser import SafeConfigParser, NoOptionError
     import vobject
-except ImportError:
-    print "py-vobject not installed"
+except ImportError, error:
+    print error
     sys.exit(1)
 
 
@@ -50,13 +49,9 @@ def main():
         default="~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
     arg_parser.add_argument("-v", "--version", action="version",
-            version="0.3.1")
+            version="0.4a")
     arg_parser.add_argument("--debug", action="store_true", dest="debug",
             help="enable debugging; WARNING: shows passwords in cleartext")
-    arg_parser.add_argument("-b", "--backup", action="store",
-            dest="backup", help="backup the local db to BACKUP")
-    arg_parser.add_argument('-i', '--import', type=argparse.FileType('r'),
-            dest='importing', help='import vcard from file or STDIN')
     args = arg_parser.parse_args()
 
     #config file foo
@@ -73,7 +68,13 @@ def main():
         syncer.passwd = conf_parser.get('default', 'passwd')
     except NoOptionError:
         syncer.passwd = getpass.getpass(prompt='CardDAV password: ')
-    #syncer.base_url = conf_parser.get('default', 'base_url')
+    try:
+        temp = conf_parser.get('default', 'write_support')
+        if temp == 'YesPleaseIDoHaveABackupOfMyData':
+            syncer.write_support = True
+    except NoOptionError:
+        pass
+
     debug = bool(conf_parser.getint('default', 'DEBUG'))
     if args.debug:   # argument overrides config file
         debug = bool(args.debug)
@@ -102,68 +103,40 @@ def main():
 
     my_dbtool = pycard.PcQuery(db_path, "utf-8", "stricts", debug)
 
-    # backup:
-    if args.backup:
-        vcf_file = open(args.backup, 'w')
-        hreflist = my_dbtool.get_all_vref_from_db()
-        for href in hreflist:
-            card = my_dbtool.get_vcard_from_db(href)
-            vcf_file.write(card.serialize())
-        sys.exit()
-
-    #import:
-    if args.importing:
-        for vcard in vobject.readComponents(args.importing):
-            vcard.prettyPrint()
-            while True:
-                answer = raw_input("Import this card [y/n]? ")
-                if answer.lower() in pycard.NOSTRINGS:
-                    break
-                if answer.lower() in pycard.YESSTRINGS:
-                    while True:
-                        tmp_vref = pycard.get_random_href()
-                        if my_dbtool.check_vref_exists(tmp_vref):
-                            my_dbtool.insert_vref(tmp_vref, 2)
-                            break
-                    my_dbtool.insert_vcard_in_db(tmp_vref, vcard)
-                    break
-        sys.exit()
-
     # sync:
-    else:
-        abook = syncer.get_abook()
+    abook = syncer.get_abook()
 
-        for vref, v_etag in abook.iteritems():
-            if my_dbtool.check_vref_exists(vref):
-                my_dbtool.insert_vref(vref)
+    for vref, v_etag in abook.iteritems():
+        if my_dbtool.check_vref_exists(vref):
+            my_dbtool.insert_vref(vref)
 
-            if my_dbtool.check_new_etag(vref, v_etag):
-                my_dbtool.delete_vcard_from_db(vref)
-                if debug:
-                    print "getting ", vref, " etag: ", v_etag
-                vcard = syncer.get_vcard(vref)
-                vcard = vobject.readOne(vcard)
-                # import ipdb; ipdb.set_trace()
-                my_dbtool.insert_vcard_in_db(vref, vcard)
-                my_dbtool.update_etag(vref, v_etag)
-        # for now local changes overwritten by remote changes
+        if my_dbtool.check_new_etag(vref, v_etag):
+            my_dbtool.delete_vcard_props_from_db(vref)
+            if debug:
+                print "getting ", vref, " etag: ", v_etag
+            vcard = syncer.get_vcard(vref)
+            vcard = vobject.readOne(vcard)
+            # import ipdb; ipdb.set_trace()
+            my_dbtool.insert_vcard_in_db(vref, vcard)
+            my_dbtool.update_etag(vref, v_etag)
+    # for now local changes overwritten by remote changes
+    if debug:
+        print "getting changed vcards from db"
+    hrefs = my_dbtool.get_local_edited_hrefs()
+    for href in hrefs:
         if debug:
-            print "getting changed vcards from db"
-        hrefs = my_dbtool.get_local_edited_hrefs()
-        for href in hrefs:
-            if debug:
-                print "updating " + href
-            card = my_dbtool.get_vcard_from_db(href)
-            syncer.update_vcard(card.serialize(), href)
-            my_dbtool.reset_flag(href)
-        hrefs = my_dbtool.get_local_new_hrefs()
-        for href in hrefs:
-            if debug:
-                print "uploading new card " + href
-            card = my_dbtool.get_vcard_from_db(href)
-            href_new = syncer.upload_new_card(card.serialize())
-            my_dbtool.update_vref(href, href_new)
-            my_dbtool.reset_flag(href_new)
+            print "trying to update " + href
+        card = my_dbtool.get_vcard_from_db(href)
+        syncer.update_vcard(card.serialize(), href)
+        my_dbtool.reset_flag(href)
+    hrefs = my_dbtool.get_local_new_hrefs()
+    for href in hrefs:
+        if debug:
+            print "trying to upload new card " + href
+        card = my_dbtool.get_vcard_from_db(href)
+        href_new = syncer.upload_new_card(card.serialize())
+        my_dbtool.update_vref(href, href_new)
+        my_dbtool.reset_flag(href_new)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,8 @@
 user: username
 passwd: yourpassword
 resource: https://carddav.server.tld:80/davical/caldav.php/username/addressbook/
+# or for owncloud
+#resource: https://[server]/owncloud/apps/contacts/carddav.php/addressbooks/[user]/[addressbook name]/
 db_path: /home/localuser/.pycard/abook.db
 DEBUG: 0
 
