@@ -169,12 +169,12 @@ class VCard(list):
         cursor = conn.cursor()
         for prop in self:
             if prop.edited == 1:
-                if hasattr(prop, 'types'):
+                if hasattr(prop.params, 'types'):
                     prop.types = ast.literal_eval(prop.types)
                 else:
                     prop.types = u"{}"
                 stuple = (unicode(prop.prop), unicode(prop.value),
-                          unicode(self.h_ref), unicode(prop.types),
+                          unicode(self.h_ref), unicode(prop.params),
                           unicode(prop.uid))
                 print "#####"
                 print stuple
@@ -224,7 +224,7 @@ class CardProperty(list):
             self.edited = 1
         temp = raw_input(u"Types [" + self.type_list() + u"]: ")
         if not temp == unicode():
-            self.type_list = temp
+            self.params[u'TYPE'] = temp.split(',')
             self.edited = 1
 
     def print_yourself(self):
