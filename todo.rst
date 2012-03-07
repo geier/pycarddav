@@ -1,7 +1,11 @@
 FEATURES
 ========
 **WRITE SUPPORT**
-create new vcards
+ -upload (put) DONE, but needs better etag checking
+ - new upload DONE
+ - DELETE
+
+create new vcards manually
 handle more than one search string
 gnome-keychain support
 display only certain x-properties
