@@ -14,4 +14,4 @@ DEBUG: 0
 # this corresponds to curl's -k/--insecure flag
 #insecure_ssl: 0
 # corrpesonds to curl's --cacert
-#ssl_cacert_file = /path/to/cacert.pem
+#ssl_cacert_file: /path/to/cacert.pem

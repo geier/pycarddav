@@ -136,8 +136,12 @@ in your config file.
 SSL
 ---
 *pyCardDAV* uses liburl for all interaction with the CardDAV server, so, by
-default, it uses curl's ssl trust files. You can configure pyCardDAV/curl's
-behaviour; look in pycard.conf.sample for more information.
+default, it uses curl's ssl trust files. If you use SSL to interact with your
+CardDAV Server (you probably should) and you don't have a certificate signed by
+a CA your OS Vendor trusts (like a self-signed certificate or one signed by
+CAcert) you can set *cacert_file* to a path to the CA's root file (must be in
+pem format). If you really don't care about security (you should) you can also
+set *insecure_ssl* to *1* to disable *any* ssl certificate checking.
 
 Additional Information
 ----------------------
