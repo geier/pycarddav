@@ -21,6 +21,7 @@ try:
     import pycurl
     import vobject
     import lxml.etree as ET
+    from collections import namedtuple
 
     import my_exceptions
 except ImportError, error:
@@ -186,7 +187,8 @@ class VCard(list):
                        (self.h_ref, ))
         conn.commit()
         conn.close()
-        print "Saved your edits to the local db. They are NOT yet on the server."
+        print "Saved your edits to the local db."
+        "They are NOT yet on the server."
 
 
 class CardProperty(list):
@@ -267,7 +269,8 @@ class PcQuery(object):
             if self.print_function == "print_email":
                 VCard(contact_id, self.db_path).print_email()
             else:
-                VCard(contact_id, self.db_path).print_contact_info(self.display_all)
+                VCard(contact_id, self.db_path).print_contact_info(
+                        self.display_all)
                 if len(contact_ids) > 0:
                     print ""
 
@@ -317,7 +320,7 @@ class PcQuery(object):
         return card_to_edit
 
     def select_entry_urwid(self, search_string):
-
+        """interactive href seleter (urwid based)"""
         names = self.get_names_vref_from_db(search_string)
         #import ipdb; ipdb.set_trace()
         if names == list():
@@ -329,7 +332,6 @@ class PcQuery(object):
             ('reveal focus', 'black', 'dark cyan', 'standout'),]
         content = urwid.SimpleListWalker([
             urwid.AttrMap(w, None, 'reveal focus') for w in name_list ])
-
 
         listbox = urwid.ListBox(content)
         show_key = urwid.Text(u"", wrap='clip')
@@ -573,7 +575,8 @@ class PcQuery(object):
             for href in hrefs:
                 try:
                     stuple = (href,)
-                    cursor.execute('SELECT name, href FROM vcardtable WHERE href =(?)', stuple)
+                    cursor.execute(
+                        'SELECT name, href FROM vcardtable WHERE href =(?)', stuple)
                     temp.append(cursor.fetchall()[0])
                 except IndexError as error:
                     print href
@@ -786,13 +789,15 @@ class PyCardDAV(object):
     """interacts with CardDAV server"""
 
     def __init__(self, resource):
+        split_url = urlparse.urlparse(resource)
+        url_tuple = namedtuple('url', 'resource base path')
+        login_creds = namedtuple('creds', 'user passwd resource')
+        self.url = url_tuple(resource,
+                             split_url.scheme + '://' + split_url.netloc,
+                             split_url.path)
         self.debug = ""
         self.user = ""
         self.passwd = ""
-        self.resource = resource
-        split_url = urlparse.urlparse(resource)
-        self.base_url = split_url.scheme + '://'  + split_url.netloc
-        self.path = split_url.path
         self.insecure_ssl = 0
         self.ssl_cacert_file = None
         self.curl = pycurl.Curl()
@@ -800,7 +805,7 @@ class PyCardDAV(object):
         self.header = StringIO.StringIO()
         self.write_support = False
         self._header = StringIO.StringIO()
-        self.heade = dict()
+        self.header = dict()
 
     def check_write_support(self):
         """checks if user really wants is data destroyed"""
@@ -817,7 +822,7 @@ class PyCardDAV(object):
         """
         self._curl_reset()
         self.curl.setopt(pycurl.CUSTOMREQUEST, "OPTIONS")
-        self.curl.setopt(pycurl.URL, self.base_url)
+        self.curl.setopt(pycurl.URL, self.url.base)
         self.perform_curl()
         print self.header
         if self.header.has_key("X-Sabre-Version:"):
@@ -846,7 +851,7 @@ class PyCardDAV(object):
         """
         self._curl_reset()
         self.curl.setopt(pycurl.CUSTOMREQUEST, "GET")
-        self.curl.setopt(pycurl.URL, self.base_url + vref)
+        self.curl.setopt(pycurl.URL, self.url.base + vref)
         self.curl.perform()
 
         vcard = self.response.getvalue()
@@ -857,11 +862,11 @@ class PyCardDAV(object):
         pushes changed vcard to the server
         card: vcard as unicode string
          """
-        # TODO
+        # TODO etag checking
         self.check_write_support()
         print str(vref), " uploading your changes..."
         self._curl_reset()
-        remotepath = str(self.base_url + vref)
+        remotepath = str(self.url.base + vref)
 
         headers = ["Content-Type: application/plain"]
         self.curl.setopt(pycurl.HTTPHEADER, headers)
@@ -876,6 +881,14 @@ class PyCardDAV(object):
         tempfile.close()
         self.curl.close()
 
+    def delete_vcard(self, vref, etag, force=False):
+        """deletes vcard from server
+
+        deletes the resource at vref if etag matches, if force=True deletes even
+        if etag does not match
+        """
+        pass
+
     def upload_new_card(self, card):
         """
         upload new card to the server
@@ -887,7 +900,7 @@ class PyCardDAV(object):
         self.check_write_support()
         for _ in range(0, 5):
             rand_string = get_random_href()
-            remotepath = str(self.resource + rand_string + ".vcf")
+            remotepath = str(self.url.resource + rand_string + ".vcf")
             self._curl_reset()
             # doesn't work without escape of *
             headers = ["If-None-Match: \*", "Content-Type: text/vcard"]
@@ -940,7 +953,7 @@ class PyCardDAV(object):
         """
         self._curl_reset()
         self.curl.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
-        self.curl.setopt(pycurl.URL, self.resource)
+        self.curl.setopt(pycurl.URL, self.url.resource)
         self.perform_curl()
         try:
             if self.header['DAV:'].count('addressbook') == 0:

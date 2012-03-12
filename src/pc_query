@@ -109,6 +109,7 @@ def main():
                 if answer.lower() in pycard.YES_STRINGS:
                     while True:
                         tmp_vref = pycard.get_random_href()
+                        #import ipdb; ipdb.set_trace()
                         if my_dbtool.check_vref_exists(tmp_vref):
                             my_dbtool.insert_vref(tmp_vref, 2)
                             break
@@ -151,7 +152,6 @@ def main():
 
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
-    #import ipdb; ipdb.set_trace()
 
     print "searching for " + args.search_string + "..."
     my_query.search(args.search_string.decode("utf-8"))

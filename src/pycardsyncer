@@ -62,7 +62,7 @@ def main():
     conf_parser.read(configfile)
 
     resource = conf_parser.get('default', 'resource')
-    syncer = pycard.PyCardDAV(resource)
+    syncer = pycard.PyCardDAV(resource, )
     syncer.user = conf_parser.get('default', 'user')
     try:
         syncer.passwd = conf_parser.get('default', 'passwd')
@@ -94,8 +94,8 @@ def main():
         print "using remote options:"
         print "  user:", syncer.user
         print "  passwd:", syncer.passwd
-        print "  resource:", syncer.resource
-        print "  base_url:", syncer.base_url
+        print "  resource:", syncer.url.resource
+        print "  base_url:", syncer.url.base
         print "  insecureSSL:", syncer.insecure_ssl
         print "using local options:"
         print "  db_path:", db_path
