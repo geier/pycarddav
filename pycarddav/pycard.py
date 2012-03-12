@@ -339,11 +339,17 @@ class PcQuery(object):
         top = urwid.Frame(listbox, head)
 
         def show_all_input(input, raw):
+            """used for urwid test
+            to be removed
+            """
             show_key.set_text(u"Pressed: " + u" ".join([
                 unicode(i) for i in input]))
             return input
 
         def keystroke(input):
+            """used for urwid test
+            to be removed
+            """
             if input == 'q':
                 raise urwid.ExitMainLoop()
             if input is 'enter':
@@ -545,6 +551,23 @@ class PcQuery(object):
         cursor = conn.cursor()
         stuple = (vref, )
         cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
+        conn.commit()
+        cursor.close()
+
+    def delete_vcard_from_db(self, vref):
+        """
+        removes the whole vcard,
+        from the property and vcardtable table
+        returns nothing
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (vref, )
+        if self.debug:
+            print "locally deleting ", vref
+        cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
+        conn.commit()
+        cursor.execute('DELETE FROM vcardtable WHERE href=(?)', stuple)
         conn.commit()
         cursor.close()
 
@@ -949,7 +972,7 @@ class PyCardDAV(object):
 
         gets the xml file with all vcard hrefs
 
-        :rtype: str (an xml file)
+        :rtype: str() (an xml file)
         """
         self._curl_reset()
         self.curl.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
@@ -965,7 +988,12 @@ class PyCardDAV(object):
         return self.response.getvalue()
 
     def _process_xml_props(self, xml):
-        """returns abook (dict())"""
+        """processes the xml from PROPFIND, listing all vcard hrefs
+
+        :param xml: the xml file
+        :type xml: str()
+        :rtype: dict() key: vref, value: etag
+        """
         namespace = "{DAV:}"
         element = ET.XML(xml)
         abook = dict()

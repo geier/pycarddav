@@ -24,6 +24,7 @@ TODO fix that href vref h_ref mess
 
 DONE
 ====
+DONE: detect remote-deleted vcards, remove them from local db
 DONE: handle photos etc (base64 encoded)
 DONE: creating the dbs
 DONE: use ssl public cert

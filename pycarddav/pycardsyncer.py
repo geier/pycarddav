@@ -105,7 +105,7 @@ def main():
     my_dbtool = pycard.PcQuery(db_path, "utf-8", "stricts", debug)
 
     # sync:
-    abook = syncer.get_abook()
+    abook = syncer.get_abook()  # type (abook): dict
 
     for vref, v_etag in abook.iteritems():
         if my_dbtool.check_vref_exists(vref):
@@ -117,9 +117,22 @@ def main():
                 print "getting ", vref, " etag: ", v_etag
             vcard = syncer.get_vcard(vref)
             vcard = vobject.readOne(vcard)
-            # import ipdb; ipdb.set_trace()
             my_dbtool.insert_vcard_in_db(vref, vcard)
             my_dbtool.update_etag(vref, v_etag)
+
+    # detecting remote-deleted cards
+    ulist = list()
+    # is there a better way to compare a list of unicode() with a list of str()
+    # objects?
+    for one in abook.keys():
+        ulist.append(unicode(one))
+    rlist = my_dbtool.get_all_vref_from_db()
+    delete = set(rlist).difference(ulist)
+    #import ipdb; ipdb.set_trace()
+    for href in delete:
+         my_dbtool.delete_vcard_from_db(href)
+
+
     # for now local changes overwritten by remote changes
     if debug:
         print "getting changed vcards from db"
