@@ -17,6 +17,7 @@ try:
     import getpass
     from os import path
     import pycard
+    import pycarddav
 
     from ConfigParser import SafeConfigParser, NoOptionError
     import vobject
@@ -49,7 +50,7 @@ def main():
         default="~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
     arg_parser.add_argument("-v", "--version", action="version",
-            version="0.4a")
+            version=pycarddav.__version__)
     arg_parser.add_argument("--debug", action="store_true", dest="debug",
             help="enable debugging; WARNING: shows passwords in cleartext")
     args = arg_parser.parse_args()

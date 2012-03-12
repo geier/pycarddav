@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
+import pycarddav
 
 setup(name='pyCardDAV',
-      version = '0.4',
-      description = 'A CardDAV based address book tool',
-      author = 'Christian Geier',
-      author_email = 'pycarddav@lostpackets.de',
-      url = 'http://pycarddav.lostpackets.de',
-      license = 'beerware, see COPYING',
-      py_modules=['src/pycard'],
-      scripts=['src/pycardsyncer', 'src/pc_query'],
+      version = pycarddav.__version__,
+      description = pycarddav.__version__,
+      author = pycarddav.__version__,
+      author_email = pycarddav.__author_email__,
+      url = pycarddav.__homepage__,
+      license = pycarddav.__license__,
+      packages = ['pycarddav'],
+      scripts=['bin/pycardsyncer', 'bin/pc_query'],
       data_files=[('config', ['pycard.conf.sample']),('README', ['README.rst'])],
       )
