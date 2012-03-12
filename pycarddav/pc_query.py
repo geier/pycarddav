@@ -18,6 +18,7 @@ try:
     import argparse
     from ConfigParser import SafeConfigParser
     import pycard
+    import pycarddav
     import vobject
 except ImportError, error:
     print error
@@ -53,7 +54,7 @@ def main():
         default = "~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
     parser.add_argument("-v", "--version", action = "version",
-            version = "0.4a")
+            version = pycarddav.__version__)
     parser.add_argument("-a", action = "store_true", dest = "display_all",
             default = "False", help = "prints the whole card, not only name, "
             "telephone numbers and email addresses")

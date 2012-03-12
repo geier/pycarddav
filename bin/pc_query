@@ -1,0 +1,5 @@
+#!/usr/bin/env python
+
+from pycarddav import pc_query
+pc_query.main()
+
