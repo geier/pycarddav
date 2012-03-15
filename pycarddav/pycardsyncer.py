@@ -18,6 +18,7 @@ try:
     from os import path
     import pycard
     import pycarddav
+    import carddav
 
     from ConfigParser import SafeConfigParser, NoOptionError
     import vobject
@@ -63,7 +64,7 @@ def main():
     conf_parser.read(configfile)
 
     resource = conf_parser.get('default', 'resource')
-    syncer = pycard.PyCardDAV(resource, )
+    syncer = carddav.PyCardDAV(resource, )
     syncer.user = conf_parser.get('default', 'user')
     try:
         syncer.passwd = conf_parser.get('default', 'passwd')

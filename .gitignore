@@ -1,3 +1,5 @@
 *.pyc
 .*.swp
 *.tgz
+dist/
+MANIFEST
