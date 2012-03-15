@@ -7,9 +7,11 @@
 # can do whatever you want with this stuff. If we meet some day, and you think
 # this stuff is worth it, you can buy me a beer in return Christian Geier
 # ----------------------------------------------------------------------------
+"""
+syncs the remote database to the local db
+"""
 
 
-#from IPython.Debugger import Tracer; debug_here = Tracer()
 try:
     import sys
     import argparse
@@ -131,7 +133,7 @@ def main():
     delete = set(rlist).difference(ulist)
     #import ipdb; ipdb.set_trace()
     for href in delete:
-         my_dbtool.delete_vcard_from_db(href)
+        my_dbtool.delete_vcard_from_db(href)
 
 
     # for now local changes overwritten by remote changes

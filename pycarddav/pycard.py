@@ -14,14 +14,9 @@ try:
     import sys
     from os import path
     import ast
-    import StringIO
-    import urlparse
     import urwid
     import sqlite3
-    import pycurl
     import vobject
-    import lxml.etree as ET
-    from collections import namedtuple
 
     import my_exceptions
 except ImportError, error:
@@ -488,7 +483,8 @@ class PcQuery(object):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref, )
-        cursor.execute('SELECT count(*) FROM vcardtable WHERE href=(?);', stuple)
+        cursor.execute('SELECT count(*) FROM vcardtable WHERE href=(?);',
+                        stuple)
         if cursor.fetchall() == [(1, )]:
             return_code = False
         else:
@@ -599,7 +595,8 @@ class PcQuery(object):
                 try:
                     stuple = (href,)
                     cursor.execute(
-                        'SELECT name, href FROM vcardtable WHERE href =(?)', stuple)
+                        'SELECT name, href FROM vcardtable WHERE href =(?)',
+                         stuple)
                     temp.append(cursor.fetchall()[0])
                 except IndexError as error:
                     print href
@@ -612,7 +609,8 @@ class PcQuery(object):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref, )
-        cursor.execute('SELECT id, property, value, parameters FROM properties WHERE href=(?)', stuple)
+        cursor.execute('SELECT id, property, value, parameters FROM properties '
+                        'WHERE href=(?)', stuple)
         result = cursor.fetchall()
 
         card = vobject.vCard()
@@ -644,7 +642,8 @@ class PcQuery(object):
             else:
                 tmp.value = value
             tmp.params = ast.literal_eval(parameters)
-        cursor.execute('SELECT id, property, value, parameters FROM blobproperties WHERE href=(?)', stuple)
+        cursor.execute('SELECT id, property, value, parameters '
+                       'FROM blobproperties WHERE href=(?)', stuple)
         result = cursor.fetchall()
         for uid, prop, value, parameters in result:
             tmp = card.add(prop)
@@ -678,11 +677,8 @@ class PcQuery(object):
         """
         if vcard.name == "VCARD":
             for line in vcard.getChildren():
-                try:
-                    line.transformFromNative()
-                except:
-                    #FIXME
-                    pass
+                # this might break, was tried/excepted before
+                line.transformFromNative()
 
                 property_name = line.name
                 property_value = line.value
@@ -693,13 +689,13 @@ class PcQuery(object):
                 try:
                     if line.ENCODING_paramlist == [u'b']:
                         print "found binary"
-                        try:
-                            stuple = (unicode(property_name), sqlite3.Binary(property_value), vref, unicode(line.params),)
-                            cursor.execute('INSERT INTO blobproperties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
-                            conn.commit()
-                        except:
-                            # FIXME
-                            print "didnt work"
+                        stuple = (unicode(property_name),
+                                  sqlite3.Binary(property_value),
+                                  vref, unicode(line.params),)
+                        cursor.execute('INSERT INTO blobproperties '
+                                '(property, value, href, parameters) '
+                                'VALUES (?,?,?,?);', stuple)
+                        conn.commit()
 
                 except AttributeError:
                     #PROPFUCK
@@ -707,8 +703,11 @@ class PcQuery(object):
                     #    print property_name, " ", property_value
                     if type(property_value) == list:
                         property_value = (',').join(property_value)
-                    stuple = (unicode(property_name), property_value, vref, unicode(line.params),)
-                    cursor.execute('INSERT INTO properties (property, value, href, parameters) VALUES (?,?,?,?);', stuple)
+                    stuple = (unicode(property_name), property_value,
+                              vref, unicode(line.params),)
+                    cursor.execute('INSERT INTO properties '
+                                   '(property, value, href, parameters) '
+                                   'VALUES (?,?,?,?);', stuple)
                     cursor.close()
                     conn.commit()
                     #import ipdb; ipdb.set_trace()
@@ -724,7 +723,8 @@ class PcQuery(object):
         cursor = conn.cursor()
         stuple = (href, )
 
-        cursor.execute('UPDATE vcardtable SET edited = 0 WHERE href = ?', stuple)
+        cursor.execute('UPDATE vcardtable SET edited = 0 WHERE href = ?',
+                       stuple)
         conn.commit()
         conn.close()
 
