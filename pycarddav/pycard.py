@@ -141,13 +141,14 @@ class VCard(list):
 
     def edit(self):
         """proper edit"""
-        number = 1
-        print '{:>3}'.format("0"), "NAME", ":", self.name()
-        for line in self:
-            if line.prop not in ["N", "FN", "VERSION"]:
-                print '{:>3}'.format(number), line.prop, ":", line.value
-            number = number + 1
         while True:
+            print ""
+            number = 1
+            print '{:>3}'.format("0"), "NAME", ":", self.name()
+            for line in self:
+                if line.prop not in ["N", "FN", "VERSION"]:
+                    print '{:>3}'.format(number), line.prop, ":", line.value
+                number = number + 1
             input_string = raw_input("Edit ('n' for adding a property, "
                 "'e' number for editing the property number, "
                 "'d' number for deleting property number, 's' for saving): ")
@@ -155,9 +156,10 @@ class VCard(list):
                 id_to_edit = int(input_string[2:])
                 if not id_to_edit == 0:
                     self[id_to_edit - 1].edit()
-                    break
             if input_string in ["s", u"s"]:
                 break
+            if input_string in ['q', u'q']:
+                sys.exit()
 
     def save(self):
         """saves the changed properties to the db"""
@@ -172,8 +174,6 @@ class VCard(list):
                 stuple = (unicode(prop.prop), unicode(prop.value),
                           unicode(self.h_ref), unicode(prop.params),
                           unicode(prop.uid))
-                print "#####"
-                print stuple
                 cursor.execute('UPDATE properties SET property = ? ,'
                                 'value = ?, href = ?, parameters = ? '
                                 'WHERE id = ?;', stuple)

@@ -133,6 +133,10 @@ def main():
     # editing a card:
     if (args.edit == True):
         href = my_query.select_entry_urwid(args.search_string.decode('utf-8'))
+        if href is None:
+            print "Found no matching cards."
+            sys.exit()
+        #import ipdb; ipdb.set_trace()
 
         contact = pycard.VCard(href, db_path)
         while True:
