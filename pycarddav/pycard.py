@@ -81,16 +81,16 @@ class VCard(list):
         result = cur.fetchall()
         for (vcard_id, vcard_property, vcard_value,
             vcard_href, param_dict) in result:
-            #PROPFUCK
-            #if vcard_property in [u"NICKNAMES", u"CATEGORIES"]:
-            #    try:
-            #        vcard_value = ast.literal_eval(unicode(vcard_value))
-            #        vcard_value = ','.join(vcard_value)
-            #    except:
-            #        pass
-            self.append(CardProperty(vcard_property,
-                        vcard_value,
-                        ast.literal_eval(param_dict), vcard_id), )
+            if vcard_property == u'FN':
+                self.fn = vcard_value
+            elif vcard_property == u'N':
+                pass
+            elif vcard_property == u'VERSION':
+                self.version = self.version
+            else:
+                self.append(CardProperty(vcard_property,
+                            vcard_value,
+                            ast.literal_eval(param_dict), vcard_id), )
         conn.close()
 
     def get_prop(self, card_property):
@@ -211,15 +211,11 @@ class CardProperty(list):
 
     def edit(self):
         """edits this card property"""
-    #    temp = raw_input(u"Property [" + self.prop + u"]: ")
-    #    if not temp == unicode():
-    #        self.prop = temp
-    #        self.edited = 1
-        temp = raw_input(self.prop + " [" + self.value + u"]: ")
+        temp = raw_input(smartencode(self.prop + u' [' + self.value + u']: '))
         if not temp == unicode():
             self.value = temp
             self.edited = 1
-        temp = raw_input(u"Types [" + self.type_list() + u"]: ")
+        temp = raw_input(smartencode(u"Types [" + self.type_list() + u"]: "))
         if not temp == unicode():
             self.params[u'TYPE'] = temp.split(',')
             self.edited = 1

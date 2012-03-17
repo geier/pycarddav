@@ -3,3 +3,4 @@
 *.tgz
 dist/
 MANIFEST
+build/
