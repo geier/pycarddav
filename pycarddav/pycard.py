@@ -86,7 +86,7 @@ class VCard(list):
             elif vcard_property == u'N':
                 pass
             elif vcard_property == u'VERSION':
-                self.version = self.version
+                self.version = vcard_value
             else:
                 self.append(CardProperty(vcard_property,
                             vcard_value,
@@ -104,13 +104,6 @@ class VCard(list):
                 collector.append(prop)
         return collector
 
-    def name(self):
-        """
-        returns the name of the contact (FN)
-        fluff to make the rest more readable
-        """
-        return self.get_prop('FN')[0].value
-
     def get_props(self):
         """
         returns a list of all properties (each property only once,
@@ -123,7 +116,7 @@ class VCard(list):
 
     def print_contact_info(self, display_all=False):
         """new style contact card information printing"""
-        print_bold(unicode("Name: " + self.name()).encode("utf-8"))
+        print_bold(unicode("Name: " + self.fn).encode("utf-8"))
         for prop in ("EMAIL", "TEL", ):
             for line in self.get_prop(prop):
                 line.print_yourself()
@@ -136,7 +129,7 @@ class VCard(list):
     def print_email(self):
         """prints only name, email and type for use with mutt"""
         for email in self.get_prop('EMAIL'):
-            print unicode(email.value + u"\t" + self.name() + u"\t" 
+            print unicode(email.value + u"\t" + self.fn + u"\t" 
                           + email.type_list()).encode("utf-8")
 
     def edit(self):
@@ -144,7 +137,7 @@ class VCard(list):
         while True:
             print ""
             number = 1
-            print '{:>3}'.format("0"), "NAME", ":", self.name()
+            print '{:>3}'.format("0"), "NAME", ":", self.fn
             for line in self:
                 if line.prop not in ["N", "FN", "VERSION"]:
                     print '{:>3}'.format(number), line.prop, ":", line.value
@@ -284,7 +277,7 @@ class PcQuery(object):
             print "There are several cards matching your search string:"
             for i, j in enumerate(ids):
                 contact = VCard(j, self.db_path)
-                print (i + 1), contact.name()
+                print (i + 1), contact.fn
             while True:  # should break if input not convertible to int
                 id_to_edit = raw_input("Which one do you want to edit: ")
                 try:
@@ -694,9 +687,6 @@ class PcQuery(object):
                         conn.commit()
 
                 except AttributeError:
-                    #PROPFUCK
-                    #if property_name in [u"NICKNAMES",u"CATEGORIES"]:
-                    #    print property_name, " ", property_value
                     if type(property_value) == list:
                         property_value = (',').join(property_value)
                     stuple = (unicode(property_name), property_value,
