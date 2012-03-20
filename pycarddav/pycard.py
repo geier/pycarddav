@@ -82,8 +82,9 @@ class VCard(list):
         for (vcard_id, vcard_property, vcard_value,
             vcard_href, param_dict) in result:
             if vcard_property == u'FN':
-                self.fn = vcard_value
+                self.fname = vcard_value
             elif vcard_property == u'N':
+                self.name = vcard_value
                 pass
             elif vcard_property == u'VERSION':
                 self.version = vcard_value
@@ -116,7 +117,7 @@ class VCard(list):
 
     def print_contact_info(self, display_all=False):
         """new style contact card information printing"""
-        print_bold(unicode("Name: " + self.fn).encode("utf-8"))
+        print_bold(unicode("Name: " + self.fname).encode("utf-8"))
         for prop in ("EMAIL", "TEL", ):
             for line in self.get_prop(prop):
                 line.print_yourself()
@@ -129,7 +130,7 @@ class VCard(list):
     def print_email(self):
         """prints only name, email and type for use with mutt"""
         for email in self.get_prop('EMAIL'):
-            print unicode(email.value + u"\t" + self.fn + u"\t" 
+            print unicode(email.value + u"\t" + self.fname + u"\t" 
                           + email.type_list()).encode("utf-8")
 
     def edit(self):
@@ -137,39 +138,70 @@ class VCard(list):
         while True:
             print ""
             number = 1
-            print '{:>3}'.format("0"), "NAME", ":", self.fn
+            print '{:>3}'.format("0"), "NAME", ":", self.fname
             for line in self:
-                if line.prop not in ["N", "FN", "VERSION"]:
-                    print '{:>3}'.format(number), line.prop, ":", line.value
                 number = number + 1
+                print '{:>3}'.format(number), line.prop, ":", line.value
             input_string = raw_input("Edit ('n' for adding a property, "
                 "'e' number for editing the property number, "
                 "'d' number for deleting property number, 's' for saving): ")
             if input_string[0:2] in ["e ", u"e "]:
                 id_to_edit = int(input_string[2:])
-                if not id_to_edit == 0:
+                if id_to_edit == 0:
+                    self.edit_name()
+                else:
                     self[id_to_edit - 1].edit()
             if input_string in ["s", u"s"]:
                 break
             if input_string in ['q', u'q']:
                 sys.exit()
+            if input_string in ['n']:
+                self.add_prop()
+
+    def edit_name(self):
+        """editing the name attributes (N and FN)"""
+        print "sorry, not yet implemented"
+
+    def add_prop(self):
+        """add a new property"""
+        prop = raw_input("Property Name: ")
+        value = raw_input("Value: ")
+        types = raw_input("Types: ")
+        if prop in ['']:
+            return
+        print "test"
+        self.append(CardProperty(prop, value, types, edited=2))
 
     def save(self):
         """saves the changed properties to the db"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         for prop in self:
-            if prop.edited == 1:
+            if prop.edited == 1: # updated property
                 if hasattr(prop.params, 'types'):
                     prop.types = ast.literal_eval(prop.types)
                 else:
-                    prop.types = u"{}"
+                    prop.types = u'{}'
                 stuple = (unicode(prop.prop), unicode(prop.value),
                           unicode(self.h_ref), unicode(prop.params),
                           unicode(prop.uid))
                 cursor.execute('UPDATE properties SET property = ? ,'
                                 'value = ?, href = ?, parameters = ? '
                                 'WHERE id = ?;', stuple)
+            if prop.edited == 2:  # new property
+                if hasattr(prop.params, 'types'):
+                    prop.types = ast.literal_eval(prop.types)
+                else:
+                    prop.types = u'{}'
+                prop.params = u'{}'
+                #FIXME properties not properly saved to db
+                # have to merge type list and the others
+                # using some setting (decorator) for the type_list
+                stuple = (unicode(prop.prop), unicode(prop.value),
+                          unicode(self.h_ref), unicode(prop.params),)
+                cursor.execute('INSERT INTO properties (property ,'
+                                'value, href, parameters) VALUES '
+                                '(?, ?, ?, ?);', stuple)
         conn.commit()
         cursor.execute('UPDATE vcardtable SET edited = 1 WHERE href = ?',
                        (self.h_ref, ))
@@ -198,7 +230,7 @@ class CardProperty(list):
         """returns all types parameters, separated by "," """
         try:
             params = unicode(", ".join(self.params[u'TYPE']))
-        except:
+        except TypeError:
             params = u""
         return params
 
@@ -277,16 +309,16 @@ class PcQuery(object):
             print "There are several cards matching your search string:"
             for i, j in enumerate(ids):
                 contact = VCard(j, self.db_path)
-                print (i + 1), contact.fn
+                print (i + 1), contact.fname
             while True:  # should break if input not convertible to int
                 id_to_edit = raw_input("Which one do you want to edit: ")
-                try:
-                    id_to_edit = int(id_to_edit)
-                    if (id_to_edit > 0) and (id_to_edit <= len(ids)):  # FIXME
-                        href_to_edit = ids[id_to_edit - 1][0]
-                        break
-                except:
-                    pass
+                #try:
+                id_to_edit = int(id_to_edit)
+                if (id_to_edit > 0) and (id_to_edit <= len(ids)):  # FIXME
+                    href_to_edit = ids[id_to_edit - 1][0]
+                    break
+                #except:
+                #    pass
                 print "Please only type a number between 1 and", len(ids)
         elif len(ids) != 0:
             href_to_edit = ids[0][0]
