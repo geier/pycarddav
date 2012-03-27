@@ -25,10 +25,12 @@ except ImportError, error:
 
 try:
     from termcolor import cprint
+
     def print_bold(text):
         """prints text bold"""
         cprint(text, attrs=['bold'])
 except ImportError:
+
     def print_bold(text):
         """prints text bold"""
         print(text)
@@ -50,6 +52,7 @@ class SelText(urwid.Text):
         """needs to be implemented"""
         return key
 
+
 class MessageException(Exception):
     """
     this is used for breaking out of urwid's main loop
@@ -61,6 +64,7 @@ class MessageException(Exception):
 
 NO_STRINGS = [u"n", "n", u"no", "no"]
 YES_STRINGS = [u"y", "y", u"yes", "yes"]
+
 
 class VCard(list):
     """
@@ -85,7 +89,6 @@ class VCard(list):
                 self.fname = vcard_value
             elif vcard_property == u'N':
                 self.name = vcard_value
-                pass
             elif vcard_property == u'VERSION':
                 self.version = vcard_value
             else:
@@ -130,18 +133,19 @@ class VCard(list):
     def print_email(self):
         """prints only name, email and type for use with mutt"""
         for email in self.get_prop('EMAIL'):
-            print unicode(email.value + u"\t" + self.fname + u"\t" 
+            print unicode(email.value + u"\t" + self.fname + u"\t"
                           + email.type_list()).encode("utf-8")
 
     def edit(self):
         """proper edit"""
         while True:
             print ""
-            number = 1
-            print '{:>3}'.format("0"), "NAME", ":", self.fname
+            number = 0
+            print '{:>3}'.format(number), "NAME", ":", self.fname
             for line in self:
                 number = number + 1
-                print '{:>3}'.format(number), line.prop, ":", line.value
+                print '{:>3}'.format(number), line.prop, '(', \
+                    line.type_list(), ')', ":", line.value
             input_string = raw_input("Edit ('n' for adding a property, "
                 "'e' number for editing the property number, "
                 "'d' number for deleting property number, 's' for saving): ")
@@ -170,14 +174,17 @@ class VCard(list):
         if prop in ['']:
             return
         print "test"
-        self.append(CardProperty(prop, value, types, edited=2))
+        params_d = dict()
+        if not types == unicode():
+            params_d[u'TYPE'] = types.split(',')
+        self.append(CardProperty(prop, value, params_d, edited=2))
 
     def save(self):
         """saves the changed properties to the db"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         for prop in self:
-            if prop.edited == 1: # updated property
+            if prop.edited == 1:  # updated property
                 if hasattr(prop.params, 'types'):
                     prop.types = ast.literal_eval(prop.types)
                 else:
@@ -189,10 +196,10 @@ class VCard(list):
                                 'value = ?, href = ?, parameters = ? '
                                 'WHERE id = ?;', stuple)
             if prop.edited == 2:  # new property
-                if hasattr(prop.params, 'types'):
-                    prop.types = ast.literal_eval(prop.types)
-                else:
-                    prop.types = u'{}'
+                #if hasattr(prop.params, 'types'):
+                #    prop.types = ast.literal_eval(prop.types)
+                #else:
+                #    prop.types = u'{}'
                 prop.params = u'{}'
                 #FIXME properties not properly saved to db
                 # have to merge type list and the others
@@ -229,9 +236,11 @@ class CardProperty(list):
     def type_list(self):
         """returns all types parameters, separated by "," """
         try:
-            params = unicode(", ".join(self.params[u'TYPE']))
+            params = u', '.join(self.params[u'TYPE'])
         except TypeError:
-            params = u""
+            params = u''
+        except KeyError:
+            params = u''
         return params
 
     def edit(self):
@@ -252,11 +261,11 @@ class CardProperty(list):
         """
         if self.value != unicode():
             if self.params == dict():
-                print unicode(self.prop.capitalize() + u": " 
+                print unicode(self.prop.capitalize() + u": "
                               + self.value).encode("utf-8")
             else:
-                print unicode(self.prop.capitalize() + " (" 
-                              + self.type_list() + u"): " 
+                print unicode(self.prop.capitalize() + " ("
+                              + self.type_list() + u"): "
                               + self.value).encode("utf-8")
 
 
@@ -346,9 +355,9 @@ class PcQuery(object):
         for one in names:
             name_list.append(SelText(one[0], one[1]))
         palette = [('header', 'white', 'black'),
-            ('reveal focus', 'black', 'dark cyan', 'standout'),]
+            ('reveal focus', 'black', 'dark cyan', 'standout'), ]
         content = urwid.SimpleListWalker([
-            urwid.AttrMap(w, None, 'reveal focus') for w in name_list ])
+            urwid.AttrMap(w, None, 'reveal focus') for w in name_list])
 
         listbox = urwid.ListBox(content)
         show_key = urwid.Text(u"", wrap='clip')
@@ -533,7 +542,8 @@ class PcQuery(object):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (name, vref)
-        cursor.execute('UPDATE vcardtable SET name=(?) WHERE href=(?);', stuple)
+        cursor.execute('UPDATE vcardtable SET name=(?) WHERE href=(?);',
+                       stuple)
         conn.commit()
         cursor.close()
 
@@ -542,7 +552,8 @@ class PcQuery(object):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (v_etag, vref)
-        cursor.execute('UPDATE vcardtable SET etag=(?) WHERE href=(?);', stuple)
+        cursor.execute('UPDATE vcardtable SET etag=(?) WHERE href=(?);',
+                       stuple)
         conn.commit()
         cursor.close()
 
@@ -554,8 +565,10 @@ class PcQuery(object):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (new_vref, old_vref)
-        cursor.execute('UPDATE vcardtable SET href=(?) WHERE href=(?);', stuple)
-        cursor.execute('UPDATE properties SET href=(?) WHERE href=(?);', stuple)
+        cursor.execute('UPDATE vcardtable SET href=(?) WHERE href=(?);',
+                        stuple)
+        cursor.execute('UPDATE properties SET href=(?) WHERE href=(?);',
+                       stuple)
         conn.commit()
         cursor.close()
 
@@ -625,14 +638,13 @@ class PcQuery(object):
                     print error
             return temp
 
-
     def get_vcard_from_db(self, vref):
         """returns a vobject.vCard()"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref, )
-        cursor.execute('SELECT id, property, value, parameters FROM properties '
-                        'WHERE href=(?)', stuple)
+        cursor.execute('SELECT id, property, value, parameters FROM properties'
+                        ' WHERE href=(?)', stuple)
         result = cursor.fetchall()
 
         card = vobject.vCard()
@@ -658,7 +670,7 @@ class PcQuery(object):
                                                   box=adr[5],
                                                   extended=adr[6])
             #PROPFUCK
-            elif prop in [u'CATEGORIES', u'NICKNAMES'] :
+            elif prop in [u'CATEGORIES', u'NICKNAMES']:
                 cats = value.split(',')
                 tmp.value = cats
             else:
