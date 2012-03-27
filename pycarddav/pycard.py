@@ -338,7 +338,8 @@ class PcQuery(object):
     def select_entry_urwid(self, search_string):
         """interactive href seleter (urwid based)"""
         names = self.get_names_vref_from_db(search_string)
-        #import ipdb; ipdb.set_trace()
+        if len(names) is 1:
+            return names[0][1]
         if names == list():
             return None
         name_list = list()
