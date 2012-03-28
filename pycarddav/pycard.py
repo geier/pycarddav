@@ -196,14 +196,7 @@ class VCard(list):
                                 'value = ?, href = ?, parameters = ? '
                                 'WHERE id = ?;', stuple)
             if prop.edited == 2:  # new property
-                #if hasattr(prop.params, 'types'):
-                #    prop.types = ast.literal_eval(prop.types)
-                #else:
-                #    prop.types = u'{}'
                 prop.params = u'{}'
-                #FIXME properties not properly saved to db
-                # have to merge type list and the others
-                # using some setting (decorator) for the type_list
                 stuple = (unicode(prop.prop), unicode(prop.value),
                           unicode(self.h_ref), unicode(prop.params),)
                 cursor.execute('INSERT INTO properties (property ,'
@@ -578,10 +571,12 @@ class PcQuery(object):
         from the property table
         returns nothing
         """
+        # FIXME this should also reset the etag
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref, )
         cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
+        cursor.execute('DELETE FROM blobproperties WHERE href=(?)', stuple)
         conn.commit()
         cursor.close()
 
