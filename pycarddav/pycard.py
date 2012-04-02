@@ -185,10 +185,6 @@ class VCard(list):
         cursor = conn.cursor()
         for prop in self:
             if prop.edited == 1:  # updated property
-                if hasattr(prop.params, 'types'):
-                    prop.types = ast.literal_eval(prop.types)
-                else:
-                    prop.types = u'{}'
                 stuple = (unicode(prop.prop), unicode(prop.value),
                           unicode(self.h_ref), unicode(prop.params),
                           unicode(prop.uid))
