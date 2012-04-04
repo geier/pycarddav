@@ -10,6 +10,39 @@
 classes and methods for pycarddav, the carddav class could/should be moved
 to another module for better reusing
 """
+
+
+"""
+Database Layout
+===============
+
+current version number: 5
+tables: version, vcardtable, properties, blobproperties
+
+version:
+    version (INT): only one line: current db version
+
+vcardtable:
+    href (TEXT PRIMARY KEY)
+    etag (TEXT)
+    name (TEXT): name as in vcard, seperated by ';'
+    fname (TEXT): formated name
+    version (TEXT): vcard version
+    edited (INT): status of this card
+        * 0: not touched since last sync
+        * 1: properties edited or added (news to be pushed to server)
+        * 2: new card, needs to be created on the server
+
+properties:
+
+
+blobproperties:
+
+
+
+
+"""
+
 try:
     import sys
     from os import path
@@ -81,20 +114,18 @@ class VCard(list):
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
         stuple = (h_ref, )
+        cur.execute('SELECT name, fname, version FROM vcardtable WHERE href=(?)', stuple)
+        result = cur.fetchall()
+        self.name = result[0][0]
+        self.fname = result[0][1]
+
         cur.execute('SELECT * FROM properties WHERE href=(?)', stuple)
         result = cur.fetchall()
         for (vcard_id, vcard_property, vcard_value,
             vcard_href, param_dict) in result:
-            if vcard_property == u'FN':
-                self.fname = vcard_value
-            elif vcard_property == u'N':
-                self.name = vcard_value
-            elif vcard_property == u'VERSION':
-                self.version = vcard_value
-            else:
-                self.append(CardProperty(vcard_property,
-                            vcard_value,
-                            ast.literal_eval(param_dict), vcard_id), )
+            self.append(CardProperty(vcard_property,
+                        vcard_value,
+                        ast.literal_eval(param_dict), vcard_id), )
         conn.close()
 
     def get_prop(self, card_property):
@@ -126,7 +157,7 @@ class VCard(list):
                 line.print_yourself()
         if display_all == True:
             for props in self.get_props():
-                if not props in ("EMAIL", "TEL", "N", "FN"):
+                if not props in ("EMAIL", "TEL",):
                     for line in self.get_prop(props):
                         line.print_yourself()
 
@@ -163,8 +194,19 @@ class VCard(list):
                 self.add_prop()
 
     def edit_name(self):
-        """editing the name attributes (N and FN)"""
-        print "sorry, not yet implemented"
+        """editing the name attributes (N and FN)
+        BruteForce Style
+        """
+        print self.fname
+        name_split = self.name.split(';')
+        name = list()
+        name.append( raw_input('Surname (was: ' + name_split[0] + '):') )
+        name.append(raw_input('Given name (was: ' + name_split[1] + '):') )
+        name.append(raw_input('Surname (was: ' + name_split[2] + '):') )
+        name.append(raw_input('Surname (was: ' + name_split[3] + '):') )
+        self.fname = raw_input('Displayed Name (was: ' + self.fname + '):')
+        self.name = ';'.join(name)
+        self.edited = 1
 
     def add_prop(self):
         """add a new property"""
@@ -173,7 +215,6 @@ class VCard(list):
         types = raw_input("Types: ")
         if prop in ['']:
             return
-        print "test"
         params_d = dict()
         if not types == unicode():
             params_d[u'TYPE'] = types.split(',')
@@ -199,12 +240,16 @@ class VCard(list):
                                 'value, href, parameters) VALUES '
                                 '(?, ?, ?, ?);', stuple)
         conn.commit()
+        if self.edited == 1:  # name & fname edited
+            stuple = (self.fname, self.name, self.h_ref)
+            cursor.execute('UPDATE vcardtable SET fname = ? , '
+                           'name = ? WHERE href = ?;', stuple)
         cursor.execute('UPDATE vcardtable SET edited = 1 WHERE href = ?',
                        (self.h_ref, ))
         conn.commit()
         conn.close()
-        print "Saved your edits to the local db."
-        "They are NOT yet on the server."
+        print "Saved your edits to the local db." \
+              "They are NOT yet on the server."
 
 
 class CardProperty(list):
@@ -296,6 +341,9 @@ class PcQuery(object):
         cursor.execute('SELECT href FROM properties WHERE value LIKE (?)',
                 stuple)
         result = cursor.fetchall()
+        cursor.execute('SELECT href FROM vcardtable WHERE name LIKE (?)',
+                stuple)
+        result.extend(cursor.fetchall())
         result = list(set(result))
         conn.close()
         return [row[0] for row in result]
@@ -312,7 +360,7 @@ class PcQuery(object):
                 id_to_edit = raw_input("Which one do you want to edit: ")
                 #try:
                 id_to_edit = int(id_to_edit)
-                if (id_to_edit > 0) and (id_to_edit <= len(ids)):  # FIXME
+                if (id_to_edit > 0) and (id_to_edit <= len(ids)):  # FIXME what's wrong here again?
                     href_to_edit = ids[id_to_edit - 1][0]
                     break
                 #except:
@@ -384,7 +432,7 @@ class PcQuery(object):
         tests for curent db Version
         if the table is still empty, insert db_version
         """
-        database_version = 4  # the current db VERSION
+        database_version = 5  # the current db VERSION
         #try:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -423,6 +471,8 @@ class PcQuery(object):
                     href TEXT PRIMARY KEY NOT NULL,
                     etag TEXT,
                     name TEXT,
+                    fname TEXT,
+                    version TEXT,
                     edited INT
                     )''')
             if self.debug:
@@ -526,13 +576,20 @@ class PcQuery(object):
         conn.commit()
         cursor.close()
 
-    def update_name(self, vref, name):
-        """ updates the name field in the vcardtable"""
+    def update_name(self, vref, fname, name, version='3.0'):
+        """ updates the name field in the vcardtable
+
+        :parameter fname: formatted name
+        :type fname: unicode()
+        :parameter name: name property as in vcard (seperated by ';')
+        :type name: unicode()
+        :return: nothing
+        """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (name, vref)
-        cursor.execute('UPDATE vcardtable SET name=(?) WHERE href=(?);',
-                       stuple)
+        stuple = (fname, name, version, vref )
+        cursor.execute('UPDATE vcardtable SET fname=(?), name=(?), '
+                       'version=(?) WHERE href=(?);', stuple)
         conn.commit()
         cursor.close()
 
@@ -608,7 +665,7 @@ class PcQuery(object):
         if searchstring is None:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute('SELECT name, href FROM vcardtable ORDER BY name')
+            cursor.execute('SELECT fname, href FROM vcardtable ORDER BY name')
             result = cursor.fetchall()
             return result
         else:
@@ -621,7 +678,7 @@ class PcQuery(object):
                 try:
                     stuple = (href,)
                     cursor.execute(
-                        'SELECT name, href FROM vcardtable WHERE href =(?)',
+                        'SELECT fname, href FROM vcardtable WHERE href =(?)',
                          stuple)
                     temp.append(cursor.fetchall()[0])
                 except IndexError as error:
@@ -641,8 +698,8 @@ class PcQuery(object):
         card = vobject.vCard()
         #import ipdb; ipdb.set_trace()
         for uid, prop, value, parameters in result:
-            # atm we need to treat N and ADR properties differently #FIXME
-            # BUG: ORG should be treated differently, too
+            # atm we need to treat N and ADR properties differently 
+            # FIXME: ORG should be treated differently, too
             tmp = card.add(prop)
             if prop == u'N':
                 name = value.split(';')
@@ -701,14 +758,21 @@ class PcQuery(object):
         returns nothing
         """
         if vcard.name == "VCARD":
+
+            name = vcard.n.value.family + u';' \
+                 + vcard.n.value.given + u';' \
+                 + vcard.n.value.additional + u';' \
+                 + vcard.n.value.prefix + u';' \
+                 + vcard.n.value.suffix
+            fname = vcard.fn.value
+            version = vcard.version.value
             for line in vcard.getChildren():
                 # this might break, was tried/excepted before
                 line.transformFromNative()
 
                 property_name = line.name
                 property_value = line.value
-                # for now, we cannot handle photos (or any other binary data):
-                # FIXME
+
                 conn = sqlite3.connect(self.db_path)
                 cursor = conn.cursor()
                 try:
@@ -723,6 +787,8 @@ class PcQuery(object):
                         conn.commit()
 
                 except AttributeError:
+                    if property_name in [u'FN', u'N', u'VERSION']:
+                        continue
                     if type(property_value) == list:
                         property_value = (',').join(property_value)
                     stuple = (unicode(property_name), property_value,
@@ -732,8 +798,7 @@ class PcQuery(object):
                                    'VALUES (?,?,?,?);', stuple)
                     cursor.close()
                     conn.commit()
-                    #import ipdb; ipdb.set_trace()
-                    self.update_name(vref, vcard.fn.value)
+            self.update_name(vref, fname, name, version=version)
         else:
             return -1  # this is not a vcard
 
