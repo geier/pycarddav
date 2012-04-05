@@ -695,27 +695,41 @@ class PcQuery(object):
 
     def get_vcard_from_db(self, vref):
         """returns a vobject.vCard()"""
+        card = vobject.vCard()
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref, )
+
+        # adding name, fname and version
+        cursor.execute('SELECT name, fname, version FROM vcardtable'
+                       ' WHERE href=(?)', stuple)
+        result = cursor.fetchall()
+        name = result[0][0]
+        fname = result[0][1]
+        version = result[0][2]
+        tmp = card.add('N')
+        name = name.split(';')
+        tmp.value = vobject.vcard.Name(family=name[0],
+                                       given=name[1],
+                                       additional=name[2],
+                                       prefix=name[3],
+                                       suffix=name[4])
+        tmp = card.add('FN')
+        tmp.value = fname
+        tmp = card.add('VERSION')
+        tmp.value = version
+
+        # and now we add everything else
         cursor.execute('SELECT id, property, value, parameters FROM properties'
                         ' WHERE href=(?)', stuple)
         result = cursor.fetchall()
 
-        card = vobject.vCard()
         #import ipdb; ipdb.set_trace()
         for uid, prop, value, parameters in result:
-            # atm we need to treat N and ADR properties differently 
+            # atm we need to treat ADR properties differently 
             # FIXME: ORG should be treated differently, too
             tmp = card.add(prop)
-            if prop == u'N':
-                name = value.split(';')
-                tmp.value = vobject.vcard.Name(family=name[0],
-                                               given=name[1],
-                                               additional=name[2],
-                                               prefix=name[3],
-                                               suffix=name[4])
-            elif prop == u'ADR':
+            if prop == u'ADR':
                 adr = value.split(';')
                 tmp.value = vobject.vcard.Address(street=adr[0],
                                                   city=adr[1],
