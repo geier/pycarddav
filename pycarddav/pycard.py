@@ -32,15 +32,22 @@ vcardtable:
         * 0: not touched since last sync
         * 1: properties edited or added (news to be pushed to server)
         * 2: new card, needs to be created on the server
+        * 9: card locally deleted, should be DELETEd on the server
 
 properties:
+    id (INTEGER PRIMARY KEY)
+    property (TEXT): vcard property, like EMAIL, TEL etc.
+    value (TEXT): the properties value, like 'user@domain.com' or '+12345678'
+    href (TEXT):
+    parameters (TEXT): the parameters as a unicode()ed dict
 
 
-blobproperties:
-
-
-
-
+blobproperties: the same as the properties table, but with a binary value
+    id (INTEGER PRIMARY KEY)
+    property (TEXT): vcard property, like PHOTO, LOGO etc.
+    value (TEXT): binary value 
+    href (TEXT):
+    parameters (TEXT): the parameters as a unicode()ed dict
 """
 
 try:
