@@ -15,8 +15,9 @@ BUGS
 ====
 * BUG fix vcard creation from db (ORGs are broken)
 * BUG vcard printed differently on import (vobject prettyPrint)
-* BUG no notification from pc_query when db exists
-* BUG type properties/all properties not properly saved
+* BUG no notification from pc_query when db exists but has not been
+      successfully synced yet
+* BUG type properties/all properties not properly saved ??? Really?
 
 TODO
 ====
