@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% set active_page = "archives" %}
+{% block content %}
+<section id="content" class="body">
+<h1>News</h1>
+
+<dl>
+{% for article in articles %}
+    <h2><a href="{{ article.url }}">{{ article.title }}</a></h2>
+    {% include 'article_infos.html' %}{{ article.content }}
+{% endfor %}
+</dl>
+</section>
+{% endblock %}
