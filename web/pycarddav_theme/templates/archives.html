@@ -6,9 +6,15 @@
 
 <dl>
 {% for article in articles %}
+    {% include 'article_infos.html' %}
     <h2><a href="{{ article.url }}">{{ article.title }}</a></h2>
-    {% include 'article_infos.html' %}{{ article.content }}
+    {{ article.content }}
+    <hr />
 {% endfor %}
+		<span class="feeds">
+		<a class="feed" href="feeds/all.atom.xml">All News</a>
+		<a class="feed" href="feeds/Releases.atom.xml">Only Releases</a>
+		</span>
 </dl>
 </section>
 {% endblock %}

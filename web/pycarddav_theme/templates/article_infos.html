@@ -1,7 +1,5 @@
 <footer class="post-info">
-        <abbr class="published" title="{{ article.date.isoformat() }}">
+        <strong class="published">
                 {{ article.locale_date }}
-<a href="{{ SITEURL }}/{{ article.category.url }}">{{ article.category }}</a>
-        </abbr>
-{% include 'taglist.html' %}
+</strong>
 </footer><!-- /.post-info -->
