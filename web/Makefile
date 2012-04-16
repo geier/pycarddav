@@ -48,7 +48,7 @@ github: $(OUTPUTDIR)/index.html
 	ghp-import $(OUTPUTDIR)
 	git push origin gh-pages
 
-banner:
+banner: html
 	find output -type f -exec sed -i 's#<strong>New</strong>#<span class=\"label label-success\">New</span>#g' {} \;
 	find output -type f -exec sed -i 's#<strong>Warning</strong>#<span class=\"label label-important\">Warning</span>#g' {} \;
 	find output -type f -exec sed -i 's#<strong>Attention</strong>#<span class=\"label label-warning\">Attention</span>#g' {} \;
