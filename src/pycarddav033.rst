@@ -24,4 +24,4 @@ release yet), but the frontend is still really buggy and a pain to use. If
 you want to have a look, check the repository out at github and check the
 branch *write_support* (but it might be broken).
 
-.. _v0.3.3: http://pycarddav.lostpackets.de/download/pycarddav0.3.3.tgz
+.. _v0.3.3: https://lostpackets.de/pycarddav/downloads/pycarddav0.3.3.tgz

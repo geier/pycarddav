@@ -13,4 +13,4 @@ some more meaningful error messages were added.
 **Attention** if you are upgrading:
 you should delete the old database again and resync using pycardsyncer.
 
-.. _v0.3.1: http://pycarddav.lostpackets.de/download/pycarddav0.3.1.tgz
+.. _v0.3.1: https://lostpackets.de/pycarddav/downloads/pycarddav0.3.1.tgz

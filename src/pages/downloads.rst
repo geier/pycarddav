@@ -14,7 +14,7 @@ Downloads
 +---------+-------------+----------------------------------+------------------------------------------------------------------+
 
 
-.. _031.tgz: downloads/pycarddav0.3.1.tgz
-.. _032.tgz: downloads/pycarddav0.3.2.tgz
-.. _033.tgz: downloads/pycarddav0.3.3.tgz
-.. _033.tar.gz: downloads/pycarddav0.3.3.tar.gz
+.. _031.tgz: ../downloads/pycarddav0.3.1.tgz
+.. _032.tgz: ../downloads/pycarddav0.3.2.tgz
+.. _033.tgz: ../downloads/pycarddav0.3.3.tgz
+.. _033.tar.gz: ../downloads/pycarddav-0.3.3.tar.gz
