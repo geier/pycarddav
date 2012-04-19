@@ -9,7 +9,7 @@ CONFFILE=$(BASEDIR)/pelican.conf.py
 
 SSH_HOST=lostpackets.de
 SSH_USER=geier
-SSH_TARGET_DIR=pycarddav.lostpackets.de/
+SSH_TARGET_DIR=lostpackets.de/pycarddav
 
 
 help:
@@ -37,8 +37,8 @@ clean:
 	mkdir $(OUTPUTDIR)
 
 
-rsync_upload: $(OUTPUTDIR)/index.html
-	rsync --delete -rvz -e ssh $(OUTPUTDIR)/* $(SSH_USER)@$(SSH_HOST):$(SSH_TARGET_DIR)
+rsync_upload: banner
+	rsync -rvz -e ssh $(OUTPUTDIR)/* $(SSH_USER)@$(SSH_HOST):$(SSH_TARGET_DIR)
 
 ssh_upload: $(OUTPUTDIR)/index.html
 	scp -r $(OUTPUTDIR)/* $(SSH_USER)@$(SSH_HOST):$(SSH_TARGET_DIR)
