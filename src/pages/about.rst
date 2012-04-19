@@ -1,11 +1,13 @@
 About
 =====
-*pyCardDAV* is supposed to provide a simple way of accessing a CardDAV_
-resource, mainly for use with mutt's query_command, but it might be of some use
-solo.  *pyCardDAV* consists of *pycardsyncer*, a program for syncing your
-CardDAV resource into a local database and of *pc_query*, a program for
-querying the local database. *pyCardDAV* is some ugly python_ code that holds
-together vobject_, lxml_, PyCurl_ and pysqlite_.
+*pyCardDAV* is a simple to use CardDAV CLI client. It has built in support for
+mutt's *query_command* but also works very well solo.
+
+*pyCardDAV* consists of *pycardsyncer*, a program
+for syncing your CardDAV resource into a local database and of *pc_query*, a
+program for querying the local database. *pyCardDAV* is some ugly python_ code
+(actually, it's not *that* bad anymore…) that holds together vobject_, lxml_,
+PyCurl_ and pysqlite_.
 
 .. _python: http://python.org/
 .. _CardDav: http://en.wikipedia.org/wiki/CardDAV
@@ -19,15 +21,15 @@ Features
 (or rather: limitations)
 
 - *pyCardDAV* can only use one addressbook resource at the moment
-- *pyCardDAV* is read-only for now
+- *pyCardDAV* is read-only for now (but write support is coming really soon™)
 - *pyCardDAV* is only tested against davical and owncloud/sabredav
 - **Warning** your password is stored in cleartext in the config file
 
 Feedback
 --------
 Please do provide feedback if *pyCardDAV* works for you or even more importantly
-if it doesn't. You can reach me by email at pycarddav@lostpackets.de , by
-jabber/XMPP at geier@jabber.ccc.de or via github_
+if it doesn't. You can reach me by email at pycarddav (a) lostpackets (dot) de , by
+jabber/XMPP at geier (a) jabber.ccc.de or via github_
 
 .. _github: https://github.com/geier/pycarddav/
 

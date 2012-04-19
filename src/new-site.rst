@@ -14,7 +14,7 @@ can check out this branch as follows:
         git clone -b beta https://github.com/geier/pycarddav.git
 
 If you stumble upon any bugs not mentioned in *todo.rst*, please let me now.
-Please **backup your data before** testing any of this!
+Please **backup your data BEFORE** testing any of this!
 
 But while I didn't finish write support, I created a new website for
 *pyCardDAV*, with the help of pelican_ and bootstrap_. The new
