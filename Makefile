@@ -53,4 +53,4 @@ banner: html
 	find output -type f -exec sed -i 's#<strong>Warning</strong>#<span class=\"label label-important\">Warning</span>#g' {} \;
 	find output -type f -exec sed -i 's#<strong>Attention</strong>#<span class=\"label label-warning\">Attention</span>#g' {} \;
 
-.PHONY: html help clean ssh_upload github
+.PHONY: html help clean ssh_upload github test
