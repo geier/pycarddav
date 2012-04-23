@@ -190,6 +190,7 @@ class PyCardDAV(object):
         deletes the resource at vref if etag matches, if force=True deletes even
         if etag does not match
         """
+        # TODO implement delete_vcard
         pass
 
     def upload_new_card(self, card):

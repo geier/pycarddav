@@ -176,29 +176,74 @@ class VCard(list):
 
     def edit(self):
         """proper edit"""
-        while True:
-            print ""
-            number = 0
-            print '{:>3}'.format(number), "NAME", ":", self.fname
-            for line in self:
-                number = number + 1
-                print '{:>3}'.format(number), line.prop, '(', \
-                    line.type_list(), ')', ":", line.value
-            input_string = raw_input("Edit ('n' for adding a property, "
-                "'e' number for editing the property number, "
-                "'d' number for deleting property number, 's' for saving): ")
-            if input_string[0:2] in ["e ", u"e "]:
-                id_to_edit = int(input_string[2:])
-                if id_to_edit == 0:
-                    self.edit_name()
+        import cmd
+
+        print len(self)
+        contact = self
+
+        def str_to_int(self, string):
+            try:
+                number = int(string)
+            except:
+                pass
+
+
+        class CommandLine(cmd.Cmd):
+            """Our own command line interpreter"""
+
+            def do_show(self, line):
+                print ""
+                number = 0
+                print '{:>3}'.format(number), "NAME", ":", contact.fname
+                for line in contact:
+                    number = number + 1
+                    print '{:>3}'.format(number), line.prop, '(', \
+                        line.type_list(), ')', ":", line.value
+
+            def do_edit(self, line):
+                try:
+                    number = int(line)
+                except ValueError:
+                    number = -1
+                if number == 0:
+                    contact.edit_name()
+                elif (number <= len(contact)) and (number > 0):
+                    contact[line -1].edit()
                 else:
-                    self[id_to_edit - 1].edit()
-            if input_string in ["s", u"s"]:
-                break
-            if input_string in ['q', u'q']:
+                    self.help_edit()
+
+            def help_edit(self):
+                print '\n'.join(['edit LINENUMBER',
+                    'LINUMBER must be between 0 and %s' %len(contact)])
+
+            def do_exit(self, line):
+                """exits the program, does NOT save your edits"""
                 sys.exit()
-            if input_string in ['n']:
-                self.add_prop()
+
+            def do_new(self,line):
+                """add a new property"""
+                contact.add_prop()
+
+            def do_save(self,line):
+                """saves contact to the LOCAL db"""
+                contact.save()
+
+            def do_delete(self, line):
+                """deletes the property NUMBER"""
+                contact[line - 1].delete()
+
+            def emptyline(self,line):
+                pass
+
+            def do_EOF(self, line):
+                """Exit"""
+                return True
+
+        CommandLine().cmdloop()
+
+
+
+
 
     def edit_name(self):
         """editing the name attributes (N and FN)
