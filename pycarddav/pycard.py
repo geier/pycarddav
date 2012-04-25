@@ -178,20 +178,22 @@ class VCard(list):
         """proper edit"""
         import cmd
 
-        print len(self)
         contact = self
-
-        def str_to_int(self, string):
-            try:
-                number = int(string)
-            except:
-                pass
-
 
         class CommandLine(cmd.Cmd):
             """Our own command line interpreter"""
 
+            def str_to_int(self, string):
+                try:
+                    return int(string)
+                except:
+                    return -1
+
+            def help_help(self):
+                print "help TOPIC prints help for TOPIC"
+
             def do_show(self, line):
+                """print the card"""
                 print ""
                 number = 0
                 print '{:>3}'.format(number), "NAME", ":", contact.fname
@@ -201,10 +203,7 @@ class VCard(list):
                         line.type_list(), ')', ":", line.value
 
             def do_edit(self, line):
-                try:
-                    number = int(line)
-                except ValueError:
-                    number = -1
+                number = self.str_to_int(line)
                 if number == 0:
                     contact.edit_name()
                 elif (number <= len(contact)) and (number > 0):
@@ -230,13 +229,23 @@ class VCard(list):
 
             def do_delete(self, line):
                 """deletes the property NUMBER"""
-                contact[line - 1].delete()
+                number = self.str_to_int(line)
+                if (number <= len(contact)) and (number > 0):
+                    contact[line - 1].delete()
+                else:
+                    self.help_delete()
+
+            def help_delete(self):
+                print '\n'.join(['delete property LINENUMBER',
+                    'LINUMBER must be between 1 and %s' %len(contact),
+                    'you cannot delete the name property'])
 
             def emptyline(self,line):
                 pass
 
             def do_EOF(self, line):
-                """Exit"""
+                """Exits the card editor and saves changes to the local db"""
+                contact.save()
                 return True
 
         CommandLine().cmdloop()
@@ -254,8 +263,9 @@ class VCard(list):
         name = list()
         name.append( raw_input('Surname (was: ' + name_split[0] + '):') )
         name.append(raw_input('Given name (was: ' + name_split[1] + '):') )
-        name.append(raw_input('Surname (was: ' + name_split[2] + '):') )
-        name.append(raw_input('Surname (was: ' + name_split[3] + '):') )
+        name.append(raw_input('Additional Names (was: ' + name_split[2] + '):') )
+        name.append(raw_input('Prefixes (was: ' + name_split[3] + '):') )
+        name.append(raw_input('Postfixes (was: ' + name_split[4] + '):') )
         self.fname = raw_input('Displayed Name (was: ' + self.fname + '):')
         self.name = ';'.join(name)
         self.edited = 1
