@@ -45,7 +45,7 @@ properties:
 blobproperties: the same as the properties table, but with a binary value
     id (INTEGER PRIMARY KEY)
     property (TEXT): vcard property, like PHOTO, LOGO etc.
-    value (TEXT): binary value 
+    value (TEXT): binary value
     href (TEXT):
     parameters (TEXT): the parameters as a unicode()ed dict
 """
@@ -104,6 +104,8 @@ class MessageException(Exception):
 
 NO_STRINGS = [u"n", "n", u"no", "no"]
 YES_STRINGS = [u"y", "y", u"yes", "yes"]
+
+PROPERTIES = ['EMAIL', 'TEL']
 
 
 class VCard(list):
@@ -184,9 +186,10 @@ class VCard(list):
             """Our own command line interpreter"""
 
             def str_to_int(self, string):
+                """returns int(string) or, if this fails -1"""
                 try:
                     return int(string)
-                except:
+                except ValueError:
                     return -1
 
             def help_help(self):
@@ -207,23 +210,23 @@ class VCard(list):
                 if number == 0:
                     contact.edit_name()
                 elif (number <= len(contact)) and (number > 0):
-                    contact[line -1].edit()
+                    contact[line - 1].edit()
                 else:
                     self.help_edit()
 
             def help_edit(self):
                 print '\n'.join(['edit LINENUMBER',
-                    'LINUMBER must be between 0 and %s' %len(contact)])
+                    'LINUMBER must be between 0 and %s' % len(contact)])
 
             def do_exit(self, line):
                 """exits the program, does NOT save your edits"""
                 sys.exit()
 
-            def do_new(self,line):
+            def do_new(self, line):
                 """add a new property"""
                 contact.add_prop()
 
-            def do_save(self,line):
+            def do_save(self, line):
                 """saves contact to the LOCAL db"""
                 contact.save()
 
@@ -237,10 +240,10 @@ class VCard(list):
 
             def help_delete(self):
                 print '\n'.join(['delete property LINENUMBER',
-                    'LINUMBER must be between 1 and %s' %len(contact),
+                    'LINUMBER must be between 1 and %s' % len(contact),
                     'you cannot delete the name property'])
 
-            def emptyline(self,line):
+            def emptyline(self, line):
                 pass
 
             def do_EOF(self, line):
@@ -250,10 +253,6 @@ class VCard(list):
 
         CommandLine().cmdloop()
 
-
-
-
-
     def edit_name(self):
         """editing the name attributes (N and FN)
         BruteForce Style
@@ -261,11 +260,11 @@ class VCard(list):
         print self.fname
         name_split = self.name.split(';')
         name = list()
-        name.append( raw_input('Surname (was: ' + name_split[0] + '):') )
-        name.append(raw_input('Given name (was: ' + name_split[1] + '):') )
-        name.append(raw_input('Additional Names (was: ' + name_split[2] + '):') )
-        name.append(raw_input('Prefixes (was: ' + name_split[3] + '):') )
-        name.append(raw_input('Postfixes (was: ' + name_split[4] + '):') )
+        name.append(raw_input('Surname (was: ' + name_split[0] + '):'))
+        name.append(raw_input('Given name (was: ' + name_split[1] + '):'))
+        name.append(raw_input('Additional Names (was: ' + name_split[2] + '):'))
+        name.append(raw_input('Prefixes (was: ' + name_split[3] + '):'))
+        name.append(raw_input('Postfixes (was: ' + name_split[4] + '):'))
         self.fname = raw_input('Displayed Name (was: ' + self.fname + '):')
         self.name = ';'.join(name)
         self.edited = 1
@@ -649,7 +648,7 @@ class PcQuery(object):
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (fname, name, version, vref )
+        stuple = (fname, name, version, vref)
         cursor.execute('UPDATE vcardtable SET fname=(?), name=(?), '
                        'version=(?) WHERE href=(?);', stuple)
         conn.commit()
@@ -781,7 +780,7 @@ class PcQuery(object):
 
         #import ipdb; ipdb.set_trace()
         for uid, prop, value, parameters in result:
-            # atm we need to treat ADR properties differently 
+            # atm we need to treat ADR properties differently
             # FIXME: ORG should be treated differently, too
             tmp = card.add(prop)
             if prop == u'ADR':
