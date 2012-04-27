@@ -45,7 +45,7 @@ properties:
 blobproperties: the same as the properties table, but with a binary value
     id (INTEGER PRIMARY KEY)
     property (TEXT): vcard property, like PHOTO, LOGO etc.
-    value (TEXT): binary value 
+    value (TEXT): binary value
     href (TEXT):
     parameters (TEXT): the parameters as a unicode()ed dict
 """
@@ -93,11 +93,9 @@ class SelText(urwid.Text):
         return key
 
 
-class MessageException(Exception):
+class Selected(Exception):
     """
-    this is used for breaking out of urwid's main loop
-    and "returning" a string, this is probably not at all how it is supposed to
-    work. But it works (tm).
+    used for signalling that an item was chosen in urwid
     """
     pass
 
@@ -411,7 +409,11 @@ class PcQuery(object):
         return [row[0] for row in result]
 
     def select_entry(self, search_string):
-        """select a single entry from a list matching the search_string"""
+        """select a single entry from a list matching the search_string
+
+        returns: href
+        return type: string
+        """
         ids = self.get_contact_id_from_string(search_string)
         if len(ids) > 1:
             print "There are several cards matching your search string:"
@@ -444,7 +446,11 @@ class PcQuery(object):
         return card_to_edit
 
     def select_entry_urwid(self, search_string):
-        """interactive href seleter (urwid based)"""
+        """interactive href selector (urwid based)
+
+        returns: href
+        return type: string
+        """
         names = self.get_names_vref_from_db(search_string)
         if len(names) is 1:
             return names[0][1]
@@ -479,15 +485,14 @@ class PcQuery(object):
                 raise urwid.ExitMainLoop()
             if input is 'enter':
                 focus = listbox.get_focus()[0].original_widget
-                #sys.exit(focus.href)
-                raise my_exceptions.MessageException(focus.href)
+                raise Selected()
 
         loop = urwid.MainLoop(top, palette,
             input_filter=show_all_input, unhandled_input=keystroke)
         try:
             loop.run()
-        except my_exceptions.MessageException as error:
-            return str(error)
+        except Selected:
+            return names[listbox.get_focus()[1]][1]
 
     def _check_table_version(self):
         """
@@ -781,7 +786,7 @@ class PcQuery(object):
 
         #import ipdb; ipdb.set_trace()
         for uid, prop, value, parameters in result:
-            # atm we need to treat ADR properties differently 
+            # atm we need to treat ADR properties differently
             # FIXME: ORG should be treated differently, too
             tmp = card.add(prop)
             if prop == u'ADR':
