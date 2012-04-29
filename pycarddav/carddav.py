@@ -113,8 +113,8 @@ class PyCardDAV(object):
     def check_write_support(self):
         """checks if user really wants is data destroyed"""
         if not self.write_support:
-            sys.stderr.write("Sorry, no write support for you. Please check the "
-                             "documentation.\n")
+            sys.stderr.write("Sorry, no write support for you. Please check "
+                             "the documentation.\n")
             sys.exit(1)
 
     def _detect_server(self):
@@ -187,8 +187,8 @@ class PyCardDAV(object):
     def delete_vcard(self, vref, etag, force=False):
         """deletes vcard from server
 
-        deletes the resource at vref if etag matches, if force=True deletes even
-        if etag does not match
+        deletes the resource at vref if etag matches, if force=True deletes
+        even if etag does not match
         """
         # TODO implement delete_vcard
         pass
@@ -237,14 +237,15 @@ class PyCardDAV(object):
         if (self.insecure_ssl == 1):
             self.curl.setopt(pycurl.SSL_VERIFYPEER, 0)
         if self.ssl_cacert_file:
-            self.curl.setopt(pycurl.CAINFO, path.expanduser(self.ssl_cacert_file))
+            self.curl.setopt(pycurl.CAINFO,
+                             path.expanduser(self.ssl_cacert_file))
 
     def perform_curl(self):
         """performs curl request and exits gracefully on failure"""
         try:
             self.curl.perform()
         except pycurl.error, errorstring:
-            sys.stderr.write( str(errorstring[1])+"\n")
+            sys.stderr.write(str(errorstring[1]) + "\n")
             sys.exit(1)
         self.header = header_parser(self._header.getvalue())
 
@@ -288,7 +289,9 @@ class PyCardDAV(object):
                         href = refprop.text
                     for prop in refprop.iterchildren():
                         for props in prop.iterchildren():
-                            if (props.tag == namespace + "getcontenttype" and ( props.text == "text/vcard" or props.text == "text/x-vcard" )) :
+                            if (props.tag == namespace + "getcontenttype" and \
+                               (props.text == "text/vcard" or \
+                                props.text == "text/x-vcard")):
                                 insert = True
                             if (props.tag == namespace + "getetag"):
                                 etag = props.text

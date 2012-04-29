@@ -26,10 +26,12 @@ except ImportError, error:
 
 try:
     from termcolor import cprint
+
     def print_bold(text):
         """prints text bold"""
         cprint(text, attrs=['bold'])
 except ImportError:
+
     def print_bold(text):
         """prints text bold"""
         print(text)
@@ -48,29 +50,29 @@ def main():
     configfile = "~/.pycard/pycard.conf"
 
     parser = argparse.ArgumentParser(
-        description = 'prints contacts cards matching a search string')
+        description='prints contacts cards matching a search string')
     parser.add_argument(
-        "-c", "--config", action = "store", dest = "configfile",
-        default = "~/.pycard/pycard.conf",
+        "-c", "--config", action="store", dest="configfile",
+        default="~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
-    parser.add_argument("-v", "--version", action = "version",
-            version = pycarddav.__version__)
-    parser.add_argument("-a", action = "store_true", dest = "display_all",
-            default = "False", help = "prints the whole card, not only name, "
+    parser.add_argument("-v", "--version", action="version",
+            version=__init__.__version__)
+    parser.add_argument("-a", action="store_true", dest="display_all",
+            default="False", help="prints the whole card, not only name, "
             "telephone numbers and email addresses")
-    parser.add_argument("-m", dest = "print_function", action = "store_const",
-            const = "print_email", default = "print_contact_info",
-            help = "only prints email addresses, in a mutt friendly format")
-    parser.add_argument("-e", dest = "edit", action = "store_true",
-            default = "False", help="edit the contact file.\n"
+    parser.add_argument("-m", dest="print_function", action="store_const",
+            const="print_email", default="print_contact_info",
+            help="only prints email addresses, in a mutt friendly format")
+    parser.add_argument("-e", dest="edit", action="store_true",
+            default="False", help="edit the contact file.\n"
             "NOTE: this feature is experimental and will probably corrupt "
             "your *local* database. Your remote CardDAV resource will stay "
             "untouched, as long as You don't enable write support for the "
             "syncer.")
-    parser.add_argument("--debug", action = "store_true", dest = "debug",
-            default = "False", help = "enable debugging")
-    parser.add_argument("search_string", metavar = "SEARCHSTRING",
-            help = "the string to search for", nargs = '?' ,default = "")
+    parser.add_argument("--debug", action="store_true", dest="debug",
+            default="False", help="enable debugging")
+    parser.add_argument("search_string", metavar="SEARCHSTRING",
+            help="the string to search for", nargs='?', default="")
     parser.add_argument("-b", "--backup", action="store",
             dest="backup", help="backup the local db to BACKUP, "
             "if a SEARCHSTRING is present, only backup cards matching it.")
@@ -89,7 +91,6 @@ def main():
     if not path.exists(db_path):
         sys.exit(str(db_path) + " file does not exist, please sync with "
                 "pycardsyncer first.")
-
 
     my_query = pycard.PcQuery()
     my_query.db_path = path.expanduser(db_path)

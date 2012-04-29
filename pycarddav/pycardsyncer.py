@@ -39,12 +39,10 @@ def signal_handler(*_):
     sys.exit(0)
 
 
-
 def main():
     """this should probably be seperated from the class definitions"""
     # trying to hide some ugly python code on pressing Ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
-
 
     arg_parser = argparse.ArgumentParser(
             description="syncs the local db to the CardDAV server")
@@ -134,7 +132,6 @@ def main():
     #import ipdb; ipdb.set_trace()
     for href in delete:
         my_dbtool.delete_vcard_from_db(href)
-
 
     # for now local changes overwritten by remote changes
     if debug:
