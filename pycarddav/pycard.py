@@ -58,7 +58,6 @@ try:
     import sqlite3
     import vobject
 
-    import my_exceptions
 except ImportError, error:
     print error
     sys.exit(1)
@@ -955,10 +954,9 @@ def header_parser(header_string):
     """
 
     head = dict()
-    #import ipdb; ipdb.set_trace()
     for line in header_string.split("\r\n"):
         test = line.split(" ", 1)
-        if not head.has_key(test[0]):
+        if not test[0] in head:
             head[test[0]] = list()
         try:
             for one in test[1].split(', '):

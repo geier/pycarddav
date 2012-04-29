@@ -73,7 +73,7 @@ def header_parser(header_string):
     #import ipdb; ipdb.set_trace()
     for line in header_string.split("\r\n"):
         test = line.split(" ", 1)
-        if not head.has_key(test[0]):
+        if not test[0] in head:
             head[test[0]] = list()
         try:
             for one in test[1].split(', '):
@@ -128,9 +128,9 @@ class PyCardDAV(object):
         self.curl.setopt(pycurl.URL, self.url.base)
         self.perform_curl()
         print self.header
-        if self.header.has_key("X-Sabre-Version:"):
-            server =  SABREDAV
-        elif self.header.has_key("X-DAViCal-Version:"):
+        if "X-Sabre-Version:" in self.header:
+            server = SABREDAV
+        elif "X-DAViCal-Version:" in self.header:
             server = DAVICAL
         else:
             server = UNKNOWN
