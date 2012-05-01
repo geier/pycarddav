@@ -103,6 +103,19 @@ NO_STRINGS = [u"n", "n", u"no", "no"]
 YES_STRINGS = [u"y", "y", u"yes", "yes"]
 
 PROPERTIES = ['EMAIL', 'TEL']
+PROPS_ALL = ['FN', 'N', 'VERSION', 'NICKNAME', 'PHOTO', 'BDAY', 'ADR',
+             'LABEL', 'TEL', 'EMAIL', 'MAILER', 'TZ', 'GEO', 'TITLE', 'ROLE',
+             'LOGO', 'AGENT', 'ORG', 'NOTE', 'REV', 'SOUND', 'URL', 'UID',
+             'KEY', 'CATEGORIES', 'PRODID', 'REV', 'SORT-STRING', 'SOUND',
+             'URL', 'VERSION', 'UTC-OFFSET']
+PROPS_ALLOWED = ['NICKNAME', 'BDAY', 'ADR', 'LABEL', 'TEL', 'EMAIL',
+                 'MAILER', 'TZ', 'GEO', 'TITLE', 'ROLE', 'AGENT',
+                 'ORG', 'NOTE', 'REV', 'SOUND', 'URL', 'UID', 'KEY',
+                 'CATEGORIES', 'PRODID', 'REV', 'SORT-STRING', 'SOUND',
+                 'URL', 'VERSION', 'UTC-OFFSET']
+PROPS_ONCE = ['FN', 'N', 'VERSION']
+PROPS_LIST = ['NICKNAME', 'CATEGORIES']
+PROPS_BIN = ['PHOTO', 'LOGO', 'SOUND', 'KEY']
 
 
 class VCard(list):
