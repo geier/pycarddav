@@ -111,7 +111,7 @@ class PyCardDAV(object):
         self.header = dict()
 
     def check_write_support(self):
-        """checks if user really wants is data destroyed"""
+        """checks if user really wants his data destroyed"""
         if not self.write_support:
             sys.stderr.write("Sorry, no write support for you. Please check "
                              "the documentation.\n")
