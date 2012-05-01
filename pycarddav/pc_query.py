@@ -18,7 +18,6 @@ try:
     import argparse
     from ConfigParser import SafeConfigParser
     import pycard
-    import pycarddav
     import vobject
 except ImportError, error:
     print error

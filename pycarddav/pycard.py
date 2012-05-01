@@ -64,14 +64,15 @@ except ImportError, error:
 
 try:
     from termcolor import cprint
-
-    def print_bold(text):
-        """prints text bold"""
-        cprint(text, attrs=['bold'])
 except ImportError:
+    termcolor = False
 
-    def print_bold(text):
-        """prints text bold"""
+
+def print_bold(text):
+    """prints text bold"""
+    if termcolor:
+        cprint(text, attrs=['bold'])
+    else:
         print(text)
 
 
@@ -702,7 +703,7 @@ class PcQuery(object):
         from the property table
         returns nothing
         """
-        # FIXME this should also reset the etag
+        # FIXME this should also reset the etag or shouldn't it?
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref, )
