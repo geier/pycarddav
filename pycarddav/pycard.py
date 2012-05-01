@@ -450,11 +450,6 @@ class PcQuery(object):
         card_to_edit = VCard(href_to_edit, self.db_path)
         card_to_edit.print_contact_info()
         print ""
-        #while (edit != "y") and (edit != "N") and (edit != ""):
-            #edit = raw_input("Is this the entry you want to edit [y/N]? ")
-        #if (edit == u"N") or (edit == ""):
-            #sys.exit()
-        #else:
         return card_to_edit
 
     def select_entry_urwid(self, search_string):
@@ -496,7 +491,7 @@ class PcQuery(object):
             if input == 'q':
                 raise urwid.ExitMainLoop()
             if input is 'enter':
-                focus = listbox.get_focus()[0].original_widget
+                listbox.get_focus()[0].original_widget
                 raise Selected()
 
         loop = urwid.MainLoop(top, palette,
@@ -776,9 +771,8 @@ class PcQuery(object):
         cursor.execute('SELECT name, fname, version FROM vcardtable'
                        ' WHERE href=(?)', stuple)
         result = cursor.fetchall()
-        name = result[0][0]
-        fname = result[0][1]
-        version = result[0][2]
+        name, fname, version = result[0]
+
         tmp = card.add('N')
         name = name.split(';')
         tmp.value = vobject.vcard.Name(family=name[0],
@@ -796,7 +790,6 @@ class PcQuery(object):
                         ' WHERE href=(?)', stuple)
         result = cursor.fetchall()
 
-        #import ipdb; ipdb.set_trace()
         for uid, prop, value, parameters in result:
             # atm we need to treat ADR properties differently
             # FIXME: ORG should be treated differently, too
@@ -811,7 +804,7 @@ class PcQuery(object):
                                                   box=adr[5],
                                                   extended=adr[6])
             #PROPFUCK
-            elif prop in [u'CATEGORIES', u'NICKNAMES']:
+            elif prop in PROPS_LIST:
                 cats = value.split(',')
                 tmp.value = cats
             else:
@@ -825,7 +818,6 @@ class PcQuery(object):
             tmp.value = str(value)
             tmp.params = ast.literal_eval(parameters)
         conn.close()
-        #import ipdb; ipdb.set_trace()
         return card
 
     def get_local_edited_hrefs(self):
