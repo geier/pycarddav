@@ -134,7 +134,8 @@ class VCard(list):
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
         stuple = (h_ref, )
-        cur.execute('SELECT name, fname, version FROM vcardtable WHERE href=(?)', stuple)
+        cur.execute('SELECT name, fname, version FROM \
+                vcardtable WHERE href=(?)', stuple)
         result = cur.fetchall()
         self.name = result[0][0]
         self.fname = result[0][1]
@@ -237,6 +238,11 @@ class VCard(list):
                 """add a new property"""
                 contact.add_prop()
 
+            def help_new(self):
+                print '\n'.join(['add a new property',
+                    'property must be either one of %s' %PROPS_ALLOWED,
+                    'or begin with \'X-\''])
+
             def do_save(self, line):
                 """saves contact to the LOCAL db"""
                 contact.save()
@@ -282,7 +288,11 @@ class VCard(list):
 
     def add_prop(self):
         """add a new property"""
-        prop = raw_input("Property Name: ")
+        prop = raw_input("Property Name: ").upper()
+        if (prop not in PROPS_ALLOWED) and (prop[0:2] is not 'X-'):
+            print "this property is not allowed, please type "\
+                "'help new' to get a list of allowed values"
+            return
         value = raw_input("Value: ")
         types = raw_input("Types: ")
         if prop in ['']:
