@@ -19,6 +19,7 @@ try:
     from ConfigParser import SafeConfigParser
     import pycard
     import vobject
+    import __init__
 except ImportError, error:
     print error
     sys.exit(1)

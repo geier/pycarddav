@@ -65,12 +65,12 @@ except ImportError, error:
 try:
     from termcolor import cprint
 except ImportError:
-    termcolor = False
+    cprint = False
 
 
 def print_bold(text):
     """prints text bold"""
-    if termcolor:
+    if cprint:
         cprint(text, attrs=['bold'])
     else:
         print(text)
