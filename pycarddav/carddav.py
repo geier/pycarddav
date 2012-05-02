@@ -127,14 +127,13 @@ class PyCardDAV(object):
         self.curl.setopt(pycurl.CUSTOMREQUEST, "OPTIONS")
         self.curl.setopt(pycurl.URL, self.url.base)
         self.perform_curl()
-        print self.header
         if "X-Sabre-Version:" in self.header:
             server = SABREDAV
         elif "X-DAViCal-Version:" in self.header:
             server = DAVICAL
         else:
             server = UNKNOWN
-        if self.debug:
+        if self.debug:  # TODO proper logging
             print server + " detected"
         return server
 
@@ -165,9 +164,8 @@ class PyCardDAV(object):
         pushes changed vcard to the server
         card: vcard as unicode string
          """
-        # TODO etag checking
         self.check_write_support()
-        print str(vref), " uploading your changes..."
+        print str(vref), " uploading your changes..."  # TODO proper logging
         self._curl_reset()
         remotepath = str(self.url.base + vref)
 
