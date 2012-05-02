@@ -251,7 +251,7 @@ class VCard(list):
                 """deletes the property NUMBER"""
                 number = self.str_to_int(line)
                 if (number <= len(contact)) and (number > 0):
-                    contact[line - 1].delete()
+                    contact[number - 1].delete()
                 else:
                     self.help_delete()
 
