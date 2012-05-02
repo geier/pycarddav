@@ -222,7 +222,7 @@ class VCard(list):
                 if number == 0:
                     contact.edit_name()
                 elif (number <= len(contact)) and (number > 0):
-                    contact[line - 1].edit()
+                    contact[number - 1].edit()
                 else:
                     self.help_edit()
 
@@ -260,7 +260,7 @@ class VCard(list):
                     'LINUMBER must be between 1 and %s' % len(contact),
                     'you cannot delete the name property'])
 
-            def emptyline(self, line):
+            def emptyline(self):
                 pass
 
             def do_EOF(self, line):
