@@ -125,6 +125,11 @@ class VCard(list):
     associated methods, each list element is a CardProperty
     h_ref: unique id (really just the url) of the VCard
     db_path: database file from which to initialize the VCard
+
+    self.edited:
+        0: nothing changed
+        1: name and/or fname changed
+        2: some property was deleted
     """
 
     def __init__(self, h_ref="", db_path=""):
@@ -251,7 +256,8 @@ class VCard(list):
                 """deletes the property NUMBER"""
                 number = self.str_to_int(line)
                 if (number <= len(contact)) and (number > 0):
-                    contact[number - 1].delete()
+                    del contact[number - 1]
+                    contact.edited = 2
                 else:
                     self.help_delete()
 
@@ -329,6 +335,17 @@ class VCard(list):
         cursor.execute('UPDATE vcardtable SET edited = 1 WHERE href = ?',
                        (self.h_ref, ))
         conn.commit()
+        if self.edited == 2:  # some properties have been deleted
+            stuple = (unicode(self.h_ref),)
+            cursor.execute('DELETE FROM properties WHERE href=(?);', stuple)
+            for prop in self:
+                stuple = (unicode(prop.prop), prop.value,
+                           self. h_ref, unicode(prop.params),)
+                cursor.execute('INSERT into properties '
+                        '(property, value, href, parameters)'
+                        'VALUES (?,?,?,?);', stuple)
+            conn.commit()
+
         conn.close()
         print "Saved your edits to the local db." \
               "They are NOT yet on the server."
@@ -383,7 +400,7 @@ class CardProperty(list):
                 print unicode(self.prop.capitalize() + " ("
                               + self.type_list() + u"): "
                               + self.value).encode("utf-8")
-
+        return
 
 class PcQuery(object):
     """Querying the addressbook database"""
