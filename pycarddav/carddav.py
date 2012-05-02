@@ -159,17 +159,21 @@ class PyCardDAV(object):
         vcard = self.response.getvalue()
         return vcard
 
-    def update_vcard(self, card, vref):
+    def update_vcard(self, card, vref, etag):
         """
         pushes changed vcard to the server
         card: vcard as unicode string
+        etag: str or None, if this is set to a string, card is only updated if
+              remote etag matches. If etg = None the update is forced anyway
          """
         self.check_write_support()
         print str(vref), " uploading your changes..."  # TODO proper logging
         self._curl_reset()
         remotepath = str(self.url.base + vref)
-
-        headers = ["Content-Type: application/plain"]
+        if etag is None:
+            headers = ["Content-Type: text/vcard"]
+        else:
+            headers = ["If-Match: %s" % etag, "Content-Type: text/vcard"]
         self.curl.setopt(pycurl.HTTPHEADER, headers)
         self.curl.setopt(pycurl.UPLOAD, 1)
         self.curl.setopt(pycurl.URL, remotepath)
