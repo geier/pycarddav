@@ -141,6 +141,7 @@ def main():
         if debug:
             print "trying to update " + href
         card = my_dbtool.get_vcard_from_db(href)
+        print my_dbtool.get_etag(href)
         syncer.update_vcard(card.serialize(), href, None)
         my_dbtool.reset_flag(href)
     hrefs = my_dbtool.get_local_new_hrefs()

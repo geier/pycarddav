@@ -702,6 +702,23 @@ class PcQuery(object):
         conn.commit()
         cursor.close()
 
+    def get_etag(self, vref):
+        """get etag for vref
+
+        type vref: str()
+
+        return: etag
+        rtype: str()
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (vref)
+        cursor.execute('UPDATE vcardtable GET etag WHERE href=(?);',
+                       stuple)
+        etag = cursor.fetchall()[0][0]
+        cursor.close()
+        return etag
+
     def update_vref(self, old_vref, new_vref):
         """
         updates vref
