@@ -370,9 +370,7 @@ class CardProperty(list):
         """returns all types parameters, separated by "," """
         try:
             params = u', '.join(self.params[u'TYPE'])
-        except TypeError:
-            params = u''
-        except KeyError:
+        except TypeError or KeyError:
             params = u''
         return params
 
