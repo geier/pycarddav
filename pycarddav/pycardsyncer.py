@@ -21,12 +21,20 @@ try:
     import pycard
     import pycarddav
     import carddav
+    import logging
 
     from ConfigParser import SafeConfigParser, NoOptionError
     import vobject
 except ImportError, error:
     print error
     sys.exit(1)
+
+LEVELS = { 'debug':logging.DEBUG,
+           'info':logging.INFO,
+            'warning':logging.WARNING,
+            'error':logging.ERROR,
+            'critical':logging.CRITICAL,
+         }
 
 
 def smartencode(string):
@@ -42,6 +50,7 @@ def signal_handler(*_):
 def main():
     """this should probably be seperated from the class definitions"""
     # trying to hide some ugly python code on pressing Ctrl-C
+    logging.basicConfig(level=logging.DEBUG)
     signal.signal(signal.SIGINT, signal_handler)
 
     arg_parser = argparse.ArgumentParser(
@@ -56,10 +65,12 @@ def main():
             help="enable debugging; WARNING: shows passwords in cleartext")
     args = arg_parser.parse_args()
 
+    logger = logging.getLogger('simple_logger')
+    logger.setLevel(logging.DEBUG)
+
     #config file foo
     configfile = path.expanduser(args.configfile)
-    if args.debug:
-        print "reading config from ", configfile
+    logging.info("reading config from %s" % configfile)
     conf_parser = SafeConfigParser()
     conf_parser.read(configfile)
 
@@ -92,16 +103,14 @@ def main():
         pass
     syncer.debug = debug
 
-    if debug:
-        print "using remote options:"
-        print "  user:", syncer.user
-        print "  passwd:", syncer.passwd
-        print "  resource:", syncer.url.resource
-        print "  base_url:", syncer.url.base
-        print "  insecureSSL:", syncer.insecure_ssl
-        print "using local options:"
-        print "  db_path:", db_path
-        print "\n"
+    logging.info("using remote options:\n"
+        "  user: %s\n" % syncer.user + \
+        "  passwd: %s\n" % syncer.passwd + \
+        "  resource: %s\n" % syncer.url.resource + \
+        "  base_url: %s\n" % syncer.url.base + \
+        "  insecureSSL: %s\n" % syncer.insecure_ssl +\
+        "using local options:\na" + \
+        "  db_path: %s\n" % db_path)
 
     my_dbtool = pycard.PcQuery(db_path, "utf-8", "stricts", debug)
 
@@ -114,8 +123,7 @@ def main():
 
         if my_dbtool.check_new_etag(vref, v_etag):
             my_dbtool.delete_vcard_props_from_db(vref)
-            if debug:
-                print "getting ", vref, " etag: ", v_etag
+            logging.debug("getting ", vref, " etag: ", v_etag)
             vcard = syncer.get_vcard(vref)
             vcard = vobject.readOne(vcard)
             my_dbtool.insert_vcard_in_db(vref, vcard)
@@ -134,20 +142,17 @@ def main():
         my_dbtool.delete_vcard_from_db(href)
 
     # for now local changes overwritten by remote changes
-    if debug:
-        print "getting changed vcards from db"
+    logging.info("getting changed vcards from db")
     hrefs = my_dbtool.get_local_edited_hrefs()
     for href in hrefs:
-        if debug:
-            print "trying to update " + href
+        logging.info("trying to update %s" % href)
         card = my_dbtool.get_vcard_from_db(href)
-        print my_dbtool.get_etag(href)
+        logging.debug("%s" % my_dbtool.get_etag(href))
         syncer.update_vcard(card.serialize(), href, None)
         my_dbtool.reset_flag(href)
     hrefs = my_dbtool.get_local_new_hrefs()
     for href in hrefs:
-        if debug:
-            print "trying to upload new card " + href
+        logging.info("trying to upload new card %s" % href)
         card = my_dbtool.get_vcard_from_db(href)
         href_new = syncer.upload_new_card(card.serialize())
         my_dbtool.update_vref(href, href_new)
