@@ -9,9 +9,11 @@
 			body {
 				padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
 			}
-			.feeds a[href*='atom.xml']:before {content: url('theme/images/icons/rss.png'); margin-right: 2px; vertical-align: -3px;}
+			.feeds a:before {content: url('theme/images/icons/rss.png'); margin-right: 2px; vertical-align: -3px;}
+
 		</style>
 		<link rel="stylesheet" href="{{ SITEURL }}/theme/css/bootstrap-responsive.min.css" type="text/css" />
+
 
 		<link href="{{ FEED_DOMAIN }}/{{ FEED }}" type="application/atom+xml" rel="alternate" title="{{ SITENAME }} Atom Feed" />
 		{% if FEED_RSS %}
