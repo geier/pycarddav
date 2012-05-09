@@ -20,7 +20,7 @@ try:
     from collections import namedtuple
 
 except ImportError, error:
-    print error
+    sys.stderr.write
     sys.exit(1)
 
 
@@ -91,22 +91,23 @@ UNKNOWN = 'unknown server'
 class PyCardDAV(object):
     """interacts with CardDAV server"""
 
-    def __init__(self, resource):
+    def __init__(self, resource, debug='', user='', passwd='',
+                insecure_ssl='', ssl_cacert_file='', write_support=False):
         split_url = urlparse.urlparse(resource)
         url_tuple = namedtuple('url', 'resource base path')
         login_creds = namedtuple('creds', 'user passwd resource')
         self.url = url_tuple(resource,
                              split_url.scheme + '://' + split_url.netloc,
                              split_url.path)
-        self.debug = ""
-        self.user = ""
-        self.passwd = ""
-        self.insecure_ssl = 0
-        self.ssl_cacert_file = None
+        self.debug = debug
+        self.user = user
+        self.passwd = passwd
+        self.insecure_ssl = insecure_ssl
+        self.ssl_cacert_file = ssl_cacert_file
         self.curl = pycurl.Curl()
         self.response = StringIO.StringIO()
         self.header = StringIO.StringIO()
-        self.write_support = False
+        self.write_support = write_support
         self._header = StringIO.StringIO()
         self.header = dict()
 
@@ -264,7 +265,7 @@ class PyCardDAV(object):
         self.perform_curl()
         try:
             if self.header['DAV:'].count('addressbook') == 0:
-                print "URL is not a CardDAV resource"
+                sys.stderr.write("URL is not a CardDAV resource")
                 sys.exit(1)
         except KeyError:
             print "URL is not a DAV resource"
@@ -297,7 +298,6 @@ class PyCardDAV(object):
                                 insert = True
                             if (props.tag == namespace + "getetag"):
                                 etag = props.text
-                            #print("%s - %s" % (props.tag, props.text))
                         if insert:
                             abook[href] = etag
         return abook

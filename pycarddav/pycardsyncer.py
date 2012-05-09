@@ -22,19 +22,19 @@ try:
     import pycarddav
     import carddav
     import logging
-
-    from ConfigParser import SafeConfigParser, NoOptionError
+    from ConfigParser import SafeConfigParser
     import vobject
 except ImportError, error:
-    print error
+    sys.stderr.write(error)
     sys.exit(1)
 
-LEVELS = { 'debug':logging.DEBUG,
-           'info':logging.INFO,
-            'warning':logging.WARNING,
-            'error':logging.ERROR,
-            'critical':logging.CRITICAL,
-         }
+
+LEVELS = {'debug': logging.DEBUG,
+          'info': logging.INFO,
+          'warning': logging.WARNING,
+          'error': logging.ERROR,
+          'critical': logging.CRITICAL,
+          }
 
 
 def smartencode(string):
@@ -47,72 +47,74 @@ def signal_handler(*_):
     sys.exit(0)
 
 
+def parser():
+    """config and command line option parser for pycardsyncer"""
+    carg_parser = argparse.ArgumentParser(
+            description=__doc__,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            add_help=False
+            )
+    carg_parser.add_argument("-c", "--config",
+        action="store", dest="configfile",
+        default="~/.pycard/pycard.conf", metavar="FILE",
+        help="defaults to ~/.pycard/pycard.conf")
+    args, remaining_argv = carg_parser.parse_known_args()
+
+    config_parser = SafeConfigParser(vars(args))
+    config_parser.read([path.expanduser(args.configfile)])
+    defaults = dict(config_parser.items("default"))
+
+    arg_parser = argparse.ArgumentParser(
+            description="syncs the local db to the CardDAV server")
+    arg_parser.set_defaults(**defaults)
+    arg_parser.add_argument("-v", "--version", action="version",
+            version=pycarddav.__version__)
+    arg_parser.add_argument("--debug", action="store_true", dest="debug",
+            help="enable debugging; WARNING: shows passwords in cleartext")
+    args = vars(arg_parser.parse_args(remaining_argv))
+    if 'passwd' not in args:
+        args['passwd'] = getpass.getpass(prompt='CardDAV password: ')
+    if args['write_support'] == 'YesPleaseIDoHaveABackupOfMyData':
+        args['write_support'] = True
+    else:
+        args['write_support'] = False
+    return args
+
+
 def main():
     """this should probably be seperated from the class definitions"""
     # trying to hide some ugly python code on pressing Ctrl-C
     logging.basicConfig(level=logging.DEBUG)
     signal.signal(signal.SIGINT, signal_handler)
-
-    arg_parser = argparse.ArgumentParser(
-            description="syncs the local db to the CardDAV server")
-    arg_parser.add_argument(
-        "-c", "--config", action="store", dest="configfile",
-        default="~/.pycard/pycard.conf",
-        help="defaults to ~/.pycard/pycard.conf")
-    arg_parser.add_argument("-v", "--version", action="version",
-            version=pycarddav.__version__)
-    arg_parser.add_argument("--debug", action="store_true", dest="debug",
-            help="enable debugging; WARNING: shows passwords in cleartext")
-    args = arg_parser.parse_args()
+    args = parser()
 
     logger = logging.getLogger('simple_logger')
     logger.setLevel(logging.DEBUG)
 
-    #config file foo
-    configfile = path.expanduser(args.configfile)
-    logging.info("reading config from %s" % configfile)
-    conf_parser = SafeConfigParser()
-    conf_parser.read(configfile)
-
-    resource = conf_parser.get('default', 'resource')
-    syncer = carddav.PyCardDAV(resource, )
-    syncer.user = conf_parser.get('default', 'user')
+    syncer = carddav.PyCardDAV(args['resource'],
+                               user=args['user'],
+                               passwd=args['passwd'],
+                               write_support=args['write_support'])
     try:
-        syncer.passwd = conf_parser.get('default', 'passwd')
-    except NoOptionError:
-        syncer.passwd = getpass.getpass(prompt='CardDAV password: ')
-    try:
-        temp = conf_parser.get('default', 'write_support')
-        if temp == 'YesPleaseIDoHaveABackupOfMyData':
-            syncer.write_support = True
-    except NoOptionError:
-        pass
-
-    debug = bool(conf_parser.getint('default', 'DEBUG'))
-    if args.debug:   # argument overrides config file
-        debug = bool(args.debug)
-    db_path = conf_parser.get('default', 'db_path')
-    # ssl:
-    try:
-        syncer.insecure_ssl = conf_parser.getint('default', 'insecure_ssl')
-    except NoOptionError:
+        syncer.insecure_ssl = args['insecure_ssl']
+    except KeyError:
         pass
     try:
-        syncer.ssl_cacert_file = conf_parser.get('default', 'ssl_cacert_file')
-    except NoOptionError:
+        syncer.ssl_cacert_file = args['ssl_cacert_file']
+    except KeyError:
         pass
-    syncer.debug = debug
 
-    logging.info("using remote options:\n"
+    logging.debug("using remote options:\n"
         "  user: %s\n" % syncer.user + \
         "  passwd: %s\n" % syncer.passwd + \
         "  resource: %s\n" % syncer.url.resource + \
         "  base_url: %s\n" % syncer.url.base + \
         "  insecureSSL: %s\n" % syncer.insecure_ssl +\
-        "using local options:\na" + \
-        "  db_path: %s\n" % db_path)
+        "using local options:\n" + \
+        "  db_path: %s\n" % args['db_path'])
 
-    my_dbtool = pycard.PcQuery(db_path, "utf-8", "stricts", debug)
+    my_dbtool = pycard.PcQuery(args['db_path'], "utf-8", "stricts",
+                               args['debug'])
 
     # sync:
     abook = syncer.get_abook()  # type (abook): dict
@@ -123,7 +125,7 @@ def main():
 
         if my_dbtool.check_new_etag(vref, v_etag):
             my_dbtool.delete_vcard_props_from_db(vref)
-            logging.debug("getting ", vref, " etag: ", v_etag)
+            logging.debug("getting %s etag: %s", vref, v_etag)
             vcard = syncer.get_vcard(vref)
             vcard = vobject.readOne(vcard)
             my_dbtool.insert_vcard_in_db(vref, vcard)
@@ -145,14 +147,14 @@ def main():
     logging.info("getting changed vcards from db")
     hrefs = my_dbtool.get_local_edited_hrefs()
     for href in hrefs:
-        logging.info("trying to update %s" % href)
+        logging.info("trying to update %s", href)
         card = my_dbtool.get_vcard_from_db(href)
-        logging.debug("%s" % my_dbtool.get_etag(href))
+        logging.debug("%s", my_dbtool.get_etag(href))
         syncer.update_vcard(card.serialize(), href, None)
         my_dbtool.reset_flag(href)
     hrefs = my_dbtool.get_local_new_hrefs()
     for href in hrefs:
-        logging.info("trying to upload new card %s" % href)
+        logging.info("trying to upload new card %s", href)
         card = my_dbtool.get_vcard_from_db(href)
         href_new = syncer.upload_new_card(card.serialize())
         my_dbtool.update_vref(href, href_new)

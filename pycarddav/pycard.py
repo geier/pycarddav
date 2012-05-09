@@ -9,10 +9,8 @@
 """
 classes and methods for pycarddav, the carddav class could/should be moved
 to another module for better reusing
-"""
 
 
-"""
 Database Layout
 ===============
 
@@ -57,6 +55,8 @@ try:
     import urwid
     import sqlite3
     import vobject
+    import cmd
+    import logging
 
 except ImportError, error:
     print error
@@ -195,7 +195,6 @@ class VCard(list):
 
     def edit(self):
         """proper edit"""
-        import cmd
 
         contact = self
 
@@ -245,7 +244,7 @@ class VCard(list):
 
             def help_new(self):
                 print '\n'.join(['add a new property',
-                    'property must be either one of %s' %PROPS_ALLOWED,
+                    'property must be either one of %s' % PROPS_ALLOWED,
                     'or begin with \'X-\''])
 
             def do_save(self, line):
@@ -285,10 +284,10 @@ class VCard(list):
         name = list()
         name.append(raw_input('Surname (was: ' + name_split[0] + '):'))
         name.append(raw_input('Given name (was: ' + name_split[1] + '):'))
-        name.append(raw_input('Additional Names (was: ' + name_split[2] + '):'))
+        name.append(raw_input('Additional name (was: ' + name_split[2] + '):'))
         name.append(raw_input('Prefixes (was: ' + name_split[3] + '):'))
         name.append(raw_input('Postfixes (was: ' + name_split[4] + '):'))
-        self.fname = raw_input('Displayed Name (was: ' + self.fname + '):')
+        self.fname = raw_input('Displayed name (was: ' + self.fname + '):')
         self.name = ';'.join(name)
         self.edited = 1
 
@@ -370,7 +369,7 @@ class CardProperty(list):
         """returns all types parameters, separated by "," """
         try:
             params = u', '.join(self.params[u'TYPE'])
-        except TypeError or KeyError:
+        except (TypeError, KeyError):
             params = u''
         return params
 
@@ -399,6 +398,7 @@ class CardProperty(list):
                               + self.type_list() + u"): "
                               + self.value).encode("utf-8")
         return
+
 
 class PcQuery(object):
     """Querying the addressbook database"""
@@ -555,11 +555,9 @@ class PcQuery(object):
         cursor = conn.cursor()
         try:
             cursor.execute('''CREATE TABLE version ( version INTEGER )''')
-            if self.debug:
-                print "created version table"
+            logging.debug("created version table")
         except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
+            logging.debug("%s", detail)
         except Exception, error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
@@ -574,11 +572,9 @@ class PcQuery(object):
                     version TEXT,
                     edited INT
                     )''')
-            if self.debug:
-                print "created vcardtable"
+            logging.debug("created vcardtable table")
         except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
+            logging.debug("%s", detail)
         except Exception, error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
@@ -593,11 +589,9 @@ class PcQuery(object):
             parameters TEXT,
             FOREIGN KEY(href) REFERENCES vcardtable(href)
             )''')
-            if self.debug:
-                print "created properties table"
+            logging.debug("created properties table")
         except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
+            logging.debug("%s", detail)
         except Exception, error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
@@ -612,11 +606,9 @@ class PcQuery(object):
             parameters TEXT,
             FOREIGN KEY(href) REFERENCES vcardtable(href)
             )''')
-            if self.debug:
-                print "created blobproperties table"
+            logging.debug("created blobproperties table")
         except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
+            logging.debug("%s", detail)
         except Exception, error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
@@ -712,8 +704,8 @@ class PcQuery(object):
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref)
-        cursor.execute('UPDATE vcardtable GET etag WHERE href=(?);',
+        stuple = (vref,)
+        cursor.execute('SELECT etag FROM vcardtable WHERE href=(?);',
                        stuple)
         etag = cursor.fetchall()[0][0]
         cursor.close()
