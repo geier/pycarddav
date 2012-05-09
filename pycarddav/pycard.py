@@ -76,6 +76,21 @@ def print_bold(text):
         print(text)
 
 
+def list_clean(string):
+    """ transforms a comma seperated string to a list, stripping whitespaces
+    "HOME, WORK,pref" -> ['HOME', 'WORK', 'pref']
+
+    string: string of comma seperated elements
+    returns: list()
+    """
+
+    string = string.split(',')
+    rstring = list()
+    for element in string:
+        rstring.append(element.strip(' '))
+    return rstring
+
+
 class SelText(urwid.Text):
     """
     Selectable Text with an aditional href varibale
@@ -381,7 +396,7 @@ class CardProperty(list):
             self.edited = 1
         temp = raw_input(smartencode(u"Types [" + self.type_list() + u"]: "))
         if not temp == unicode():
-            self.params[u'TYPE'] = temp.split(',')
+            self.params[u'TYPE'] = list_clean(temp)
             self.edited = 1
 
     def print_yourself(self):
