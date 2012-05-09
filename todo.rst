@@ -10,6 +10,7 @@ FEATURES
 * gnome-keychain support
 * display only certain x-properties
 * test against other servers (fruux)
+* use logging from std lib
 
 BUGS
 ====
