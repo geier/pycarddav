@@ -51,12 +51,12 @@ def main():
 
     parser = argparse.ArgumentParser(
         description='prints contacts cards matching a search string')
+    parser.add_argument("-v", "--version", action="version",
+            version=__init__.__version__)
     parser.add_argument(
         "-c", "--config", action="store", dest="configfile",
         default="~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
-    parser.add_argument("-v", "--version", action="version",
-            version=__init__.__version__)
     parser.add_argument("-a", action="store_true", dest="display_all",
             default="False", help="prints the whole card, not only name, "
             "telephone numbers and email addresses")
@@ -78,6 +78,8 @@ def main():
             "if a SEARCHSTRING is present, only backup cards matching it.")
     parser.add_argument('-i', '--import', type=argparse.FileType('r'),
             dest='importing', help='import vcard from file or STDIN')
+    parser.add_argument('--delete', dest='delete', action='store_true',
+            help='delete card matching SEARCHSTRING')
     args = parser.parse_args()
 
     # let's try to hide some ugly python code, at least when hitting Ctrl-C
@@ -127,6 +129,7 @@ def main():
         else:
             hreflist = my_dbtool.get_contact_id_from_string(search_string)
         for href in hreflist:
+
             card = my_dbtool.get_vcard_from_db(href)
             vcf_file.write(card.serialize())
         sys.exit()
@@ -135,9 +138,7 @@ def main():
     if (args.edit == True):
         href = my_query.select_entry_urwid(args.search_string.decode('utf-8'))
         if href is None:
-            print "Found no matching cards."
-            sys.exit()
-        #import ipdb; ipdb.set_trace()
+            sys.exit("Found no matching cards.")
 
         contact = pycard.VCard(href, db_path)
         while True:
@@ -155,6 +156,16 @@ def main():
                 if edit in [u"n", "n", u"N", "N"]:
                     return 0
         return 0
+
+    if (args.delete == True):
+        href = my_query.select_entry_urwid(args.search_string.decode('utf-8'))
+        if href is None:
+            sys.exit('Found no matching cards.')
+        my_query.mark_for_deletion(href)
+        print 'marked vcard %s as deleted, will be deleted on the server ' + \
+        'on the next sync'
+        sys.exit()
+
 
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all

@@ -769,7 +769,21 @@ class PcQuery(object):
             print "locally deleting ", vref
         cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
         conn.commit()
+        cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
+        conn.commit()
         cursor.execute('DELETE FROM vcardtable WHERE href=(?)', stuple)
+        conn.commit()
+        cursor.close()
+
+    def mark_for_deletion(self, vref):
+        """
+        marks vcard for deletion
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (9, vref, )
+        cursor.execute('UPDATE vcardtable SET edited = ? WHERE href=(?)',
+                stuple)
         conn.commit()
         cursor.close()
 
