@@ -9,14 +9,12 @@
 """
 classes and methods for pycarddav, the carddav class could/should be moved
 to another module for better reusing
-"""
 
 
-"""
 Database Layout
 ===============
 
-current version number: 5
+current version number: 6
 tables: version, vcardtable, properties, blobproperties
 
 version:
@@ -32,7 +30,6 @@ vcardtable:
         * 0: not touched since last sync
         * 1: properties edited or added (news to be pushed to server)
         * 2: new card, needs to be created on the server
-        * 9: card locally deleted, should be DELETEd on the server
 
 properties:
     id (INTEGER PRIMARY KEY)
@@ -48,6 +45,10 @@ blobproperties: the same as the properties table, but with a binary value
     value (TEXT): binary value
     href (TEXT):
     parameters (TEXT): the parameters as a unicode()ed dict
+
+delete: list of hrefs and corresponding etags to be deleted on next sync
+    href (TEXT)
+    etag (TEXT)
 """
 
 try:
@@ -57,6 +58,8 @@ try:
     import urwid
     import sqlite3
     import vobject
+    import cmd
+    import logging
 
 except ImportError, error:
     print error
@@ -74,6 +77,21 @@ def print_bold(text):
         cprint(text, attrs=['bold'])
     else:
         print(text)
+
+
+def list_clean(string):
+    """ transforms a comma seperated string to a list, stripping whitespaces
+    "HOME, WORK,pref" -> ['HOME', 'WORK', 'pref']
+
+    string: string of comma seperated elements
+    returns: list()
+    """
+
+    string = string.split(',')
+    rstring = list()
+    for element in string:
+        rstring.append(element.strip(' '))
+    return rstring
 
 
 class SelText(urwid.Text):
@@ -133,6 +151,7 @@ class VCard(list):
     """
 
     def __init__(self, h_ref="", db_path=""):
+        list.__init__(list())
         self.h_ref = h_ref
         self.db_path = db_path
         self.edited = 0
@@ -195,7 +214,6 @@ class VCard(list):
 
     def edit(self):
         """proper edit"""
-        import cmd
 
         contact = self
 
@@ -245,7 +263,7 @@ class VCard(list):
 
             def help_new(self):
                 print '\n'.join(['add a new property',
-                    'property must be either one of %s' %PROPS_ALLOWED,
+                    'property must be either one of %s' % PROPS_ALLOWED,
                     'or begin with \'X-\''])
 
             def do_save(self, line):
@@ -285,10 +303,10 @@ class VCard(list):
         name = list()
         name.append(raw_input('Surname (was: ' + name_split[0] + '):'))
         name.append(raw_input('Given name (was: ' + name_split[1] + '):'))
-        name.append(raw_input('Additional Names (was: ' + name_split[2] + '):'))
+        name.append(raw_input('Additional name (was: ' + name_split[2] + '):'))
         name.append(raw_input('Prefixes (was: ' + name_split[3] + '):'))
         name.append(raw_input('Postfixes (was: ' + name_split[4] + '):'))
-        self.fname = raw_input('Displayed Name (was: ' + self.fname + '):')
+        self.fname = raw_input('Displayed name (was: ' + self.fname + '):')
         self.name = ';'.join(name)
         self.edited = 1
 
@@ -370,7 +388,7 @@ class CardProperty(list):
         """returns all types parameters, separated by "," """
         try:
             params = u', '.join(self.params[u'TYPE'])
-        except TypeError or KeyError:
+        except (TypeError, KeyError):
             params = u''
         return params
 
@@ -382,7 +400,7 @@ class CardProperty(list):
             self.edited = 1
         temp = raw_input(smartencode(u"Types [" + self.type_list() + u"]: "))
         if not temp == unicode():
-            self.params[u'TYPE'] = temp.split(',')
+            self.params[u'TYPE'] = list_clean(temp)
             self.edited = 1
 
     def print_yourself(self):
@@ -399,6 +417,7 @@ class CardProperty(list):
                               + self.type_list() + u"): "
                               + self.value).encode("utf-8")
         return
+
 
 class PcQuery(object):
     """Querying the addressbook database"""
@@ -531,7 +550,7 @@ class PcQuery(object):
         tests for curent db Version
         if the table is still empty, insert db_version
         """
-        database_version = 5  # the current db VERSION
+        database_version = 6  # the current db VERSION
         #try:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -555,11 +574,9 @@ class PcQuery(object):
         cursor = conn.cursor()
         try:
             cursor.execute('''CREATE TABLE version ( version INTEGER )''')
-            if self.debug:
-                print "created version table"
+            logging.debug("created version table")
         except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
+            logging.debug("%s", detail)
         except Exception, error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
@@ -574,11 +591,9 @@ class PcQuery(object):
                     version TEXT,
                     edited INT
                     )''')
-            if self.debug:
-                print "created vcardtable"
+            logging.debug("created vcardtable table")
         except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
+            logging.debug("%s", detail)
         except Exception, error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
@@ -593,11 +608,9 @@ class PcQuery(object):
             parameters TEXT,
             FOREIGN KEY(href) REFERENCES vcardtable(href)
             )''')
-            if self.debug:
-                print "created properties table"
+            logging.debug("created properties table")
         except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
+            logging.debug("%s", detail)
         except Exception, error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
@@ -612,11 +625,20 @@ class PcQuery(object):
             parameters TEXT,
             FOREIGN KEY(href) REFERENCES vcardtable(href)
             )''')
-            if self.debug:
-                print "created blobproperties table"
+            logging.debug("created blobproperties table")
         except sqlite3.OperationalError as detail:
-            if self.debug:
-                print detail
+            logging.debug("%s", detail)
+        except Exception, error:
+            sys.stderr.write('Failed to connect to database,'
+                'Unknown Error: ' + str(error) + "\n")
+        conn.commit()
+        # create delete table
+        try:
+            cursor.execute('''CREATE TABLE delete (
+            href TEXT NOT NULL,
+            etag TEXT)''')
+        except sqlite3.OperationalError as detail:
+            logging.debug("%s", detail)
         except Exception, error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
@@ -712,8 +734,8 @@ class PcQuery(object):
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref)
-        cursor.execute('UPDATE vcardtable GET etag WHERE href=(?);',
+        stuple = (vref,)
+        cursor.execute('SELECT etag FROM vcardtable WHERE href=(?);',
                        stuple)
         etag = cursor.fetchall()[0][0]
         cursor.close()
@@ -762,7 +784,20 @@ class PcQuery(object):
             print "locally deleting ", vref
         cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
         conn.commit()
+        cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
+        conn.commit()
         cursor.execute('DELETE FROM vcardtable WHERE href=(?)', stuple)
+        conn.commit()
+        cursor.close()
+
+    def mark_for_deletion(self, vref, etag):
+        """
+        marks vcard for deletion
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (vref, '' )
+        cursor.execute('INSERT INTO delete (href, etag) VALUES (?,?);', stuple)
         conn.commit()
         cursor.close()
 
@@ -877,6 +912,14 @@ class PcQuery(object):
         cursor.execute('SELECT href FROM vcardtable where edited == 2')
         result = cursor.fetchall()
         return [row[0] for row in result]
+
+    def get_local_deleted_hrefs_etags(self):
+        """returns list of tuples (hrefs, etags) of locally deleted vcards"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT href, etag FROM deleted')
+        result = cursor.fetchall()
+        return result
 
     def insert_vcard_in_db(self, vref, vcard):
         """

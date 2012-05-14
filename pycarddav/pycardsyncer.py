@@ -22,11 +22,10 @@ try:
     import pycarddav
     import carddav
     import logging
-
-    from ConfigParser import SafeConfigParser, NoOptionError
+    from ConfigParser import SafeConfigParser
     import vobject
 except ImportError, error:
-    print error
+    sys.stderr.write(error)
     sys.exit(1)
 
 LEVELS = {'debug':logging.DEBUG,
@@ -91,9 +90,16 @@ def main():
     logger = logging.getLogger('simple_logger')
     logger.setLevel(logging.DEBUG)
 
+<<<<<<< HEAD
     syncer = carddav.PyCardDAV(args['resource'], )
     syncer.user = args['user']
     syncer.passwd = args['passwd']
+=======
+    syncer = carddav.PyCardDAV(args['resource'],
+                               user=args['user'],
+                               passwd=args['passwd'],
+                               write_support=args['write_support'])
+>>>>>>> 5b60818a52bf5b5e013445d547b29bb0bad17bc0
     try:
         syncer.insecure_ssl = args['insecure_ssl']
     except KeyError:
@@ -103,7 +109,7 @@ def main():
     except KeyError:
         pass
 
-    logging.info("using remote options:\n"
+    logging.debug("using remote options:\n"
         "  user: %s\n" % syncer.user + \
         "  passwd: %s\n" % syncer.passwd + \
         "  resource: %s\n" % syncer.url.resource + \
@@ -112,7 +118,8 @@ def main():
         "using local options:\n" + \
         "  db_path: %s\n" % args['db_path'])
 
-    my_dbtool = pycard.PcQuery(args['db_path'], "utf-8", "stricts", args['debug'])
+    my_dbtool = pycard.PcQuery(args['db_path'], "utf-8", "stricts",
+                               args['debug'])
 
     # sync:
     abook = syncer.get_abook()  # type (abook): dict
@@ -123,7 +130,7 @@ def main():
 
         if my_dbtool.check_new_etag(vref, v_etag):
             my_dbtool.delete_vcard_props_from_db(vref)
-            logging.debug("getting ", vref, " etag: ", v_etag)
+            logging.debug("getting %s etag: %s", vref, v_etag)
             vcard = syncer.get_vcard(vref)
             vcard = vobject.readOne(vcard)
             my_dbtool.insert_vcard_in_db(vref, vcard)
@@ -145,18 +152,24 @@ def main():
     logging.info("getting changed vcards from db")
     hrefs = my_dbtool.get_local_edited_hrefs()
     for href in hrefs:
-        logging.info("trying to update %s" % href)
+        logging.info("trying to update %s", href)
         card = my_dbtool.get_vcard_from_db(href)
-        logging.debug("%s" % my_dbtool.get_etag(href))
+        logging.debug("%s", my_dbtool.get_etag(href))
         syncer.update_vcard(card.serialize(), href, None)
         my_dbtool.reset_flag(href)
     hrefs = my_dbtool.get_local_new_hrefs()
     for href in hrefs:
-        logging.info("trying to upload new card %s" % href)
+        logging.info("trying to upload new card %s", href)
         card = my_dbtool.get_vcard_from_db(href)
         href_new = syncer.upload_new_card(card.serialize())
         my_dbtool.update_vref(href, href_new)
         my_dbtool.reset_flag(href_new)
+
+    # deleting locally deleted cards on the server
+    hrefs_etags = my_dbtool.get_local_deleted_hrefs_etags()
+    for href, etag in hrefs_etags:
+        logging.info('trying to delete card %s', href)
+        syncer.delete_vcard(href, etag)
 
 
 if __name__ == "__main__":
