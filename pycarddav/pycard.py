@@ -14,7 +14,7 @@ to another module for better reusing
 Database Layout
 ===============
 
-current version number: 5
+current version number: 6
 tables: version, vcardtable, properties, blobproperties
 
 version:
@@ -30,7 +30,6 @@ vcardtable:
         * 0: not touched since last sync
         * 1: properties edited or added (news to be pushed to server)
         * 2: new card, needs to be created on the server
-        * 9: card locally deleted, should be DELETEd on the server
 
 properties:
     id (INTEGER PRIMARY KEY)
@@ -46,6 +45,10 @@ blobproperties: the same as the properties table, but with a binary value
     value (TEXT): binary value
     href (TEXT):
     parameters (TEXT): the parameters as a unicode()ed dict
+
+delete: list of hrefs and corresponding etags to be deleted on next sync
+    href (TEXT)
+    etag (TEXT)
 """
 
 try:
@@ -148,6 +151,7 @@ class VCard(list):
     """
 
     def __init__(self, h_ref="", db_path=""):
+        list.__init__(list())
         self.h_ref = h_ref
         self.db_path = db_path
         self.edited = 0
@@ -546,7 +550,7 @@ class PcQuery(object):
         tests for curent db Version
         if the table is still empty, insert db_version
         """
-        database_version = 5  # the current db VERSION
+        database_version = 6  # the current db VERSION
         #try:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -622,6 +626,17 @@ class PcQuery(object):
             FOREIGN KEY(href) REFERENCES vcardtable(href)
             )''')
             logging.debug("created blobproperties table")
+        except sqlite3.OperationalError as detail:
+            logging.debug("%s", detail)
+        except Exception, error:
+            sys.stderr.write('Failed to connect to database,'
+                'Unknown Error: ' + str(error) + "\n")
+        conn.commit()
+        # create delete table
+        try:
+            cursor.execute('''CREATE TABLE delete (
+            href TEXT NOT NULL,
+            etag TEXT)''')
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
         except Exception, error:
@@ -775,15 +790,14 @@ class PcQuery(object):
         conn.commit()
         cursor.close()
 
-    def mark_for_deletion(self, vref):
+    def mark_for_deletion(self, vref, etag):
         """
         marks vcard for deletion
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (9, vref, )
-        cursor.execute('UPDATE vcardtable SET edited = ? WHERE href=(?)',
-                stuple)
+        stuple = (vref, etag )
+        cursor.execute('INSERT into delete (href, etag) VALUES (?,?);', stuple)
         conn.commit()
         cursor.close()
 
