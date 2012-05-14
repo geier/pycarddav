@@ -90,16 +90,10 @@ def main():
     logger = logging.getLogger('simple_logger')
     logger.setLevel(logging.DEBUG)
 
-<<<<<<< HEAD
-    syncer = carddav.PyCardDAV(args['resource'], )
-    syncer.user = args['user']
-    syncer.passwd = args['passwd']
-=======
     syncer = carddav.PyCardDAV(args['resource'],
                                user=args['user'],
                                passwd=args['passwd'],
                                write_support=args['write_support'])
->>>>>>> 5b60818a52bf5b5e013445d547b29bb0bad17bc0
     try:
         syncer.insecure_ssl = args['insecure_ssl']
     except KeyError:
