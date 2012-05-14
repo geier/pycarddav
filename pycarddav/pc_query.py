@@ -161,7 +161,7 @@ def main():
         href = my_query.select_entry_urwid(args.search_string.decode('utf-8'))
         if href is None:
             sys.exit('Found no matching cards.')
-        my_query.mark_for_deletion(href)
+        my_query.mark_for_deletion(href, '')
         my_query.delete_vcard_from_db(href)
         print 'vcard %s deleted from local db, will be deleted on the ',
         'server on the next sync'

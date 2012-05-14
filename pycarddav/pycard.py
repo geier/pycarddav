@@ -796,8 +796,8 @@ class PcQuery(object):
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref, etag )
-        cursor.execute('INSERT into delete (href, etag) VALUES (?,?);', stuple)
+        stuple = (vref, '' )
+        cursor.execute('INSERT INTO delete (href, etag) VALUES (?,?);', stuple)
         conn.commit()
         cursor.close()
 
@@ -912,6 +912,14 @@ class PcQuery(object):
         cursor.execute('SELECT href FROM vcardtable where edited == 2')
         result = cursor.fetchall()
         return [row[0] for row in result]
+
+    def get_local_deleted_hrefs_etags(self):
+        """returns list of tuples (hrefs, etags) of locally deleted vcards"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT href, etag FROM deleted')
+        result = cursor.fetchall()
+        return result
 
     def insert_vcard_in_db(self, vref, vcard):
         """

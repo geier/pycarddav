@@ -160,6 +160,12 @@ def main():
         my_dbtool.update_vref(href, href_new)
         my_dbtool.reset_flag(href_new)
 
+    # deleting locally deleted cards on the server
+    hrefs_etags = my_dbtool.get_local_deleted_hrefs_etags()
+    for href, etag in hrefs_etags:
+        logging.info('trying to delete card %s', href)
+        syncer.delete_vcard(href, etag)
+
 
 if __name__ == "__main__":
     main()
