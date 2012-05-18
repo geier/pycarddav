@@ -148,14 +148,18 @@ def main():
     for href in hrefs:
         logging.info("trying to update %s", href)
         card = my_dbtool.get_vcard_from_db(href)
+        card_string = card.serialize()
+        card_string = card_string.replace('###COMMA###', ',')
         logging.debug("%s", my_dbtool.get_etag(href))
-        syncer.update_vcard(card.serialize(), href, None)
+        syncer.update_vcard(card_string, href, None)
         my_dbtool.reset_flag(href)
     hrefs = my_dbtool.get_local_new_hrefs()
     for href in hrefs:
         logging.info("trying to upload new card %s", href)
         card = my_dbtool.get_vcard_from_db(href)
-        href_new = syncer.upload_new_card(card.serialize())
+        card_string = card.serialize()
+        card_string = card_string.replace('###COMMA###', ',')
+        href_new = syncer.upload_new_card(card_string)
         my_dbtool.update_vref(href, href_new)
         my_dbtool.reset_flag(href_new)
 

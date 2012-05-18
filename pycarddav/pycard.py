@@ -876,6 +876,7 @@ class PcQuery(object):
         tmp = card.add('VERSION')
         tmp.value = version
 
+
         # and now we add everything else
         cursor.execute('SELECT id, property, value, parameters FROM properties'
                         ' WHERE href=(?)', stuple)
@@ -895,12 +896,15 @@ class PcQuery(object):
                                                   box=adr[5],
                                                   extended=adr[6])
             #PROPFUCK
-            elif prop in PROPS_LIST:
-                cats = value.split(',')
-                tmp.value = cats
+            elif prop == 'NICKNAME':
+                value = value.replace(',', '###COMMA###')
+                tmp.value = unicode(value)
+            elif prop == 'CATEGORIES':
+                tmp.value = value.split(',')
             else:
                 tmp.value = value
-            tmp.params = ast.literal_eval(parameters)
+            params = ast.literal_eval(parameters)
+            tmp.params = params
         cursor.execute('SELECT id, property, value, parameters '
                        'FROM blobproperties WHERE href=(?)', stuple)
         result = cursor.fetchall()

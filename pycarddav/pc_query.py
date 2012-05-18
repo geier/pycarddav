@@ -131,7 +131,9 @@ def main():
         for href in hreflist:
 
             card = my_dbtool.get_vcard_from_db(href)
-            vcf_file.write(card.serialize())
+            card_string = card.serialize()
+            card_string = card_string.replace('###COMMA###', ',')
+            vcf_file.write(card_string)
         sys.exit()
 
     # editing a card:
