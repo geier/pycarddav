@@ -634,9 +634,10 @@ class PcQuery(object):
         conn.commit()
         # create delete table
         try:
-            cursor.execute('''CREATE TABLE delete (
+            cursor.execute('''CREATE TABLE deleted (
             href TEXT NOT NULL,
             etag TEXT)''')
+            logging.debug("created deleted table")
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
         except Exception, error:
@@ -797,7 +798,20 @@ class PcQuery(object):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (vref, '' )
-        cursor.execute('INSERT INTO delete (href, etag) VALUES (?,?);', stuple)
+        cursor.execute('INSERT INTO deleted (href, etag) VALUES (?,?);',
+                       stuple)
+        conn.commit()
+        cursor.close()
+
+    def rm_from_deleted(self, href):
+        """
+        removes href entry from deleted table, to be called after href
+        deleted from remote server
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (href, '')
+        cursor.execute('DELETE from deleted WHERE href=(?);', stuple)
         conn.commit()
         cursor.close()
 

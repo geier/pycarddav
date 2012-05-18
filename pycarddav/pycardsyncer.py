@@ -164,6 +164,7 @@ def main():
     for href, etag in hrefs_etags:
         logging.info('trying to delete card %s', href)
         syncer.delete_vcard(href, etag)
+        my_dbtool.rm_from_deleted(href)
 
 
 if __name__ == "__main__":

@@ -204,7 +204,7 @@ class PyCardDAV(object):
         if etag is None:
             headers = ["Content-Type: text/vcard"]
         else:
-            headers = ["If-Match: %s" % etag, "Content-Type: text/vcard"]
+            headers = ["If-Match: " + str(etag), "Content-Type: text/vcard"]
         self.curl.setopt(pycurl.HTTPHEADER, headers)
         self.curl.setopt(pycurl.CUSTOMREQUEST, 'DELETE')
         self.curl.setopt(pycurl.URL, remotepath)
