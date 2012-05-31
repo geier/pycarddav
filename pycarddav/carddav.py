@@ -167,6 +167,7 @@ class PyCardDAV(object):
         etag: str or None, if this is set to a string, card is only updated if
               remote etag matches. If etg = None the update is forced anyway
          """
+         # TODO what happens if etag does not match?
         self.check_write_support()
         print str(vref), " uploading your changes..."  # TODO proper logging
         self._curl_reset()
@@ -198,6 +199,7 @@ class PyCardDAV(object):
         :type vref: str()
         :returns: nothing
         """
+        # TODO: what happens if etag does not match, url does not exist etc ?
         self.check_write_support()
         self._curl_reset()
         remotepath = str(self.url.base + vref)
