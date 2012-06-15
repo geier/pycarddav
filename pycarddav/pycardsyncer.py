@@ -28,11 +28,11 @@ except ImportError, error:
     sys.stderr.write(error)
     sys.exit(1)
 
-LEVELS = {'debug':logging.DEBUG,
-          'info':logging.INFO,
-          'warning':logging.WARNING,
-          'error':logging.ERROR,
-          'critical':logging.CRITICAL,
+LEVELS = {'debug': logging.DEBUG,
+          'info': logging.INFO,
+          'warning': logging.WARNING,
+          'error': logging.ERROR,
+          'critical': logging.CRITICAL,
           }
 
 
@@ -73,9 +73,12 @@ def parser():
     args = vars(arg_parser.parse_args(remaining_argv))
     if 'passwd' not in args:
         args['passwd'] = getpass.getpass(prompt='CardDAV password: ')
-    if args['write_support'] == 'YesPleaseIDoHaveABackupOfMyData':
-        args['write_support'] = True
-    else:
+    try:
+        if args['write_support'] == 'YesPleaseIDoHaveABackupOfMyData':
+            args['write_support'] = True
+        else:
+            args['write_support'] = False
+    except KeyError:
         args['write_support'] = False
     return args
 
