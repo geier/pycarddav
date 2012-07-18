@@ -810,8 +810,7 @@ class PcQuery(object):
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (href, '')
-        cursor.execute('DELETE from deleted WHERE href=(?);', stuple)
+        cursor.execute('DELETE from deleted WHERE href=(?);', (href,))
         conn.commit()
         cursor.close()
 

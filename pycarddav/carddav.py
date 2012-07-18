@@ -18,6 +18,7 @@ try:
     import pycurl
     import lxml.etree as ET
     from collections import namedtuple
+    import requests
 
 except ImportError, error:
     sys.stderr.write(error)
@@ -102,8 +103,10 @@ class PyCardDAV(object):
         self.debug = debug
         self.user = user
         self.passwd = passwd
+        self.auth = (user, passwd)
         self.insecure_ssl = insecure_ssl
         self.ssl_cacert_file = ssl_cacert_file
+        self.session = requests.session()
         self.curl = pycurl.Curl()
         self.response = StringIO.StringIO()
         self.header = StringIO.StringIO()
@@ -152,13 +155,8 @@ class PyCardDAV(object):
         pulls vcard from server
         returns vcard
         """
-        self._curl_reset()
-        self.curl.setopt(pycurl.CUSTOMREQUEST, "GET")
-        self.curl.setopt(pycurl.URL, self.url.base + vref)
-        self.curl.perform()
-
-        vcard = self.response.getvalue()
-        return vcard
+        response = self.session.get(self.url.base + vref, auth=self.auth)
+        return response.content
 
     def update_vcard(self, card, vref, etag):
         """
@@ -199,17 +197,13 @@ class PyCardDAV(object):
         :returns: nothing
         """
         self.check_write_support()
-        self._curl_reset()
         remotepath = str(self.url.base + vref)
         if etag is None:
-            headers = ["Content-Type: text/vcard"]
+            headers = {'content-type': 'text/vcard'}
         else:
-            headers = ["If-Match: " + str(etag), "Content-Type: text/vcard"]
-        self.curl.setopt(pycurl.HTTPHEADER, headers)
-        self.curl.setopt(pycurl.CUSTOMREQUEST, 'DELETE')
-        self.curl.setopt(pycurl.URL, remotepath)
-        self.curl.perform()
-        self.curl.close()
+            headers = {'content-type': 'text/vcard', 'If-Match': str(etag)}
+        self.session.delete(remotepath, auth=self.auth,
+                            headers=headers)
 
     def upload_new_card(self, card):
         """
@@ -223,19 +217,12 @@ class PyCardDAV(object):
         for _ in range(0, 5):
             rand_string = get_random_href()
             remotepath = str(self.url.resource + rand_string + ".vcf")
-            self._curl_reset()
             # doesn't work without escape of *
-            headers = ["If-None-Match: \*", "Content-Type: text/vcard"]
-            self.curl.setopt(pycurl.HTTPHEADER, headers)
-            self.curl.setopt(pycurl.UPLOAD, 1)
-            self.curl.setopt(pycurl.URL, remotepath)
-            #self.curl.setopt(pycurl.VERBOSE, 1)
-            tempfile = StringIO.StringIO(card)
-            self.curl.setopt(pycurl.READFUNCTION, tempfile.read)
-            self.curl.setopt(pycurl.INFILESIZE, tempfile.len)
-            #import ipdb; ipdb.set_trace()
-            self.perform_curl()
-            if self.header['HTTP/1.1'][-1] == '201 Created':
+            headers = {'content-type': 'text/vcard', 'If-None-Match': '*'}
+            response = requests.put(remotepath, data=card, headers=headers,
+                                        auth=self.auth)
+            import ipdb; ipdb.set_trace()
+            if response.ok:
                 parsed_url = urlparse.urlparse(remotepath)
                 return parsed_url.path
             # TODO: should raise an exception if this is ever reached
@@ -274,18 +261,16 @@ class PyCardDAV(object):
 
         :rtype: str() (an xml file)
         """
-        self._curl_reset()
-        self.curl.setopt(pycurl.CUSTOMREQUEST, "PROPFIND")
-        self.curl.setopt(pycurl.URL, self.url.resource)
-        self.perform_curl()
+        response = requests.request('PROPFIND', self.url.resource,
+                auth=self.auth)
         try:
-            if self.header['DAV:'].count('addressbook') == 0:
+            if response.headers['DAV'].count('addressbook') == 0:
                 sys.stderr.write("URL is not a CardDAV resource")
                 sys.exit(1)
         except KeyError:
             print "URL is not a DAV resource"
             sys.exit(1)
-        return self.response.getvalue()
+        return response.content
 
     def _process_xml_props(self, xml):
         """processes the xml from PROPFIND, listing all vcard hrefs
@@ -295,6 +280,7 @@ class PyCardDAV(object):
         :rtype: dict() key: vref, value: etag
         """
         namespace = "{DAV:}"
+
         element = ET.XML(xml)
         abook = dict()
         for response in element.iterchildren():
