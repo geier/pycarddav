@@ -165,8 +165,8 @@ def main():
             sys.exit('Found no matching cards.')
         my_query.mark_for_deletion(href, '')
         my_query.delete_vcard_from_db(href)
-        print 'vcard %s deleted from local db, will be deleted on the ' + \
-            'server on the next sync' %href
+        print 'vcard %s deleted from local db, will be deleted on ' %href + \
+            'the server on the next sync'
         sys.exit()
 
 

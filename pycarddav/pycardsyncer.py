@@ -133,17 +133,6 @@ def main():
             my_dbtool.insert_vcard_in_db(vref, vcard)
             my_dbtool.update_etag(vref, v_etag)
 
-    # detecting remote-deleted cards
-    ulist = list()
-    # is there a better way to compare a list of unicode() with a list of str()
-    # objects?
-    for one in abook.keys():
-        ulist.append(unicode(one))
-    rlist = my_dbtool.get_all_vref_from_db()
-    delete = set(rlist).difference(ulist)
-    #import ipdb; ipdb.set_trace()
-    for href in delete:
-        my_dbtool.delete_vcard_from_db(href)
 
     # for now local changes overwritten by remote changes
     logging.info("getting changed vcards from db")
@@ -173,6 +162,17 @@ def main():
         syncer.delete_vcard(href, etag)
         my_dbtool.rm_from_deleted(href)
 
+    # detecting remote-deleted cards
+    ulist = list()
+    # is there a better way to compare a list of unicode() with a list of str()
+    # objects?
+    for one in abook.keys():
+        ulist.append(unicode(one))
+    rlist = my_dbtool.get_all_vref_from_db()
+    delete = set(rlist).difference(ulist)
+    #import ipdb; ipdb.set_trace()
+    for href in delete:
+        my_dbtool.delete_vcard_from_db(href)
 
 if __name__ == "__main__":
     main()
