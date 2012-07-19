@@ -67,22 +67,24 @@ About
 resource, mainly for use with mutt's query_command, but it might be of some use
 solo.  *pyCardDAV* consists of *pycardsyncer*, a program for syncing your
 CardDAV resource into a local database and of *pc_query*, a program for
-querying the local database. *pyCardDAV* is some ugly python code that holds
-together vobject_, lxml_, PyCurl_ and pysqlite_.
+querying the local database. *pyCardDAV* is some ugly python code (it's not
+*that* bad anymore) that holds
+together vobject_, lxml_, requests_ and pysqlite_.
 
 .. _CardDav: http://en.wikipedia.org/wiki/CardDAV
 .. _vobject: http://vobject.skyhouseconsulting.com/
 .. _lxml: http://lxml.de/
-.. _PyCurl: http://pycurl.sourceforge.net/
 .. _pysqlite: http://code.google.com/p/pysqlite/
+.. _requests: http://python-requests.org
 
 Features
 --------
 (or rather: limitations)
 
 - *pyCardDAV* can only use one addressbook resource at the moment
-- *pyCardDAV* is read-only for now
 - *pyCardDAV* is only tested against davical and owncloud/sabredav
+- *pyCardDAV* features a rudimentary vcard editor and can upload changed/deleted
+  new cards on the server
 - **Warning** your password is stored in cleartext in the config file
 
 Installation
@@ -93,17 +95,13 @@ Copy and edit the supplied pycard.conf.sample file (default location is
 ~/.pycard/pycard.conf). Beware that only you can access this file, if you have
 untrusted users on your machine, since the password is stored in cleartext.
 
-Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
-Users of python versions < 2.7 will also need to install argparse.
+Make sure you have pysqlite3, py-vobject, py-lxml, requests ( >
+v.0.10 ) installed.  Users of python 2.6 will also need to install argparse.
 
 *pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
 NetBSD, Debian and Ubuntu with python 2.6 and 2.7 and against davical 0.9.9.4 -
 1.0.1 (later versions should be ok, too, but 0.9.9.3 and earlier don't seem
 to work) and owncloud (which uses sabredav).
-
-NetBSD/pkgsrc users can install *pyCardDAV* via pkgsrc_.
-
-.. _pkgsrc: http://pkgsrc.se/misc/py-carddav
 
 Usage
 -----
@@ -135,8 +133,8 @@ in your config file.
 
 SSL
 ---
-*pyCardDAV* uses liburl for all interaction with the CardDAV server, so, by
-default, it uses curl's ssl trust files. If you use SSL to interact with your
+*NOT WORKING ATM*
+If you use SSL to interact with your
 CardDAV Server (you probably should) and you don't have a certificate signed by
 a CA your OS Vendor trusts (like a self-signed certificate or one signed by
 CAcert) you can set *cacert_file* to a path to the CA's root file (must be in
