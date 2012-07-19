@@ -37,11 +37,6 @@ LEVELS = {'debug': logging.DEBUG,
           }
 
 
-def smartencode(string):
-    """convert everything to utf-8"""
-    return unicode(string).encode("utf-8", "strict")
-
-
 def signal_handler(*_):
     """this should hide ugly backtraces when hitting ctrl-c"""
     sys.exit(0)

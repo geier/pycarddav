@@ -15,7 +15,6 @@ try:
     from os import path
     import StringIO
     import urlparse
-    import pycurl
     import lxml.etree as ET
     from collections import namedtuple
     import requests
@@ -33,55 +32,6 @@ def get_random_href():
         rand_number = random.randint(0, 0x100000000)
         tmp_list.append("{0:x}".format(rand_number))
     return "-".join(tmp_list).upper()
-
-
-def header_parser(header_string):
-    """
-    parses the HTTP header returned by the server
-
-    Args:
-        header_string: HTTP header as a string
-
-    Returns:
-        A dict, whose keywords correspond to the ones from the http header, the
-        values a list of strings.
-
-    example::
-
-        {'Content-Length:': ['134'],
-         'Content-Type:': ['text/xml; charset="utf-8"'],
-         'DAV:': ['1',
-                  '2',
-                  '3',
-                  'access-control',
-                  'calendar-access',
-                  'calendar-schedule',
-                  'extended-mkcol',
-                  'calendar-proxy',
-                  'bind',
-                  'addressbook',
-                  'calendar-auto-schedule'],
-         'Date:': ['Thu', '23 Feb 2012 00:03:11 GMT'],
-         'HTTP/1.1': ['100 Continue', '412 Precondition Failed'],
-         'Server:': ['Apache'],
-         'X-DAViCal-Version:': ['DAViCal/1.0.2; DB/1.2.11'],
-         'X-Powered-By:': ['PHP/5.3.10']}
-
-    beware: not all keywords are followed by a ':'
-    """
-
-    head = dict()
-    #import ipdb; ipdb.set_trace()
-    for line in header_string.split("\r\n"):
-        test = line.split(" ", 1)
-        if not test[0] in head:
-            head[test[0]] = list()
-        try:
-            for one in test[1].split(', '):
-                head[test[0]].append(one)
-        except IndexError:
-            pass
-    return head
 
 
 DAVICAL = 'davical'
@@ -108,12 +58,7 @@ class PyCardDAV(object):
         self.insecure_ssl = insecure_ssl
         self.ssl_cacert_file = ssl_cacert_file
         self.session = requests.session()
-        self.curl = pycurl.Curl()
-        self.response = StringIO.StringIO()
-        self.header = StringIO.StringIO()
         self.write_support = write_support
-        self._header = StringIO.StringIO()
-        self.header = dict()
         self.insecure_ssl = insecure_ssl
 
     def set_insecure_ssl(self, insecure):
@@ -140,13 +85,10 @@ class PyCardDAV(object):
         currently supports davical and sabredav (same as owncloud)
         :rtype: string "davical" or "sabredav"
         """
-        self._curl_reset()
-        self.curl.setopt(pycurl.CUSTOMREQUEST, "OPTIONS")
-        self.curl.setopt(pycurl.URL, self.url.base)
-        self.perform_curl()
-        if "X-Sabre-Version:" in self.header:
+        response = requests.request('OPTIONS', self.url.base)
+        if "X-Sabre-Version" in response.headers:
             server = SABREDAV
-        elif "X-DAViCal-Version:" in self.header:
+        elif "X-DAViCal-Version" in repsonse.headers:
             server = DAVICAL
         else:
             server = UNKNOWN
@@ -176,28 +118,17 @@ class PyCardDAV(object):
         pushes changed vcard to the server
         card: vcard as unicode string
         etag: str or None, if this is set to a string, card is only updated if
-              remote etag matches. If etg = None the update is forced anyway
+              remote etag matches. If etag = None the update is forced anyway
          """
          # TODO what happens if etag does not match?
         self.check_write_support()
-        print str(vref), " uploading your changes..."  # TODO proper logging
-        self._curl_reset()
         remotepath = str(self.url.base + vref)
-        if etag is None:
-            headers = ["Content-Type: text/vcard"]
-        else:
-            headers = ["If-Match: %s" % etag, "Content-Type: text/vcard"]
-        self.curl.setopt(pycurl.HTTPHEADER, headers)
-        self.curl.setopt(pycurl.UPLOAD, 1)
-        self.curl.setopt(pycurl.URL, remotepath)
-        tempfile = StringIO.StringIO(card)
-        self.curl.setopt(pycurl.READFUNCTION, tempfile.read)
-        self.curl.setopt(pycurl.INFILESIZE, tempfile.len)
+        headers = {'content-type': 'text/vcard'}
+        if etag is not None:
+            headers['If-Match'] = etag
+        self.session.put(remotepath, data=card, headers=headers,
+                          **self.settings)
 
-        self.curl.perform()
-        #cleanup
-        tempfile.close()
-        self.curl.close()
 
     def delete_vcard(self, vref, etag):
         """deletes vcard from server
@@ -213,10 +144,9 @@ class PyCardDAV(object):
         # TODO: what happens if etag does not match, url does not exist etc ?
         self.check_write_support()
         remotepath = str(self.url.base + vref)
-        if etag is None:
-            headers = {'content-type': 'text/vcard'}
-        else:
-            headers = {'content-type': 'text/vcard', 'If-Match': str(etag)}
+        headers = {'content-type': 'text/vcard'}
+        if etag is not None:
+            headers['If-Match'] = etag
         self.session.delete(remotepath, headers=headers, **self.settings)
 
     def upload_new_card(self, card):
@@ -245,33 +175,6 @@ class PyCardDAV(object):
 
                 return (parsed_url.path, etag)
             # TODO: should raise an exception if this is ever reached
-
-    def _curl_reset(self):
-        """
-        resets the connection, called from within the other
-        functions interacting with the CardDAV server
-        """
-        self.curl = pycurl.Curl()
-        self.response = StringIO.StringIO()
-        self._header = StringIO.StringIO()
-        self.curl.setopt(pycurl.WRITEFUNCTION, self.response.write)
-        self.curl.setopt(pycurl.HEADERFUNCTION, self._header.write)
-        self.curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_SSLv3)
-        self.curl.setopt(pycurl.USERPWD, self.user + ":" + self.passwd)
-        if (self.insecure_ssl == 1):
-            self.curl.setopt(pycurl.SSL_VERIFYPEER, 0)
-        if self.ssl_cacert_file:
-            self.curl.setopt(pycurl.CAINFO,
-                             path.expanduser(self.ssl_cacert_file))
-
-    def perform_curl(self):
-        """performs curl request and exits gracefully on failure"""
-        try:
-            self.curl.perform()
-        except pycurl.error, errorstring:
-            sys.stderr.write(str(errorstring[1]) + "\n")
-            sys.exit(1)
-        self.header = header_parser(self._header.getvalue())
 
     def _get_xml_props(self):
         """PROPFIND method
