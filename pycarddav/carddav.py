@@ -93,7 +93,7 @@ class PyCardDAV(object):
         else:
             server = UNKNOWN
         if self.debug:  # TODO proper logging
-            print server + " detected"
+            print(server + " detected")
         return server
 
     def get_abook(self):
@@ -191,7 +191,7 @@ class PyCardDAV(object):
                 sys.stderr.write("URL is not a CardDAV resource")
                 sys.exit(1)
         except KeyError:
-            print "URL is not a DAV resource"
+            print("URL is not a DAV resource")
             sys.exit(1)
         return response.content
 

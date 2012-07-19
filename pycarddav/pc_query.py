@@ -10,6 +10,7 @@
 """
 utility for querying the database
 """
+from __future__ import print_function
 
 try:
     import sys
@@ -20,8 +21,8 @@ try:
     import pycard
     import vobject
     import __init__
-except ImportError, error:
-    print error
+except ImportError as error:
+    print(error)
     sys.exit(1)
 
 try:
@@ -148,7 +149,7 @@ def main():
             for prop in contact:
                 if prop.edited == 1:
                     contact.edited = 1
-            print ""
+            print("")
             contact.print_contact_info(True)
             while 1:
                 edit = raw_input("Is this correct [y/N]? ")
@@ -165,15 +166,15 @@ def main():
             sys.exit('Found no matching cards.')
         my_query.mark_for_deletion(href, '')
         my_query.delete_vcard_from_db(href)
-        print 'vcard %s deleted from local db, will be deleted on ' %href + \
-            'the server on the next sync'
+        print('vcard %s deleted from local db, will be deleted on ' %href + \
+            'the server on the next sync')
         sys.exit()
 
 
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
 
-    print "searching for " + args.search_string + "..."
+    print("searching for " + args.search_string + "...")
     my_query.search(args.search_string.decode("utf-8"))
 
     return 0
