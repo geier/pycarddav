@@ -104,6 +104,7 @@ class PyCardDAV(object):
         self.user = user
         self.passwd = passwd
         self.auth = (user, passwd)
+        self.settings = {'auth': (user, passwd,)}
         self.insecure_ssl = insecure_ssl
         self.ssl_cacert_file = ssl_cacert_file
         self.session = requests.session()
@@ -113,6 +114,18 @@ class PyCardDAV(object):
         self.write_support = write_support
         self._header = StringIO.StringIO()
         self.header = dict()
+        self.insecure_ssl = insecure_ssl
+
+    def set_insecure_ssl(self, insecure):
+        if insecure is True or 1:
+            self.settings['verify'] = False
+        else:
+            self.settings['verify'] = True
+
+    def get_insecure_ssl(self):
+        return self.settings['verify']
+
+    insecure_ssl = property(get_insecure_ssl, set_insecure_ssl)
 
     def check_write_support(self):
         """checks if user really wants his data destroyed"""
@@ -155,7 +168,7 @@ class PyCardDAV(object):
         pulls vcard from server
         returns vcard
         """
-        response = self.session.get(self.url.base + vref, auth=self.auth)
+        response = self.session.get(self.url.base + vref, **self.settings)
         return response.content
 
     def update_vcard(self, card, vref, etag):
@@ -204,8 +217,7 @@ class PyCardDAV(object):
             headers = {'content-type': 'text/vcard'}
         else:
             headers = {'content-type': 'text/vcard', 'If-Match': str(etag)}
-        self.session.delete(remotepath, auth=self.auth,
-                            headers=headers)
+        self.session.delete(remotepath, headers=headers, **self.settings)
 
     def upload_new_card(self, card):
         """
@@ -213,20 +225,25 @@ class PyCardDAV(object):
 
         :param card: vcard to be uploaded
         :type card: unicode
-        :rtype: string, path of the vcard on the server
+        :rtype: tuple of string (path of the vcard on the server) and etag of
+                new card (string or None)
         """
         self.check_write_support()
         for _ in range(0, 5):
             rand_string = get_random_href()
-            remotepath = str(self.url.resource + rand_string + ".vcf")
-            # doesn't work without escape of *
+            remotepath = str(self.url.resource + '/' + rand_string + ".vcf")
             headers = {'content-type': 'text/vcard', 'If-None-Match': '*'}
             response = requests.put(remotepath, data=card, headers=headers,
-                                        auth=self.auth)
-            import ipdb; ipdb.set_trace()
+                                        **self.settings)
             if response.ok:
                 parsed_url = urlparse.urlparse(remotepath)
-                return parsed_url.path
+
+                if response.headers['etag'] is None:
+                    etag = ''
+                else:
+                    etag = response.headers['etag']
+
+                return (parsed_url.path, etag)
             # TODO: should raise an exception if this is ever reached
 
     def _curl_reset(self):
@@ -263,8 +280,9 @@ class PyCardDAV(object):
 
         :rtype: str() (an xml file)
         """
-        response = requests.request('PROPFIND', self.url.resource,
-                auth=self.auth)
+
+        response = requests.request('PROPFIND', self.url.resource, 
+                                    **self.settings)
         try:
             if response.headers['DAV'].count('addressbook') == 0:
                 sys.stderr.write("URL is not a CardDAV resource")

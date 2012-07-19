@@ -10,6 +10,7 @@
 """
 syncs the remote database to the local db
 """
+from __future__ import print_function
 
 
 try:
@@ -17,13 +18,13 @@ try:
     import argparse
     import signal
     import getpass
-    from os import path
     import pycard
     import pycarddav
     import carddav
     import logging
-    from ConfigParser import SafeConfigParser
     import vobject
+    from ConfigParser import SafeConfigParser
+    from os import path
 except ImportError, error:
     sys.stderr.write(error)
     sys.exit(1)
@@ -133,7 +134,8 @@ def main():
             my_dbtool.insert_vcard_in_db(vref, vcard)
             my_dbtool.update_etag(vref, v_etag)
 
-
+    
+    remote_changed = False 
     # for now local changes overwritten by remote changes
     logging.info("getting changed vcards from db")
     hrefs = my_dbtool.get_local_edited_hrefs()
@@ -145,15 +147,18 @@ def main():
         logging.debug("%s", my_dbtool.get_etag(href))
         syncer.update_vcard(card_string, href, None)
         my_dbtool.reset_flag(href)
+    # uploading
     hrefs = my_dbtool.get_local_new_hrefs()
     for href in hrefs:
         logging.info("trying to upload new card %s", href)
         card = my_dbtool.get_vcard_from_db(href)
         card_string = card.serialize()
         card_string = card_string.replace('###COMMA###', ',')
-        href_new = syncer.upload_new_card(card_string)
+
+        (href_new, etag_new) = syncer.upload_new_card(card_string)
         my_dbtool.update_vref(href, href_new)
         my_dbtool.reset_flag(href_new)
+        remote_changed = True
 
     # deleting locally deleted cards on the server
     hrefs_etags = my_dbtool.get_local_deleted_hrefs_etags()
@@ -161,16 +166,18 @@ def main():
         logging.info('trying to delete card %s', href)
         syncer.delete_vcard(href, etag)
         my_dbtool.rm_from_deleted(href)
+        remote_changed = True
 
     # detecting remote-deleted cards
     ulist = list()
     # is there a better way to compare a list of unicode() with a list of str()
     # objects?
+    if remote_changed:
+        abook = syncer.get_abook()  # type (abook): dict
     for one in abook.keys():
         ulist.append(unicode(one))
     rlist = my_dbtool.get_all_vref_from_db()
     delete = set(rlist).difference(ulist)
-    #import ipdb; ipdb.set_trace()
     for href in delete:
         my_dbtool.delete_vcard_from_db(href)
 
