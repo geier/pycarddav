@@ -20,6 +20,9 @@ BUGS
 * BUG no notification from pc_query when db exists but has not been
       successfully synced yet
 * BUG type properties/all properties not properly saved ??? Really?
+* BUG local deleted vcards are first GET from the server, then DELETEd on the
+  server and finally detected as remote deleted and deleted again from the local
+  db
 
 TODO
 ====
