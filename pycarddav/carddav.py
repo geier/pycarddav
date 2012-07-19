@@ -55,22 +55,21 @@ class PyCardDAV(object):
         self.passwd = passwd
         self.auth = (user, passwd)
         self.settings = {'auth': (user, passwd,)}
-        self.insecure_ssl = insecure_ssl
         self.ssl_cacert_file = ssl_cacert_file
         self.session = requests.session()
         self.write_support = write_support
         self.insecure_ssl = insecure_ssl
 
-    def set_insecure_ssl(self, insecure):
+    def _set_insecure_ssl(self, insecure):
         if insecure is True or 1:
             self.settings['verify'] = False
         else:
             self.settings['verify'] = True
 
-    def get_insecure_ssl(self):
+    def _get_insecure_ssl(self):
         return self.settings['verify']
 
-    insecure_ssl = property(get_insecure_ssl, set_insecure_ssl)
+    insecure_ssl = property(_get_insecure_ssl, _set_insecure_ssl)
 
     def check_write_support(self):
         """checks if user really wants his data destroyed"""
@@ -190,7 +189,7 @@ class PyCardDAV(object):
             if response.headers['DAV'].count('addressbook') == 0:
                 sys.stderr.write("URL is not a CardDAV resource")
                 sys.exit(1)
-        except KeyError:
+        except AttributeError:
             print("URL is not a DAV resource")
             sys.exit(1)
         return response.content
