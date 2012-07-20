@@ -51,6 +51,8 @@ delete: list of hrefs and corresponding etags to be deleted on next sync
     etag (TEXT)
 """
 
+from __future__ import print_function
+
 try:
     import sys
     from os import path
@@ -62,7 +64,7 @@ try:
     import logging
 
 except ImportError, error:
-    print error
+    print(error)
     sys.exit(1)
 
 try:
@@ -209,8 +211,8 @@ class VCard(list):
     def print_email(self):
         """prints only name, email and type for use with mutt"""
         for email in self.get_prop('EMAIL'):
-            print unicode(email.value + u"\t" + self.fname + u"\t"
-                          + email.type_list()).encode("utf-8")
+            print(unicode(email.value + u"\t" + self.fname + u"\t"
+                          + email.type_list()).encode("utf-8"))
 
     def edit(self):
         """proper edit"""
@@ -228,17 +230,17 @@ class VCard(list):
                     return -1
 
             def help_help(self):
-                print "help TOPIC prints help for TOPIC"
+                print("help TOPIC prints help for TOPIC")
 
             def do_show(self, line):
                 """print the card"""
-                print ""
+                print("")
                 number = 0
-                print '{:>3}'.format(number), "NAME", ":", contact.fname
+                print('{:>3}'.format(number), "NAME", ":", contact.fname)
                 for line in contact:
                     number = number + 1
-                    print '{:>3}'.format(number), line.prop, '(', \
-                        line.type_list(), ')', ":", line.value
+                    print('{:>3}'.format(number), line.prop, '(', \
+                        line.type_list(), ')', ":", line.value)
 
             def do_edit(self, line):
                 number = self.str_to_int(line)
@@ -250,8 +252,8 @@ class VCard(list):
                     self.help_edit()
 
             def help_edit(self):
-                print '\n'.join(['edit LINENUMBER',
-                    'LINUMBER must be between 0 and %s' % len(contact)])
+                print('\n'.join(['edit LINENUMBER',
+                    'LINUMBER must be between 0 and %s' % len(contact)]))
 
             def do_exit(self, line):
                 """exits the program, does NOT save your edits"""
@@ -262,9 +264,9 @@ class VCard(list):
                 contact.add_prop()
 
             def help_new(self):
-                print '\n'.join(['add a new property',
+                print('\n'.join(['add a new property',
                     'property must be either one of %s' % PROPS_ALLOWED,
-                    'or begin with \'X-\''])
+                    'or begin with \'X-\'']))
 
             def do_save(self, line):
                 """saves contact to the LOCAL db"""
@@ -280,9 +282,9 @@ class VCard(list):
                     self.help_delete()
 
             def help_delete(self):
-                print '\n'.join(['delete property LINENUMBER',
+                print('\n'.join(['delete property LINENUMBER',
                     'LINUMBER must be between 1 and %s' % len(contact),
-                    'you cannot delete the name property'])
+                    'you cannot delete the name property']))
 
             def emptyline(self):
                 pass
@@ -298,7 +300,7 @@ class VCard(list):
         """editing the name attributes (N and FN)
         BruteForce Style
         """
-        print self.fname
+        print(self.fname)
         name_split = self.name.split(';')
         name = list()
         name.append(raw_input('Surname (was: ' + name_split[0] + '):'))
@@ -314,8 +316,8 @@ class VCard(list):
         """add a new property"""
         prop = raw_input("Property Name: ").upper()
         if (prop not in PROPS_ALLOWED) and (prop[0:2] is not 'X-'):
-            print "this property is not allowed, please type "\
-                "'help new' to get a list of allowed values"
+            print("this property is not allowed, please type \
+                   'help new' to get a list of allowed values")
             return
         value = raw_input("Value: ")
         types = raw_input("Types: ")
@@ -365,8 +367,8 @@ class VCard(list):
             conn.commit()
 
         conn.close()
-        print "Saved your edits to the local db." \
-              "They are NOT yet on the server."
+        print("Saved your edits to the local db. \
+               They are NOT yet on the server.")
 
 
 class CardProperty(list):
@@ -410,12 +412,12 @@ class CardProperty(list):
         """
         if self.value != unicode():
             if self.params == dict():
-                print unicode(self.prop.capitalize() + u": "
-                              + self.value).encode("utf-8")
+                print(unicode(self.prop.capitalize() + u": "
+                              + self.value).encode("utf-8"))
             else:
-                print unicode(self.prop.capitalize() + " ("
+                print(unicode(self.prop.capitalize() + " ("
                               + self.type_list() + u"): "
-                              + self.value).encode("utf-8")
+                              + self.value).encode("utf-8"))
         return
 
 
@@ -447,7 +449,7 @@ class PcQuery(object):
                 VCard(contact_id, self.db_path).print_contact_info(
                         self.display_all)
                 if len(contact_ids) > 0:
-                    print ""
+                    print("")
 
     def get_contact_id_from_string(self, search_string):
         """returns list of ids from db matching search_string"""
@@ -472,28 +474,29 @@ class PcQuery(object):
         """
         ids = self.get_contact_id_from_string(search_string)
         if len(ids) > 1:
-            print "There are several cards matching your search string:"
+            print("There are several cards matching your search string:")
             for i, j in enumerate(ids):
                 contact = VCard(j, self.db_path)
-                print (i + 1), contact.fname
+                print((i + 1), contact.fname)
             while True:  # should break if input not convertible to int
                 id_to_edit = raw_input("Which one do you want to edit: ")
                 #try:
                 id_to_edit = int(id_to_edit)
-                if (id_to_edit > 0) and (id_to_edit <= len(ids)):  # FIXME what's wrong here again?
+                if (id_to_edit > 0) and (id_to_edit <= len(ids)):
+                    # FIXME what's wrong here again?
                     href_to_edit = ids[id_to_edit - 1][0]
                     break
                 #except:
                 #    pass
-                print "Please only type a number between 1 and", len(ids)
+                print("Please only type a number between 1 and", len(ids))
         elif len(ids) != 0:
             href_to_edit = ids[0][0]
         elif len(ids) == 0:
             sys.exit("No matching entry found.")
-        print ""
+        print("")
         card_to_edit = VCard(href_to_edit, self.db_path)
         card_to_edit.print_contact_info()
-        print ""
+        print("")
         return card_to_edit
 
     def select_entry_urwid(self, search_string):
@@ -782,7 +785,7 @@ class PcQuery(object):
         cursor = conn.cursor()
         stuple = (vref, )
         if self.debug:
-            print "locally deleting ", vref
+            print("locally deleting ", vref)
         cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
         conn.commit()
         cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
@@ -797,7 +800,7 @@ class PcQuery(object):
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref, '' )
+        stuple = (vref, etag)
         cursor.execute('INSERT INTO deleted (href, etag) VALUES (?,?);',
                        stuple)
         conn.commit()
@@ -846,8 +849,8 @@ class PcQuery(object):
                          stuple)
                     temp.append(cursor.fetchall()[0])
                 except IndexError as error:
-                    print href
-                    print error
+                    print(href)
+                    print(error)
             return temp
 
     def get_vcard_from_db(self, vref):
@@ -964,7 +967,7 @@ class PcQuery(object):
                 cursor = conn.cursor()
                 try:
                     if line.ENCODING_paramlist == [u'b']:
-                        print "found binary"
+                        print("found binary")
                         stuple = (unicode(property_name),
                                   sqlite3.Binary(property_value),
                                   vref, unicode(line.params),)
