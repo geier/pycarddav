@@ -12,8 +12,6 @@ to another module for better reusing
 """
 try:
     import sys
-    from os import path
-    import StringIO
     import urlparse
     import lxml.etree as ET
     from collections import namedtuple
