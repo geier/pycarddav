@@ -85,7 +85,7 @@ class PyCardDAV(object):
         response = requests.request('OPTIONS', self.url.base)
         if "X-Sabre-Version" in response.headers:
             server = SABREDAV
-        elif "X-DAViCal-Version" in repsonse.headers:
+        elif "X-DAViCal-Version" in response.headers:
             server = DAVICAL
         else:
             server = UNKNOWN
