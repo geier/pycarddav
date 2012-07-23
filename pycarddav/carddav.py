@@ -41,17 +41,15 @@ class PyCardDAV(object):
     """interacts with CardDAV server"""
 
     def __init__(self, resource, debug='', user='', passwd='',
-                insecure_ssl='', ssl_cacert_file='', write_support=False):
+                insecure_ssl=False, ssl_cacert_file='', write_support=False):
         split_url = urlparse.urlparse(resource)
         url_tuple = namedtuple('url', 'resource base path')
-        login_creds = namedtuple('creds', 'user passwd resource')
         self.url = url_tuple(resource,
                              split_url.scheme + '://' + split_url.netloc,
                              split_url.path)
         self.debug = debug
         self.user = user
         self.passwd = passwd
-        self.auth = (user, passwd)
         self.settings = {'auth': (user, passwd,)}
         self.ssl_cacert_file = ssl_cacert_file
         self.session = requests.session()
@@ -68,6 +66,7 @@ class PyCardDAV(object):
         return self.settings['verify']
 
     insecure_ssl = property(_get_insecure_ssl, _set_insecure_ssl)
+    del _get_insecure_ssl, _set_insecure_ssl
 
     def check_write_support(self):
         """checks if user really wants his data destroyed"""
