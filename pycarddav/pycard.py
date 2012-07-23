@@ -378,6 +378,7 @@ class CardProperty(list):
     """
 
     def __init__(self, prop, value, params, uid=0, edited=0):
+        list.__init__(list())
         self.prop = prop
         self.value = value
         self.params = params
@@ -480,7 +481,8 @@ class PcQuery(object):
                 id_to_edit = raw_input("Which one do you want to edit: ")
                 #try:
                 id_to_edit = int(id_to_edit)
-                if (id_to_edit > 0) and (id_to_edit <= len(ids)):  # FIXME what's wrong here again?
+                if (id_to_edit > 0) and (id_to_edit <= len(ids)):
+                    # FIXME what's wrong here again?
                     href_to_edit = ids[id_to_edit - 1][0]
                     break
                 #except:
@@ -564,7 +566,7 @@ class PcQuery(object):
             sys.exit(str(self.db_path) + " is probably not a valid or an "
                 "outdated database.\nYou should consider to remove it and "
                 "sync again using pycardsyncer.\n")
-        #except Exception, error:
+        #except Exception as error:
         #    sys.stderr.write('Failed to connect to database,"
         #            "Unknown Error: ' + str(error)+"\n")
 
@@ -577,7 +579,7 @@ class PcQuery(object):
             logging.debug("created version table")
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
-        except Exception, error:
+        except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
         conn.commit()
@@ -594,7 +596,7 @@ class PcQuery(object):
             logging.debug("created vcardtable table")
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
-        except Exception, error:
+        except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
         conn.commit()
@@ -611,7 +613,7 @@ class PcQuery(object):
             logging.debug("created properties table")
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
-        except Exception, error:
+        except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
         conn.commit()
@@ -628,7 +630,7 @@ class PcQuery(object):
             logging.debug("created blobproperties table")
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
-        except Exception, error:
+        except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
         conn.commit()
@@ -640,7 +642,7 @@ class PcQuery(object):
             logging.debug("created deleted table")
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
-        except Exception, error:
+        except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
         conn.commit()
@@ -797,7 +799,7 @@ class PcQuery(object):
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref, '' )
+        stuple = (vref, '')
         cursor.execute('INSERT INTO deleted (href, etag) VALUES (?,?);',
                        stuple)
         conn.commit()
@@ -874,7 +876,6 @@ class PcQuery(object):
         tmp.value = fname
         tmp = card.add('VERSION')
         tmp.value = version
-
 
         # and now we add everything else
         cursor.execute('SELECT id, property, value, parameters FROM properties'
