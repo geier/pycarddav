@@ -232,13 +232,20 @@ class VCard(list):
 
         fieldwidgets = []
         for prop in self:
-            fieldwidgets.append(urwid.Edit(prop.prop + ': ', prop.value))
+            label = urwid.Text(prop.prop)
+            value = urwid.Edit('', prop.value)
+            editwidget = urwid.Columns([('fixed', 8, label),
+                                        ('flow', value)])
+
+            fieldwidgets.append(urwid.Padding(editwidget, ('fixed left', 3), ('fixed right', 3)))
 
         fieldwidgets.append(buttons())
         listwalker = urwid.SimpleListWalker(fieldwidgets)
         listbox = urwid.ListBox(listwalker)
+        header = urwid.Text('Please edit your contacts')
+        frame = urwid.Frame(listbox, header=header)
         try:
-            urwid.MainLoop(listbox, None).run()
+            urwid.MainLoop(frame, None).run()
         except SelectedButton as selected_button:
             print selected_button.exit_token
         #####################################################
