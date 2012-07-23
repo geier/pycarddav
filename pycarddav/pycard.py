@@ -113,6 +113,11 @@ class SelText(urwid.Text):
         return key
 
 
+class SelectedButton(Exception):
+    def __init__(self, exit_token=None):
+        self.exit_token = exit_token
+
+
 class Selected(Exception):
     """
     used for signalling that an item was chosen in urwid
@@ -217,84 +222,34 @@ class VCard(list):
     def edit(self):
         """proper edit"""
 
-        contact = self
+        def buttons():
+            def save_button_callback(button):
+                raise SelectedButton(exit_token='Save')
+            savebutton = urwid.Button('OK', on_press=save_button_callback)
 
-        class CommandLine(cmd.Cmd):
-            """Our own command line interpreter"""
+            def cancel_button_callback(button):
+                raise SelectedButton(exit_token='Cancel')
+            cancelbutton = urwid.Button('Cancel', on_press=cancel_button_callback)
+            return urwid.GridFlow([savebutton, cancelbutton], 10, 7, 1, 'center')
 
-            def str_to_int(self, string):
-                """returns int(string) or, if this fails -1"""
-                try:
-                    return int(string)
-                except ValueError:
-                    return -1
+        fieldwidgets = []
+        for prop in self:
+            label = urwid.Text(prop.prop)
+            value = urwid.Edit('', prop.value)
+            editwidget = urwid.Columns([('fixed', 8, label),
+                                        ('flow', value)])
 
-            def help_help(self):
-                print("help TOPIC prints help for TOPIC")
+            fieldwidgets.append(urwid.Padding(editwidget, ('fixed left', 3), ('fixed right', 3)))
 
-            def do_show(self, line):
-                """print the card"""
-                print("")
-                number = 0
-                print('{:>3}'.format(number), "NAME", ":", contact.fname)
-                for line in contact:
-                    number = number + 1
-                    print('{:>3}'.format(number), line.prop, '(', \
-                        line.type_list(), ')', ":", line.value)
-
-            def do_edit(self, line):
-                number = self.str_to_int(line)
-                if number == 0:
-                    contact.edit_name()
-                elif (number <= len(contact)) and (number > 0):
-                    contact[number - 1].edit()
-                else:
-                    self.help_edit()
-
-            def help_edit(self):
-                print('\n'.join(['edit LINENUMBER',
-                    'LINUMBER must be between 0 and %s' % len(contact)]))
-
-            def do_exit(self, line):
-                """exits the program, does NOT save your edits"""
-                sys.exit()
-
-            def do_new(self, line):
-                """add a new property"""
-                contact.add_prop()
-
-            def help_new(self):
-                print('\n'.join(['add a new property',
-                    'property must be either one of %s' % PROPS_ALLOWED,
-                    'or begin with \'X-\'']))
-
-            def do_save(self, line):
-                """saves contact to the LOCAL db"""
-                contact.save()
-
-            def do_delete(self, line):
-                """deletes the property NUMBER"""
-                number = self.str_to_int(line)
-                if (number <= len(contact)) and (number > 0):
-                    del contact[number - 1]
-                    contact.edited = 2
-                else:
-                    self.help_delete()
-
-            def help_delete(self):
-                print('\n'.join(['delete property LINENUMBER',
-                    'LINUMBER must be between 1 and %s' % len(contact),
-                    'you cannot delete the name property']))
-
-            def emptyline(self):
-                pass
-
-            def do_EOF(self, line):
-                """Exits the card editor and saves changes to the local db"""
-                contact.save()
-                return True
-
-        CommandLine().cmdloop()
+        fieldwidgets.append(buttons())
+        listwalker = urwid.SimpleListWalker(fieldwidgets)
+        listbox = urwid.ListBox(listwalker)
+        header = urwid.Text('Please edit your contacts')
+        frame = urwid.Frame(listbox, header=header)
+        try:
+            urwid.MainLoop(frame, None).run()
+        except SelectedButton as sel:
+            print(sel.exit_token)
 
     def edit_name(self):
         """editing the name attributes (N and FN)
@@ -312,21 +267,6 @@ class VCard(list):
         self.name = ';'.join(name)
         self.edited = 1
 
-    def add_prop(self):
-        """add a new property"""
-        prop = raw_input("Property Name: ").upper()
-        if (prop not in PROPS_ALLOWED) and (prop[0:2] is not 'X-'):
-            print("this property is not allowed, please type \
-                   'help new' to get a list of allowed values")
-            return
-        value = raw_input("Value: ")
-        types = raw_input("Types: ")
-        if prop in ['']:
-            return
-        params_d = dict()
-        if not types == unicode():
-            params_d[u'TYPE'] = types.split(',')
-        self.append(CardProperty(prop, value, params_d, edited=2))
 
     def save(self):
         """saves the changed properties to the db"""
@@ -380,6 +320,7 @@ class CardProperty(list):
     """
 
     def __init__(self, prop, value, params, uid=0, edited=0):
+        list.__init__(list())
         self.prop = prop
         self.value = value
         self.params = params
@@ -567,7 +508,7 @@ class PcQuery(object):
             sys.exit(str(self.db_path) + " is probably not a valid or an "
                 "outdated database.\nYou should consider to remove it and "
                 "sync again using pycardsyncer.\n")
-        #except Exception, error:
+        #except Exception as error:
         #    sys.stderr.write('Failed to connect to database,"
         #            "Unknown Error: ' + str(error)+"\n")
 
@@ -580,7 +521,7 @@ class PcQuery(object):
             logging.debug("created version table")
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
-        except Exception, error:
+        except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
         conn.commit()
@@ -597,7 +538,7 @@ class PcQuery(object):
             logging.debug("created vcardtable table")
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
-        except Exception, error:
+        except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
         conn.commit()
@@ -614,7 +555,7 @@ class PcQuery(object):
             logging.debug("created properties table")
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
-        except Exception, error:
+        except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
         conn.commit()
@@ -631,7 +572,7 @@ class PcQuery(object):
             logging.debug("created blobproperties table")
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
-        except Exception, error:
+        except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
         conn.commit()
@@ -643,7 +584,7 @@ class PcQuery(object):
             logging.debug("created deleted table")
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
-        except Exception, error:
+        except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
         conn.commit()
@@ -877,7 +818,6 @@ class PcQuery(object):
         tmp.value = fname
         tmp = card.add('VERSION')
         tmp.value = version
-
 
         # and now we add everything else
         cursor.execute('SELECT id, property, value, parameters FROM properties'
