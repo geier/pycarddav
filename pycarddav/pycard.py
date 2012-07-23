@@ -220,19 +220,21 @@ class VCard(list):
     def edit(self):
         """proper edit"""
 
-        def save_button_callback(button):
-            raise SelectedButton(exit_token='Save')
-        savebutton = urwid.Button('OK', on_press=save_button_callback)
+        def buttons():
+            def save_button_callback(button):
+                raise SelectedButton(exit_token='Save')
+            savebutton = urwid.Button('OK', on_press=save_button_callback)
 
-        def cancel_button_callback(button):
-            raise SelectedButton(exit_token='Cancel')
-        cancelbutton = urwid.Button('Cancel', on_press=cancel_button_callback)
+            def cancel_button_callback(button):
+                raise SelectedButton(exit_token='Cancel')
+            cancelbutton = urwid.Button('Cancel', on_press=cancel_button_callback)
+            return urwid.GridFlow([savebutton, cancelbutton], 10, 7, 1, 'center')
 
         fieldwidgets = []
         for prop in self:
             fieldwidgets.append(urwid.Edit(prop.prop + ': ', prop.value))
 
-        fieldwidgets.append(urwid.Columns([savebutton, cancelbutton]))
+        fieldwidgets.append(buttons())
         listwalker = urwid.SimpleListWalker(fieldwidgets)
         listbox = urwid.ListBox(listwalker)
         try:
