@@ -10,6 +10,7 @@
 """
 utility for querying the database
 """
+from __future__ import print_function
 
 try:
     import sys
@@ -20,7 +21,11 @@ try:
     import pycard
     import vobject
     import __init__
+<<<<<<< HEAD
 except ImportError, error:
+=======
+except ImportError as error:
+>>>>>>> 9d773f9f163298e15bd7d2b0aa1a08b0317ebf51
     print(error)
     sys.exit(1)
 
@@ -165,15 +170,24 @@ def main():
             sys.exit('Found no matching cards.')
         my_query.mark_for_deletion(href, '')
         my_query.delete_vcard_from_db(href)
+<<<<<<< HEAD
         print(('vcard %s deleted from local db, will be deleted on ' %href + \
             'the server on the next sync'))
+=======
+        print('vcard %s deleted from local db, will be deleted on ' %href + \
+            'the server on the next sync')
+>>>>>>> 9d773f9f163298e15bd7d2b0aa1a08b0317ebf51
         sys.exit()
 
 
     my_query.print_function = args.print_function
     my_query.display_all = args.display_all
 
+<<<<<<< HEAD
     print(("searching for " + args.search_string + "..."))
+=======
+    print("searching for " + args.search_string + "...")
+>>>>>>> 9d773f9f163298e15bd7d2b0aa1a08b0317ebf51
     my_query.search(args.search_string.decode("utf-8"))
 
     return 0

@@ -8,9 +8,7 @@ db_path: /home/localuser/.pycard/abook.db
 DEBUG: 0
 
 # SSL:
-# you can check your SSL configuration with `curl https://carddav.server.tld/anyfile`
-# and the appropriate command line options
-# setting this to 1 disables ALL SSL cert checking and is NOT recommended
+# setting insecure_ssl to 1 disables ALL SSL cert checking and is NOT recommended
 # this corresponds to curl's -k/--insecure flag
 #insecure_ssl: 0
 # corrpesonds to curl's --cacert
