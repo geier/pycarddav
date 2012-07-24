@@ -55,13 +55,13 @@ from __future__ import print_function
 
 try:
     import sys
-    from os import path
     import ast
     import urwid
     import sqlite3
     import vobject
-    import cmd
     import logging
+    from os import path
+    from collections import defaultdict
 
 except ImportError, error:
     print(error)
@@ -144,10 +144,71 @@ PROPS_LIST = ['NICKNAME', 'CATEGORIES']
 PROPS_BIN = ['PHOTO', 'LOGO', 'SOUND', 'KEY']
 
 
-class VCard(list):
+OK = 0
+NEW = 1
+CHANGED = 2
+DELETED = 9
+
+
+def vcard_from_vobject(vcard):
+    vdict = VCard()
+    if vcard.name != "VCARD":
+        raise Exception
+    for line in vcard.getChildren():
+        # this might break, was tried/excepted before
+        line.transformFromNative()
+        property_name = line.name
+        property_value = line.value
+
+        try:
+            if line.ENCODING_paramlist == [u'b']:
+                print("found binary")
+#                stuple = (unicode(property_name),
+#                            sqlite3.Binary(property_value),
+#                            vref, unicode(line.params),)
+#                cursor.execute('INSERT INTO blobproperties '
+#                        '(property, value, href, parameters) '
+#                        'VALUES (?,?,?,?);', stuple)
+#                conn.commit()
+
+        except AttributeError:
+            #if property_name in [u'FN', u'N', u'VERSION']:
+            #    continue
+            if type(property_value) == list:
+                property_value = (',').join(property_value)
+            #stuple = (unicode(property_name), property_value,
+            #            vref, unicode(line.params),)
+
+            vdict[property_name].append((property_value, line.params,))
+    return vdict
+
+
+def vcard_from_string(vcard_string):
     """
-    internal representation of a VCard. This is mainly a list with some
-    associated methods, each list element is a CardProperty
+    vcard_string: str() or unicode()
+    returns VCard()
+    """
+    vcard = vobject.readOne(vcard_string)
+    return vcard_from_vobject(vcard)
+
+
+def cards_from_file(cards_f):
+    collector = list()
+    for vcard in vobject.readComponents(cards_f):
+        collector.append(vcard_from_vobject(vcard))
+    return collector
+
+
+class VCard(defaultdict):
+    """
+    internal representation of a VCard. This is dict with some
+    associated methods,
+    each dict item is a list of tuples
+    i.e.:
+    >>> vcard['EMAIL']
+    [('hanz@wurst.com', ['WORK', 'PREF']), ('hanz@wurst.net', ['HOME'])]
+
+
     h_ref: unique id (really just the url) of the VCard
     db_path: database file from which to initialize the VCard
 
@@ -157,67 +218,76 @@ class VCard(list):
         2: some property was deleted
     """
 
-    def __init__(self, h_ref="", db_path=""):
-        list.__init__(list())
-        self.h_ref = h_ref
-        self.db_path = db_path
+    def __init__(self, ddict='', *args):
+
+        if ddict == '':
+            defaultdict.__init__(self, list)
+        else:
+            defaultdict.__init__(self, list, ddict)
+        self.href = ''
         self.edited = 0
-        conn = sqlite3.connect(db_path)
-        cur = conn.cursor()
-        stuple = (h_ref, )
-        cur.execute('SELECT name, fname, version FROM \
-                vcardtable WHERE href=(?)', stuple)
-        result = cur.fetchall()
-        self.name = result[0][0]
-        self.fname = result[0][1]
 
-        cur.execute('SELECT * FROM properties WHERE href=(?)', stuple)
-        result = cur.fetchall()
-        for (vcard_id, vcard_property, vcard_value,
-            vcard_href, param_dict) in result:
-            self.append(CardProperty(vcard_property,
-                        vcard_value,
-                        ast.literal_eval(param_dict), vcard_id), )
-        conn.close()
+    def serialize(self):
+        return self.items().__repr__()
 
-    def get_prop(self, card_property):
-        """
-        returns a list of all CardProperties matching "card_property",
-        making VCard work like a dict (and perhaps it better would be one)
-        """
-        collector = list()
-        for prop in self:
-            if prop.prop == card_property:
-                collector.append(prop)
-        return collector
+    @property
+    def name(self):
+        return unicode(self['N'][0][0])
 
-    def get_props(self):
-        """
-        returns a list of all properties (each property only once,
-        even if it occurs multiple times) this vcard has
-        """
-        collector = list()
-        for prop in self:
-            collector.append(prop.prop)
-        return list(set(collector))
+    @property
+    def fname(self):
+        return unicode(self['FN'][0][0])
+
+    def alt_keys(self):
+        keylist = self.keys()
+        for one in ['FN', 'N', 'VERSION']:
+            keylist.remove(one)
+        keylist.sort()
+        return keylist
 
     def print_contact_info(self, display_all=False):
         """new style contact card information printing"""
         print_bold(unicode("Name: " + self.fname).encode("utf-8"))
         for prop in ("EMAIL", "TEL", ):
-            for line in self.get_prop(prop):
-                line.print_yourself()
+            for value, typelist in prop:
+                print(prop, ','.join(typelist), value)
         if display_all == True:
-            for props in self.get_props():
-                if not props in ("EMAIL", "TEL",):
-                    for line in self.get_prop(props):
-                        line.print_yourself()
+            print('alle')
 
     def print_email(self):
         """prints only name, email and type for use with mutt"""
-        for email in self.get_prop('EMAIL'):
-            print(unicode(email.value + u"\t" + self.fname + u"\t"
-                          + email.type_list()).encode("utf-8"))
+        collector = list()
+        try:
+            for one in self['EMAIL']:
+                try:
+                    typelist = ','.join(one[1][u'TYPE'])
+                except KeyError:
+                    typelist = ''
+                collector.append(one[0] + "\t" + self.fname + "\t" + typelist)
+            return '\n'.join(collector)
+        except KeyError:
+            return ''
+
+    @property
+    def pretty(self):
+        return self._pretty_base(self.alt_keys())
+
+    @property
+    def pretty_min(self):
+        return self._pretty_base(['TEL', 'EMAIL'])
+
+    def _pretty_base(self, keylist):
+        collector = list()
+        collector.append('\nName: ' + self.fname)
+        for key in keylist:
+            for value in self[key]:
+                try:
+                    types = ' (' + ', '.join(value[1]['TYPE']) + ')'
+                except KeyError:
+                    types = ''
+                line = key + types + ': ' + value[0]
+                collector.append(line)
+        return '\n'.join(collector)
 
     def edit(self):
         """proper edit"""
@@ -229,8 +299,10 @@ class VCard(list):
 
             def cancel_button_callback(button):
                 raise SelectedButton(exit_token='Cancel')
-            cancelbutton = urwid.Button('Cancel', on_press=cancel_button_callback)
-            return urwid.GridFlow([savebutton, cancelbutton], 10, 7, 1, 'center')
+            cancelbutton = urwid.Button('Cancel',
+                    on_press=cancel_button_callback)
+            return urwid.GridFlow([savebutton, cancelbutton],
+                    10, 7, 1, 'center')
 
         fieldwidgets = []
         for prop in self:
@@ -239,7 +311,8 @@ class VCard(list):
             editwidget = urwid.Columns([('fixed', 8, label),
                                         ('flow', value)])
 
-            fieldwidgets.append(urwid.Padding(editwidget, ('fixed left', 3), ('fixed right', 3)))
+            fieldwidgets.append(urwid.Padding(editwidget, ('fixed left', 3),
+                                                          ('fixed right', 3)))
 
         fieldwidgets.append(buttons())
         listwalker = urwid.SimpleListWalker(fieldwidgets)
@@ -268,100 +341,6 @@ class VCard(list):
         self.edited = 1
 
 
-    def save(self):
-        """saves the changed properties to the db"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        for prop in self:
-            if prop.edited == 1:  # updated property
-                stuple = (unicode(prop.prop), unicode(prop.value),
-                          unicode(self.h_ref), unicode(prop.params),
-                          unicode(prop.uid))
-                cursor.execute('UPDATE properties SET property = ? ,'
-                                'value = ?, href = ?, parameters = ? '
-                                'WHERE id = ?;', stuple)
-            if prop.edited == 2:  # new property
-                prop.params = u'{}'
-                stuple = (unicode(prop.prop), unicode(prop.value),
-                          unicode(self.h_ref), unicode(prop.params),)
-                cursor.execute('INSERT INTO properties (property ,'
-                                'value, href, parameters) VALUES '
-                                '(?, ?, ?, ?);', stuple)
-        conn.commit()
-        if self.edited == 1:  # name & fname edited
-            stuple = (self.fname, self.name, self.h_ref)
-            cursor.execute('UPDATE vcardtable SET fname = ? , '
-                           'name = ? WHERE href = ?;', stuple)
-        cursor.execute('UPDATE vcardtable SET edited = 1 WHERE href = ?',
-                       (self.h_ref, ))
-        conn.commit()
-        if self.edited == 2:  # some properties have been deleted
-            stuple = (unicode(self.h_ref),)
-            cursor.execute('DELETE FROM properties WHERE href=(?);', stuple)
-            for prop in self:
-                stuple = (unicode(prop.prop), prop.value,
-                           self. h_ref, unicode(prop.params),)
-                cursor.execute('INSERT into properties '
-                        '(property, value, href, parameters)'
-                        'VALUES (?,?,?,?);', stuple)
-            conn.commit()
-
-        conn.close()
-        print("Saved your edits to the local db. \
-               They are NOT yet on the server.")
-
-
-class CardProperty(list):
-    """
-    A CardProperty object holds one VCard property including all parameters
-    self.prop = the name of the property; type: unicode
-    self.value = the value of the property; type: unicode
-    self.params = all associated parameters; type: dict
-    """
-
-    def __init__(self, prop, value, params, uid=0, edited=0):
-        list.__init__(list())
-        self.prop = prop
-        self.value = value
-        self.params = params
-        self.uid = uid
-        self.edited = edited
-
-    def type_list(self):
-        """returns all types parameters, separated by "," """
-        try:
-            params = u', '.join(self.params[u'TYPE'])
-        except (TypeError, KeyError):
-            params = u''
-        return params
-
-    def edit(self):
-        """edits this card property"""
-        temp = raw_input(smartencode(self.prop + u' [' + self.value + u']: '))
-        if not temp == unicode():
-            self.value = temp
-            self.edited = 1
-        temp = raw_input(smartencode(u"Types [" + self.type_list() + u"]: "))
-        if not temp == unicode():
-            self.params[u'TYPE'] = list_clean(temp)
-            self.edited = 1
-
-    def print_yourself(self):
-        """
-        prints the cardproperty,
-        couldn't get __str__ to work, becaus of too many \n
-        """
-        if self.value != unicode():
-            if self.params == dict():
-                print(unicode(self.prop.capitalize() + u": "
-                              + self.value).encode("utf-8"))
-            else:
-                print(unicode(self.prop.capitalize() + " ("
-                              + self.type_list() + u"): "
-                              + self.value).encode("utf-8"))
-        return
-
-
 class PcQuery(object):
     """Querying the addressbook database"""
 
@@ -377,33 +356,24 @@ class PcQuery(object):
         self._check_table_version()
 
     def search(self, search_string):
-        """
-        first we get the list of contact_ids matching the search string
-        then these are printed using the different print functions
-        """
-        contact_ids = self.get_contact_id_from_string(search_string)
-        while len(contact_ids) != 0:
-            contact_id = contact_ids.pop()
-            if self.print_function == "print_email":
-                VCard(contact_id, self.db_path).print_email()
-            else:
-                VCard(contact_id, self.db_path).print_contact_info(
-                        self.display_all)
-                if len(contact_ids) > 0:
-                    print("")
-
-    def get_contact_id_from_string(self, search_string):
         """returns list of ids from db matching search_string"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = ('%' + search_string + '%', )
-        cursor.execute('SELECT href FROM properties WHERE value LIKE (?)',
-                stuple)
-        result = cursor.fetchall()
         cursor.execute('SELECT href FROM vcardtable WHERE name LIKE (?)',
                 stuple)
-        result.extend(cursor.fetchall())
-        result = list(set(result))
+        result = cursor.fetchall()
+        conn.close()
+        return [row[0] for row in result]
+
+    @property
+    def changed(self):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (CHANGED, )
+        cursor.execute('SELECT href FROM vcardtable WHERE status == (?)',
+                stuple)
+        result = cursor.fetchall()
         conn.close()
         return [row[0] for row in result]
 
@@ -494,7 +464,7 @@ class PcQuery(object):
         tests for curent db Version
         if the table is still empty, insert db_version
         """
-        database_version = 6  # the current db VERSION
+        database_version = 7  # the current db VERSION
         #try:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -528,12 +498,12 @@ class PcQuery(object):
 
         try:
             cursor.execute('''CREATE TABLE vcardtable (
-                    href TEXT PRIMARY KEY NOT NULL,
+                    href TEXT,
                     etag TEXT,
                     name TEXT,
                     fname TEXT,
-                    version TEXT,
-                    edited INT
+                    vcard TEXT,
+                    status INT NOT NULL
                     )''')
             logging.debug("created vcardtable table")
         except sqlite3.OperationalError as detail:
@@ -542,74 +512,6 @@ class PcQuery(object):
             sys.stderr.write('Failed to connect to database,'
                 'Unknown Error: ' + str(error) + "\n")
         conn.commit()
-        # properties table
-        try:
-            cursor.execute('''CREATE TABLE properties (
-            id INTEGER PRIMARY KEY NOT NULL,
-            property TEXT NOT NULL,
-            value TEXT,
-            href TEXT NOT NULL,
-            parameters TEXT,
-            FOREIGN KEY(href) REFERENCES vcardtable(href)
-            )''')
-            logging.debug("created properties table")
-        except sqlite3.OperationalError as detail:
-            logging.debug("%s", detail)
-        except Exception as error:
-            sys.stderr.write('Failed to connect to database,'
-                'Unknown Error: ' + str(error) + "\n")
-        conn.commit()
-        # create blob table
-        try:
-            cursor.execute('''CREATE TABLE blobproperties (
-            id INTEGER PRIMARY KEY NOT NULL,
-            property TEXT NOT NULL,
-            value TEXT,
-            href TEXT NOT NULL,
-            parameters TEXT,
-            FOREIGN KEY(href) REFERENCES vcardtable(href)
-            )''')
-            logging.debug("created blobproperties table")
-        except sqlite3.OperationalError as detail:
-            logging.debug("%s", detail)
-        except Exception as error:
-            sys.stderr.write('Failed to connect to database,'
-                'Unknown Error: ' + str(error) + "\n")
-        conn.commit()
-        # create delete table
-        try:
-            cursor.execute('''CREATE TABLE deleted (
-            href TEXT NOT NULL,
-            etag TEXT)''')
-            logging.debug("created deleted table")
-        except sqlite3.OperationalError as detail:
-            logging.debug("%s", detail)
-        except Exception as error:
-            sys.stderr.write('Failed to connect to database,'
-                'Unknown Error: ' + str(error) + "\n")
-        conn.commit()
-        cursor.close()
-
-    def check_new_etag(self, vref, v_etag):
-        """returns True when the etag has been updated, otherwise False
-
-        :param vref: vref
-        :type vref: str
-        :param v_etag: etag
-        :type v_etag: str
-        :rtype: bool, True when etags do not match, otherwise False
-        """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (vref, )
-        cursor.execute('SELECT etag FROM vcardtable WHERE href=(?);', stuple)
-        if v_etag == cursor.fetchall()[0][0]:
-            return_code = False
-        else:
-            return_code = True
-        conn.commit()
-        cursor.close()
-        return return_code
 
     def check_vref_exists(self, vref):
         """
@@ -629,43 +531,38 @@ class PcQuery(object):
         cursor.close()
         return return_code
 
-    def insert_vref(self, vref, new=0):
-        """
-        inserts vref into the vcardtable
-        returns nothing
-        """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (vref, new,)
-        cursor.execute('INSERT INTO vcardtable (href, edited)'
-                       'VALUES (?, ?);', stuple)
-        conn.commit()
-        cursor.close()
+    def needs_update(self, href, etag=''):
+        """checks if we need to update this vcard
 
-    def update_name(self, vref, fname, name, version='3.0'):
-        """ updates the name field in the vcardtable
-
-        :parameter fname: formatted name
-        :type fname: unicode()
-        :parameter name: name property as in vcard (seperated by ';')
-        :type name: unicode()
-        :return: nothing
+        :param href: href of vcard
+        :type href: str()
+        :param etag: etag of vcard
+        :type etag: str()
+        :return: True or False
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (fname, name, version, vref)
-        cursor.execute('UPDATE vcardtable SET fname=(?), name=(?), '
-                       'version=(?) WHERE href=(?);', stuple)
-        conn.commit()
-        cursor.close()
+        stuple = (href,)
+        cursor.execute('SELECT etag FROM vcardtable WHERE href=(?)', stuple)
+        result = cursor.fetchall()
 
-    def update_etag(self, vref, v_etag):
-        """returns nothing"""
+        if len(result) is 0:
+            return True
+        elif etag != result[0][0]:
+            return True
+        else:
+            return False
+
+    def update(self, vcard, href='', etag='', status=OK):
+        if isinstance(vcard, (str, unicode)):
+            vcard = vcard_from_string(vcard)
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (v_etag, vref)
-        cursor.execute('UPDATE vcardtable SET etag=(?) WHERE href=(?);',
-                       stuple)
+        vcard_s = vcard.serialize()
+        stuple = (href, etag, vcard.name, vcard.fname, vcard_s, OK)
+        cursor.execute(
+                'INSERT INTO vcardtable (href, etag, name, fname, vcard, status)'
+                'VALUES (?,?,?,?,?,?);', stuple)
         conn.commit()
         cursor.close()
 
@@ -673,7 +570,6 @@ class PcQuery(object):
         """get etag for vref
 
         type vref: str()
-
         return: etag
         rtype: str()
         """
@@ -685,36 +581,6 @@ class PcQuery(object):
         etag = cursor.fetchall()[0][0]
         cursor.close()
         return etag
-
-    def update_vref(self, old_vref, new_vref):
-        """
-        updates vref
-        returns: nothing
-        """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (new_vref, old_vref)
-        cursor.execute('UPDATE vcardtable SET href=(?) WHERE href=(?);',
-                        stuple)
-        cursor.execute('UPDATE properties SET href=(?) WHERE href=(?);',
-                       stuple)
-        conn.commit()
-        cursor.close()
-
-    def delete_vcard_props_from_db(self, vref):
-        """
-        does NOT actually remove the whole vcard, only the lines
-        from the property table
-        returns nothing
-        """
-        # FIXME this should also reset the etag or shouldn't it?
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (vref, )
-        cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
-        cursor.execute('DELETE FROM blobproperties WHERE href=(?)', stuple)
-        conn.commit()
-        cursor.close()
 
     def delete_vcard_from_db(self, vref):
         """
@@ -732,29 +598,6 @@ class PcQuery(object):
         cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
         conn.commit()
         cursor.execute('DELETE FROM vcardtable WHERE href=(?)', stuple)
-        conn.commit()
-        cursor.close()
-
-    def mark_for_deletion(self, vref, etag):
-        """
-        marks vcard for deletion
-        """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (vref, etag)
-        cursor.execute('INSERT INTO deleted (href, etag) VALUES (?,?);',
-                       stuple)
-        conn.commit()
-        cursor.close()
-
-    def rm_from_deleted(self, href):
-        """
-        removes href entry from deleted table, to be called after href
-        deleted from remote server
-        """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute('DELETE from deleted WHERE href=(?);', (href,))
         conn.commit()
         cursor.close()
 
@@ -794,143 +637,44 @@ class PcQuery(object):
                     print(error)
             return temp
 
-    def get_vcard_from_db(self, vref):
-        """returns a vobject.vCard()"""
-        card = vobject.vCard()
+    def get_vcard_from_db(self, href):
+        """returns a VCard()"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref, )
+        stuple = (href, )
 
         # adding name, fname and version
-        cursor.execute('SELECT name, fname, version FROM vcardtable'
-                       ' WHERE href=(?)', stuple)
+        cursor.execute('SELECT vcard FROM vcardtable WHERE href=(?)', stuple)
         result = cursor.fetchall()
-        name, fname, version = result[0]
+        vcard = VCard(ast.literal_eval(result[0][0]))
+        return vcard
 
-        tmp = card.add('N')
-        name = name.split(';')
-        tmp.value = vobject.vcard.Name(family=name[0],
-                                       given=name[1],
-                                       additional=name[2],
-                                       prefix=name[3],
-                                       suffix=name[4])
-        tmp = card.add('FN')
-        tmp.value = fname
-        tmp = card.add('VERSION')
-        tmp.value = version
-
-        # and now we add everything else
-        cursor.execute('SELECT id, property, value, parameters FROM properties'
-                        ' WHERE href=(?)', stuple)
-        result = cursor.fetchall()
-
-        for uid, prop, value, parameters in result:
-            # atm we need to treat ADR properties differently
-            # FIXME: ORG should be treated differently, too
-            tmp = card.add(prop)
-            if prop == u'ADR':
-                adr = value.split(';')
-                tmp.value = vobject.vcard.Address(street=adr[0],
-                                                  city=adr[1],
-                                                  region=adr[2],
-                                                  code=adr[3],
-                                                  country=adr[4],
-                                                  box=adr[5],
-                                                  extended=adr[6])
-            #PROPFUCK
-            elif prop == 'NICKNAME':
-                value = value.replace(',', '###COMMA###')
-                tmp.value = unicode(value)
-            elif prop == 'CATEGORIES':
-                tmp.value = value.split(',')
-            else:
-                tmp.value = value
-            params = ast.literal_eval(parameters)
-            tmp.params = params
-        cursor.execute('SELECT id, property, value, parameters '
-                       'FROM blobproperties WHERE href=(?)', stuple)
-        result = cursor.fetchall()
-        for uid, prop, value, parameters in result:
-            tmp = card.add(prop)
-            tmp.value = str(value)
-            tmp.params = ast.literal_eval(parameters)
-        conn.close()
-        return card
-
-    def get_local_edited_hrefs(self):
+    def get_changed(self):
         """returns list of hrefs of locally edited vcards"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute('SELECT href FROM vcardtable where edited == 1')
+        cursor.execute(
+                'SELECT href FROM vcardtable WHERE status == (?)', (CHANGED, ))
         result = cursor.fetchall()
         return [row[0] for row in result]
 
-    def get_local_new_hrefs(self):
+    def get_new(self):
         """returns list of hrefs of locally added vcards"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute('SELECT href FROM vcardtable where edited == 2')
+        cursor.execute(
+                'SELECT href FROM vcardtable WHERE status == (?)', (NEW, ))
         result = cursor.fetchall()
         return [row[0] for row in result]
 
-    def get_local_deleted_hrefs_etags(self):
+    def get_marked_delete(self):
         """returns list of tuples (hrefs, etags) of locally deleted vcards"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute('SELECT href, etag FROM deleted')
+        cursor.execute(
+                'SELECT href, etag FROM vcardtable WHERE status == (?)', (DELETED, ))
         result = cursor.fetchall()
-        return result
-
-    def insert_vcard_in_db(self, vref, vcard):
-        """
-        vref: ref to remote vcf file
-        vcard: vobject.Vcard()
-        returns nothing
-        """
-        if vcard.name == "VCARD":
-
-            name = vcard.n.value.family + u';' \
-                 + vcard.n.value.given + u';' \
-                 + vcard.n.value.additional + u';' \
-                 + vcard.n.value.prefix + u';' \
-                 + vcard.n.value.suffix
-            fname = vcard.fn.value
-            version = vcard.version.value
-            for line in vcard.getChildren():
-                # this might break, was tried/excepted before
-                line.transformFromNative()
-
-                property_name = line.name
-                property_value = line.value
-
-                conn = sqlite3.connect(self.db_path)
-                cursor = conn.cursor()
-                try:
-                    if line.ENCODING_paramlist == [u'b']:
-                        print("found binary")
-                        stuple = (unicode(property_name),
-                                  sqlite3.Binary(property_value),
-                                  vref, unicode(line.params),)
-                        cursor.execute('INSERT INTO blobproperties '
-                                '(property, value, href, parameters) '
-                                'VALUES (?,?,?,?);', stuple)
-                        conn.commit()
-
-                except AttributeError:
-                    if property_name in [u'FN', u'N', u'VERSION']:
-                        continue
-                    if type(property_value) == list:
-                        property_value = (',').join(property_value)
-                    stuple = (unicode(property_name), property_value,
-                              vref, unicode(line.params),)
-                    cursor.execute('INSERT INTO properties '
-                                   '(property, value, href, parameters) '
-                                   'VALUES (?,?,?,?);', stuple)
-                    cursor.close()
-                    conn.commit()
-            self.update_name(vref, fname, name, version=version)
-        else:
-            return -1  # this is not a vcard
+        return [row[0] for row in result]
 
     def reset_flag(self, href):
         """
@@ -967,51 +711,3 @@ def get_random_href():
         rand_number = random.randint(0, 0x100000000)
         tmp_list.append("{0:x}".format(rand_number))
     return "-".join(tmp_list).upper()
-
-
-def header_parser(header_string):
-    """
-    parses the HTTP header returned by the server
-
-    Args:
-        header_string: HTTP header as a string
-
-    Returns:
-        A dict, whose keywords correspond to the ones from the http header, the
-        values a list of strings.
-
-    example::
-
-        {'Content-Length:': ['134'],
-         'Content-Type:': ['text/xml; charset="utf-8"'],
-         'DAV:': ['1',
-                  '2',
-                  '3',
-                  'access-control',
-                  'calendar-access',
-                  'calendar-schedule',
-                  'extended-mkcol',
-                  'calendar-proxy',
-                  'bind',
-                  'addressbook',
-                  'calendar-auto-schedule'],
-         'Date:': ['Thu', '23 Feb 2012 00:03:11 GMT'],
-         'HTTP/1.1': ['100 Continue', '412 Precondition Failed'],
-         'Server:': ['Apache'],
-         'X-DAViCal-Version:': ['DAViCal/1.0.2; DB/1.2.11'],
-         'X-Powered-By:': ['PHP/5.3.10']}
-
-    beware: not all keywords are followed by a ':'
-    """
-
-    head = dict()
-    for line in header_string.split("\r\n"):
-        test = line.split(" ", 1)
-        if not test[0] in head:
-            head[test[0]] = list()
-        try:
-            for one in test[1].split(', '):
-                head[test[0]].append(one)
-        except IndexError:
-            pass
-    return head

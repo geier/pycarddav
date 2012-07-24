@@ -19,7 +19,6 @@ try:
     import argparse
     from ConfigParser import SafeConfigParser
     import pycard
-    import vobject
     import __init__
 except ImportError as error:
     print(error)
@@ -59,10 +58,10 @@ def main():
         default="~/.pycard/pycard.conf",
         help="defaults to ~/.pycard/pycard.conf")
     parser.add_argument("-a", action="store_true", dest="display_all",
-            default="False", help="prints the whole card, not only name, "
+            default=False, help="prints the whole card, not only name, "
             "telephone numbers and email addresses")
-    parser.add_argument("-m", dest="print_function", action="store_const",
-            const="print_email", default="print_contact_info",
+    parser.add_argument("-m", dest="mutt", action="store_true", 
+            default=False,
             help="only prints email addresses, in a mutt friendly format")
     parser.add_argument("-e", dest="edit", action="store_true",
             default="False", help="edit the contact file.\n"
@@ -105,22 +104,26 @@ def main():
 
     #import:
     if args.importing:
-        for vcard in vobject.readComponents(args.importing):
-            vcard.prettyPrint()
-            while True:
-                answer = raw_input("Import this card [y/n]? ")
-                if answer.lower() in pycard.NO_STRINGS:
-                    break
-                if answer.lower() in pycard.YES_STRINGS:
-                    while True:
-                        tmp_vref = pycard.get_random_href()
-                        #import ipdb; ipdb.set_trace()
-                        if my_dbtool.check_vref_exists(tmp_vref):
-                            my_dbtool.insert_vref(tmp_vref, 2)
-                            break
-                    my_dbtool.insert_vcard_in_db(tmp_vref, vcard)
-                    break
-        sys.exit()
+        cards = pycard.cards_from_file(args.importing)
+        for card in cards:
+            my_dbtool.update(card, status=pycard.NEW)
+
+
+        #for vcard in vobject.readComponents(args.importing):
+        #    while True:
+        #        answer = raw_input("Import this card [y/n]? ")
+        #        if answer.lower() in pycard.NO_STRINGS:
+        #            break
+        #        if answer.lower() in pycard.YES_STRINGS:
+        #            while True:
+        #                tmp_vref = pycard.get_random_href()
+        #                #import ipdb; ipdb.set_trace()
+        #                if my_dbtool.check_vref_exists(tmp_vref):
+        #                    my_dbtool.insert_vref(tmp_vref, 2)
+        #                    break
+        #            my_dbtool.insert_vcard_in_db(tmp_vref, vcard)
+        #            break
+        #sys.exit()
 
     # backup:
     if args.backup:
@@ -166,16 +169,23 @@ def main():
             sys.exit('Found no matching cards.')
         my_query.mark_for_deletion(href, '')
         my_query.delete_vcard_from_db(href)
-        print('vcard %s deleted from local db, will be deleted on ' %href + \
+        print('vcard %s deleted from local db, will be deleted on ' % href + \
             'the server on the next sync')
         sys.exit()
 
-
-    my_query.print_function = args.print_function
-    my_query.display_all = args.display_all
-
     print("searching for " + args.search_string + "...")
-    my_query.search(args.search_string.decode("utf-8"))
+    result = my_query.search(args.search_string.decode("utf-8"))
+
+    for one in result:
+        vcard = my_dbtool.get_vcard_from_db(one)
+        if args.mutt:
+            lines = vcard.print_email()
+        elif args.display_all:
+            lines = vcard.pretty
+        else:
+            lines = vcard.pretty_min
+        if not lines == '':
+            print(lines.encode('utf-8'))
 
     return 0
 

@@ -12,7 +12,6 @@ syncs the remote database to the local db
 """
 from __future__ import print_function
 
-
 try:
     import sys
     import argparse
@@ -22,7 +21,6 @@ try:
     import pycarddav
     import carddav
     import logging
-    import vobject
     from ConfigParser import SafeConfigParser
     from os import path
 except ImportError, error:
@@ -117,23 +115,16 @@ def main():
     # sync:
     abook = syncer.get_abook()  # type (abook): dict
 
-    for vref, v_etag in abook.iteritems():
-        if my_dbtool.check_vref_exists(vref):
-            my_dbtool.insert_vref(vref)
+    for href, etag in abook.iteritems():
+        if my_dbtool.needs_update(href, etag):
+            logging.debug("getting %s etag: %s", href, etag)
+            vcard = syncer.get_vcard(href)
+            my_dbtool.update(vcard, href, etag=etag)
 
-        if my_dbtool.check_new_etag(vref, v_etag):
-            my_dbtool.delete_vcard_props_from_db(vref)
-            logging.debug("getting %s etag: %s", vref, v_etag)
-            vcard = syncer.get_vcard(vref)
-            vcard = vobject.readOne(vcard)
-            my_dbtool.insert_vcard_in_db(vref, vcard)
-            my_dbtool.update_etag(vref, v_etag)
-
-    
-    remote_changed = False 
+    remote_changed = False
     # for now local changes overwritten by remote changes
-    logging.info("getting changed vcards from db")
-    hrefs = my_dbtool.get_local_edited_hrefs()
+    logging.info("looking for locally changed vcards...")
+    hrefs = my_dbtool.changed
     for href in hrefs:
         logging.info("trying to update %s", href)
         card = my_dbtool.get_vcard_from_db(href)
@@ -143,7 +134,7 @@ def main():
         syncer.update_vcard(card_string, href, None)
         my_dbtool.reset_flag(href)
     # uploading
-    hrefs = my_dbtool.get_local_new_hrefs()
+    hrefs = my_dbtool.get_new()
     for href in hrefs:
         logging.info("trying to upload new card %s", href)
         card = my_dbtool.get_vcard_from_db(href)
@@ -156,7 +147,7 @@ def main():
         remote_changed = True
 
     # deleting locally deleted cards on the server
-    hrefs_etags = my_dbtool.get_local_deleted_hrefs_etags()
+    hrefs_etags = my_dbtool.get_marked_delete()
     for href, etag in hrefs_etags:
         logging.info('trying to delete card %s', href)
         syncer.delete_vcard(href, etag)
