@@ -149,6 +149,9 @@ NEW = 1
 CHANGED = 2
 DELETED = 9
 
+RTEXT = '\x1b[7m'
+NTEXT = '\x1b[0m'
+BTEXT = '\x1b[1m'
 
 def vcard_from_vobject(vcard):
     vdict = VCard()
@@ -278,7 +281,7 @@ class VCard(defaultdict):
 
     def _pretty_base(self, keylist):
         collector = list()
-        collector.append('\nName: ' + self.fname)
+        collector.append('\n' + BTEXT + 'Name: ' + self.fname + NTEXT)
         for key in keylist:
             for value in self[key]:
                 try:

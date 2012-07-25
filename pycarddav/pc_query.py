@@ -175,7 +175,6 @@ def main():
 
     print("searching for " + args.search_string + "...")
     result = my_query.search(args.search_string.decode("utf-8"))
-
     for one in result:
         vcard = my_dbtool.get_vcard_from_db(one)
         if args.mutt:
