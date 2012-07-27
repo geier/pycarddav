@@ -67,19 +67,6 @@ except ImportError, error:
     print(error)
     sys.exit(1)
 
-try:
-    from termcolor import cprint
-except ImportError:
-    cprint = False
-
-
-def print_bold(text):
-    """prints text bold"""
-    if cprint:
-        cprint(text, attrs=['bold'])
-    else:
-        print(text)
-
 
 def list_clean(string):
     """ transforms a comma seperated string to a list, stripping whitespaces
@@ -152,6 +139,7 @@ DELETED = 9
 RTEXT = '\x1b[7m'
 NTEXT = '\x1b[0m'
 BTEXT = '\x1b[1m'
+
 
 def vcard_from_vobject(vcard):
     vdict = VCard()
@@ -248,15 +236,6 @@ class VCard(defaultdict):
         keylist.sort()
         return keylist
 
-    def print_contact_info(self, display_all=False):
-        """new style contact card information printing"""
-        print_bold(unicode("Name: " + self.fname).encode("utf-8"))
-        for prop in ("EMAIL", "TEL", ):
-            for value, typelist in prop:
-                print(prop, ','.join(typelist), value)
-        if display_all == True:
-            print('alle')
-
     def print_email(self):
         """prints only name, email and type for use with mutt"""
         collector = list()
@@ -291,6 +270,11 @@ class VCard(defaultdict):
                 line = key + types + ': ' + value[0]
                 collector.append(line)
         return '\n'.join(collector)
+
+    @property
+    def vcf(self):
+        #TODO
+        return 'bla'
 
     def edit(self):
         """proper edit"""
@@ -645,8 +629,6 @@ class PcQuery(object):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = (href, )
-
-        # adding name, fname and version
         cursor.execute('SELECT vcard FROM vcardtable WHERE href=(?)', stuple)
         result = cursor.fetchall()
         vcard = VCard(ast.literal_eval(result[0][0]))
@@ -678,6 +660,17 @@ class PcQuery(object):
                 'SELECT href, etag FROM vcardtable WHERE status == (?)', (DELETED, ))
         result = cursor.fetchall()
         return [row[0] for row in result]
+
+    def mark_delete(self, href):
+        """marks the entry as to be deleted on server on next sync"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (DELETED, href, )
+
+        cursor.execute('UPDATE vcardtable SET STATUS = ? WHERE href = ?',
+                       stuple)
+        conn.commit()
+        conn.close()
 
     def reset_flag(self, href):
         """
