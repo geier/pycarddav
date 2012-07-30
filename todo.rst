@@ -12,6 +12,9 @@ FEATURES
 * test against other servers (fruux)
 * IN WORK: use logging from std lib
 
+* handle photos etc (base64 encoded)
+* use ssl public cert
+
 BUGS
 ====
 * BUG nicknames changing breaks vcard creation
@@ -19,7 +22,6 @@ BUGS
 * BUG vcard printed differently on import (vobject prettyPrint)
 * BUG no notification from pc_query when db exists but has not been
       successfully synced yet
-* BUG type properties/all properties not properly saved ??? Really?
 * BUG local deleted vcards are first GET from the server, then DELETEd on the
   server and finally detected as remote deleted and deleted again from the local
   db
@@ -31,13 +33,9 @@ TODO
 
 DONE
 ====
-* DONE: handle photos etc (base64 encoded)
 * DONE: creating the dbs
-* DONE: use ssl public cert
 * DONE: vcard importing
 * DONE: use distutils
 * DONE: owncloud works
 * DONE: base url not in config anymore
 * DONE: detect remote-deleted vcards, remove them from local db
-* DONE: fixed the magic binary props multiplication
-* DONE: spaces in TYPESLIST now eliminated
