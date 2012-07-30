@@ -125,7 +125,6 @@ class PyCardDAV(object):
         self.session.put(remotepath, data=card, headers=headers,
                           **self.settings)
 
-
     def delete_vcard(self, vref, etag):
         """deletes vcard from server
 
@@ -180,7 +179,7 @@ class PyCardDAV(object):
         :rtype: str() (an xml file)
         """
 
-        response = requests.request('PROPFIND', self.url.resource, 
+        response = requests.request('PROPFIND', self.url.resource,
                                     **self.settings)
         try:
             if response.headers['DAV'].count('addressbook') == 0:

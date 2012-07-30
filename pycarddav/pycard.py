@@ -271,10 +271,29 @@ class VCard(defaultdict):
                 collector.append(line)
         return '\n'.join(collector)
 
+    def _line_helper(self, line):
+        collector = list()
+        for key in line[1].keys():
+            collector.append(key + '=' + ','.join(line[1][key]))
+        if collector == list():
+            return ''
+        else:
+            return (';' + ';'.join(collector))
+
     @property
     def vcf(self):
-        #TODO
-        return 'bla'
+        collector = list()
+        collector.append('BEGIN:VCARD')
+        collector.append('VERSION:3.0')
+        for key in ['FN', 'N']:
+            collector.append(key + ':' + self[key][0][0])
+        for prop in self.alt_keys():
+            for line in self[prop]:
+
+                types = self._line_helper(line)
+                collector.append(prop + types + ':' + line[0])
+        collector.append('END:VCARD')
+        return '\n'.join(collector)
 
     def edit(self):
         """proper edit"""
@@ -347,7 +366,7 @@ class PcQuery(object):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         stuple = ('%' + search_string + '%', )
-        cursor.execute('SELECT href FROM vcardtable WHERE name LIKE (?)',
+        cursor.execute('SELECT href FROM vcardtable WHERE vcard LIKE (?)',
                 stuple)
         result = cursor.fetchall()
         conn.close()
@@ -548,8 +567,8 @@ class PcQuery(object):
         vcard_s = vcard.serialize()
         stuple = (href, etag, vcard.name, vcard.fname, vcard_s, OK)
         cursor.execute(
-                'INSERT INTO vcardtable (href, etag, name, fname, vcard, status)'
-                'VALUES (?,?,?,?,?,?);', stuple)
+            'INSERT INTO vcardtable (href, etag, name, fname, vcard, status)'
+            'VALUES (?,?,?,?,?,?);', stuple)
         conn.commit()
         cursor.close()
 
@@ -657,7 +676,8 @@ class PcQuery(object):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute(
-                'SELECT href, etag FROM vcardtable WHERE status == (?)', (DELETED, ))
+                'SELECT href, etag FROM vcardtable WHERE status == (?)',
+                (DELETED, ))
         result = cursor.fetchall()
         return [row[0] for row in result]
 
