@@ -1,0 +1,4 @@
+requests
+pysqlite
+vobject
+py.test
