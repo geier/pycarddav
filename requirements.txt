@@ -3,4 +3,4 @@ pysqlite
 vobject
 pytest
 urwid
-lxm
+lxml
