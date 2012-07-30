@@ -2,3 +2,5 @@ requests
 pysqlite
 vobject
 pytest
+urwid
+lxm
