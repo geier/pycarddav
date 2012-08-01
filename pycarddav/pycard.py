@@ -21,34 +21,18 @@ version:
     version (INT): only one line: current db version
 
 vcardtable:
-    href (TEXT PRIMARY KEY)
+    href (TEXT)
     etag (TEXT)
     name (TEXT): name as in vcard, seperated by ';'
     fname (TEXT): formated name
-    version (TEXT): vcard version
-    edited (INT): status of this card
-        * 0: not touched since last sync
-        * 1: properties edited or added (news to be pushed to server)
-        * 2: new card, needs to be created on the server
+    status (INT): status of this card
+        * 0: OK; not touched since last sync
+        * 1: NEW; new card, needs to be created on the server
+        * 2: CHANGED; properties edited or added (news to be pushed to server)
+        * 9: DELETED; marked for deletion (needs to be deleted on server)
+    vcard (TEXT) the content of the vcard minus any binary objects
+                as __repr__() of the object
 
-properties:
-    id (INTEGER PRIMARY KEY)
-    property (TEXT): vcard property, like EMAIL, TEL etc.
-    value (TEXT): the properties value, like 'user@domain.com' or '+12345678'
-    href (TEXT):
-    parameters (TEXT): the parameters as a unicode()ed dict
-
-
-blobproperties: the same as the properties table, but with a binary value
-    id (INTEGER PRIMARY KEY)
-    property (TEXT): vcard property, like PHOTO, LOGO etc.
-    value (TEXT): binary value
-    href (TEXT):
-    parameters (TEXT): the parameters as a unicode()ed dict
-
-delete: list of hrefs and corresponding etags to be deleted on next sync
-    href (TEXT)
-    etag (TEXT)
 """
 
 from __future__ import print_function
