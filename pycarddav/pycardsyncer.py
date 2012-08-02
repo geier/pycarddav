@@ -138,12 +138,8 @@ def main():
     for href in hrefs:
         logging.info("trying to upload new card %s", href)
         card = my_dbtool.get_vcard_from_db(href)
-        card_string = card.serialize()
-        card_string = card_string.replace('###COMMA###', ',')
-
-        (href_new, etag_new) = syncer.upload_new_card(card_string)
-        my_dbtool.update_vref(href, href_new)
-        my_dbtool.reset_flag(href_new)
+        (href_new, etag_new) = syncer.upload_new_card(card.vcf)
+        my_dbtool.update_href(href, href_new)
         remote_changed = True
 
     # deleting locally deleted cards on the server

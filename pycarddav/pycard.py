@@ -546,15 +546,55 @@ class PcQuery(object):
     def update(self, vcard, href='', etag='', status=OK):
         if isinstance(vcard, (str, unicode)):
             vcard = vcard_from_string(vcard)
+
+        if self.href_exists(href):  # existing card
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            vcard_s = vcard.serialize()
+            stuple = (etag, vcard.name, vcard.fname, vcard_s, status, href)
+            cursor.execute(
+                'UPDATE vcardtable SET etag = ?, name = ?, fname = ?,'
+                ' vcard = ?, status = ? WHERE href = ?;', stuple)
+            conn.commit()
+            cursor.close()
+
+        else:
+            if href == '':
+                pass  # TODO
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            vcard_s = vcard.serialize()
+            stuple = (href, etag, vcard.name, vcard.fname, vcard_s, status)
+            cursor.execute(
+                'INSERT INTO vcardtable (href, etag, name, fname, vcard, status)'
+                'VALUES (?,?,?,?,?,?);', stuple)
+            conn.commit()
+            cursor.close()
+
+
+    def update_href(self, old_href, new_href, etag='', status=OK):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        vcard_s = vcard.serialize()
-        stuple = (href, etag, vcard.name, vcard.fname, vcard_s, OK)
+        stuple = (old_href, new_href, etag, status,)
         cursor.execute(
-            'INSERT INTO vcardtable (href, etag, name, fname, vcard, status)'
-            'VALUES (?,?,?,?,?,?);', stuple)
+            'UPDATE vcardtable SET href = ?, etag = ?, status = ?'
+            ' WHERE href = ?;', stuple)
         conn.commit()
         cursor.close()
+
+    def href_exists(self, href):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        stuple = (href, )
+        cursor.execute(
+            'SELECT href FROM vcardtable WHERE href = ?; ', stuple)
+        result = cursor.fetchall()
+        conn.commit()
+        cursor.close()
+        if len(result) == 0:
+            return False
+        else:
+            return True
 
     def get_etag(self, vref):
         """get etag for vref
