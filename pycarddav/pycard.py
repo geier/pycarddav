@@ -347,24 +347,16 @@ class PcQuery(object):
 
     def search(self, search_string):
         """returns list of ids from db matching search_string"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
         stuple = ('%' + search_string + '%', )
-        cursor.execute('SELECT href FROM vcardtable WHERE vcard LIKE (?)',
-                stuple)
-        result = cursor.fetchall()
-        conn.close()
+        sql_s = 'SELECT href FROM vcardtable WHERE vcard LIKE (?)'
+        result = self.sql_ex(sql_s, stuple)
         return [row[0] for row in result]
 
     @property
     def changed(self):
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
         stuple = (CHANGED, )
-        cursor.execute('SELECT href FROM vcardtable WHERE status == (?)',
-                stuple)
-        result = cursor.fetchall()
-        conn.close()
+        sql_s = 'SELECT href FROM vcardtable WHERE status == (?)'
+        result = self.sql_ex(sql_s, stuple)
         return [row[0] for row in result]
 
     def select_entry(self, search_string):
@@ -503,23 +495,15 @@ class PcQuery(object):
                 'Unknown Error: ' + str(error) + "\n")
         conn.commit()
 
-    def check_vref_exists(self, vref):
-        """
-        returns False if vref already exists in db
-        returns True otherwise
-        """
+    def sql_ex(self, statement, stuple=''):
+        """wrapper for sql statements, does a "fetchall" """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        stuple = (vref, )
-        cursor.execute('SELECT count(*) FROM vcardtable WHERE href=(?);',
-                        stuple)
-        if cursor.fetchall() == [(1, )]:
-            return_code = False
-        else:
-            return_code = True
+        cursor.execute(statement, stuple)
+        result = cursor.fetchall()
         conn.commit()
         cursor.close()
-        return return_code
+        return result
 
     def needs_update(self, href, etag=''):
         """checks if we need to update this vcard
@@ -530,11 +514,9 @@ class PcQuery(object):
         :type etag: str()
         :return: True or False
         """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
         stuple = (href,)
-        cursor.execute('SELECT etag FROM vcardtable WHERE href=(?)', stuple)
-        result = cursor.fetchall()
+        sql_s = 'SELECT etag FROM vcardtable WHERE href=(?)'
+        result = self.sql_ex(sql_s, stuple)
 
         if len(result) is 0:
             return True
@@ -548,68 +530,43 @@ class PcQuery(object):
             vcard = vcard_from_string(vcard)
 
         if self.href_exists(href):  # existing card
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
             vcard_s = vcard.serialize()
             stuple = (etag, vcard.name, vcard.fname, vcard_s, status, href)
-            cursor.execute(
-                'UPDATE vcardtable SET etag = ?, name = ?, fname = ?,'
-                ' vcard = ?, status = ? WHERE href = ?;', stuple)
-            conn.commit()
-            cursor.close()
+            sql_s = 'UPDATE vcardtable SET etag = ?, name = ?, fname = ?, \
+                 vcard = ?, status = ? WHERE href = ?;'
+            self.sql_ex(sql_s, stuple)
 
         else:
             if href == '':
                 pass  # TODO
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
             vcard_s = vcard.serialize()
             stuple = (href, etag, vcard.name, vcard.fname, vcard_s, status)
-            cursor.execute(
-                'INSERT INTO vcardtable (href, etag, name, fname, vcard, status)'
-                'VALUES (?,?,?,?,?,?);', stuple)
-            conn.commit()
-            cursor.close()
-
+            sql_s = 'INSERT INTO vcardtable (href, etag, name, fname, vcard, status) \
+                VALUES (?,?,?,?,?,?);'
+            self.sql_ex(sql_s, stuple)
 
     def update_href(self, old_href, new_href, etag='', status=OK):
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
         stuple = (old_href, new_href, etag, status,)
-        cursor.execute(
-            'UPDATE vcardtable SET href = ?, etag = ?, status = ?'
-            ' WHERE href = ?;', stuple)
-        conn.commit()
-        cursor.close()
+        sql_s = 'UPDATE vcardtable SET href = ?, etag = ?, status = ? \
+             WHERE href = ?;'
+        self.sql_ex(sql_s, stuple)
 
     def href_exists(self, href):
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (href, )
-        cursor.execute(
-            'SELECT href FROM vcardtable WHERE href = ?; ', stuple)
-        result = cursor.fetchall()
-        conn.commit()
-        cursor.close()
-        if len(result) == 0:
+        sql_s = 'SELECT href FROM vcardtable WHERE href = ?; '
+        if len(self.sql_ex(sql_s, (href, ))) == 0:
             return False
         else:
             return True
 
-    def get_etag(self, vref):
-        """get etag for vref
+    def get_etag(self, href):
+        """get etag for href
 
-        type vref: str()
+        type href: str()
         return: etag
         rtype: str()
         """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (vref,)
-        cursor.execute('SELECT etag FROM vcardtable WHERE href=(?);',
-                       stuple)
-        etag = cursor.fetchall()[0][0]
-        cursor.close()
+        sql_s = 'SELECT etag FROM vcardtable WHERE href=(?);'
+        etag = self.sql_ex(sql_s, (href,))[0][0]
         return etag
 
     def delete_vcard_from_db(self, vref):
@@ -618,21 +575,14 @@ class PcQuery(object):
         from the property and vcardtable table
         returns nothing
         """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
         stuple = (vref, )
         if self.debug:
             print("locally deleting ", vref)
-        cursor.execute('DELETE FROM vcardtable WHERE href=(?)', stuple)
-        conn.commit()
-        cursor.close()
+        self.sql_ex('DELETE FROM vcardtable WHERE href=(?)', stuple)
 
     def get_all_vref_from_db(self):
         """returns a list with all vrefs"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute('SELECT href FROM vcardtable')
-        result = cursor.fetchall()
+        result = self.sql_ex('SELECT href FROM vcardtable')
         return [row[0] for row in result]
 
     def get_names_vref_from_db(self, searchstring=None):
@@ -640,24 +590,15 @@ class PcQuery(object):
         :return: list of tuples(name, vref) of all entries from the db
         """
         if searchstring is None:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute('SELECT fname, href FROM vcardtable ORDER BY name')
-            result = cursor.fetchall()
-            return result
+            return self.sql_ex('SELECT fname, href FROM vcardtable ORDER BY name')
         else:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
             hrefs = self.get_contact_id_from_string(searchstring)
-
             temp = list()
             for href in hrefs:
                 try:
-                    stuple = (href,)
-                    cursor.execute(
-                        'SELECT fname, href FROM vcardtable WHERE href =(?)',
-                         stuple)
-                    temp.append(cursor.fetchall()[0])
+                    sql_s = 'SELECT fname, href FROM vcardtable WHERE href =(?)'
+                    result = self.sql_ex(sql_s, (href, ))
+                    temp.append(result[0])
                 except IndexError as error:
                     print(href)
                     print(error)
@@ -665,65 +606,40 @@ class PcQuery(object):
 
     def get_vcard_from_db(self, href):
         """returns a VCard()"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (href, )
-        cursor.execute('SELECT vcard FROM vcardtable WHERE href=(?)', stuple)
-        result = cursor.fetchall()
+        sql_s = 'SELECT vcard FROM vcardtable WHERE href=(?)'
+        result = self.sql_ex(sql_s, (href, ))
         vcard = VCard(ast.literal_eval(result[0][0]))
         return vcard
 
     def get_changed(self):
         """returns list of hrefs of locally edited vcards"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-                'SELECT href FROM vcardtable WHERE status == (?)', (CHANGED, ))
-        result = cursor.fetchall()
+        sql_s = 'SELECT href FROM vcardtable WHERE status == (?)'
+        result = self.sql_ex(sql_s, (CHANGED, ))
         return [row[0] for row in result]
 
     def get_new(self):
         """returns list of hrefs of locally added vcards"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-                'SELECT href FROM vcardtable WHERE status == (?)', (NEW, ))
-        result = cursor.fetchall()
+        sql_s = 'SELECT href FROM vcardtable WHERE status == (?)'
+        result = self.sql_ex(sql_s, (NEW, ))
         return [row[0] for row in result]
 
     def get_marked_delete(self):
         """returns list of tuples (hrefs, etags) of locally deleted vcards"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-                'SELECT href, etag FROM vcardtable WHERE status == (?)',
-                (DELETED, ))
-        result = cursor.fetchall()
+        sql_s = 'SELECT href FROM vcardtable WHERE status == (?)'
+        result = self.sql_ex(sql_s, (DELETED, ))
         return [row[0] for row in result]
 
     def mark_delete(self, href):
         """marks the entry as to be deleted on server on next sync"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (DELETED, href, )
-
-        cursor.execute('UPDATE vcardtable SET STATUS = ? WHERE href = ?',
-                       stuple)
-        conn.commit()
-        conn.close()
+        sql_s = 'UPDATE vcardtable SET STATUS = ? WHERE href = ?'
+        self.sql_ex(sql_s, (DELETED, href, ))
 
     def reset_flag(self, href):
         """
         resets the edited flag for a given href to 0 (=not edited locally)
         """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        stuple = (href, )
-
-        cursor.execute('UPDATE vcardtable SET edited = 0 WHERE href = ?',
-                       stuple)
-        conn.commit()
-        conn.close()
+        sql_s = 'UPDATE vcardtable SET edited = 0 WHERE href = ?'
+        self.sql_ex(sql_s, (href, ))
 
 
 def signal_handler(signal, frame):
