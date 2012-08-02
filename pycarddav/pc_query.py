@@ -109,6 +109,7 @@ def main():
         cards = pycard.cards_from_file(args['importing'])
         for card in cards:
             my_dbtool.update(card, status=pycard.NEW)
+        sys.exit()
 
     # backup:
     if args['backup']:
