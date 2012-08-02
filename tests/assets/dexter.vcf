@@ -1,0 +1,9 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Morgan;Dexter
+FN:Dexter Morgan
+ORG:Bubba Gump Shrimp Co.
+NICKNAME:Bay Harbour Butcher,Dex
+TEL;TYPE=WORK,VOICE:(42) 111-222
+END:VCARD
+
