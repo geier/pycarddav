@@ -13,18 +13,17 @@ syncs the remote database to the local db
 from __future__ import print_function
 
 try:
-    import sys
-    import argparse
-    import signal
+    from pycarddav import Configuration, ConfigurationParser
+    from pycarddav import capture_user_interruption
+    from pycarddav import pycard
+    from pycarddav import carddav
+
     import getpass
-    import pycard
-    import pycarddav
-    import carddav
     import logging
-    from ConfigParser import SafeConfigParser
-    from os import path
+    import sys
+
 except ImportError, error:
-    sys.stderr.write(error)
+    sys.stderr.write(str(error))
     sys.exit(1)
 
 LEVELS = {'debug': logging.DEBUG,
@@ -34,83 +33,52 @@ LEVELS = {'debug': logging.DEBUG,
           'critical': logging.CRITICAL,
           }
 
+class SyncConfigurationParser(ConfigurationParser):
+    """A specialized setup tool for synchronization."""
+    def __init__(self):
+        ConfigurationParser.__init__(self, "syncs the local db to the CardDAV server")
+        self.set_mandatory_options([(Configuration.SECTIONS.DAV, 'user'),
+                                    (Configuration.SECTIONS.DAV, 'resource'),
+                                    (Configuration.SECTIONS.DB, 'path')])
 
-def signal_handler(*_):
-    """this should hide ugly backtraces when hitting ctrl-c"""
-    sys.exit(0)
+    def check(self, conf):
+        success = ConfigurationParser.check(self, conf)
 
+        if success and not conf.dav__passwd:
+            conf.dav__passwd = getpass.getpass(prompt='CardDAV password: ')
 
-def parser():
-    """config and command line option parser for pycardsyncer"""
-    carg_parser = argparse.ArgumentParser(
-            description=__doc__,
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-            add_help=False
-            )
-    carg_parser.add_argument("-c", "--config",
-        action="store", dest="configfile",
-        default="~/.pycard/pycard.conf", metavar="FILE",
-        help="defaults to ~/.pycard/pycard.conf")
-    args, remaining_argv = carg_parser.parse_known_args()
-
-    config_parser = SafeConfigParser(vars(args))
-    config_parser.read([path.expanduser(args.configfile)])
-    defaults = dict(config_parser.items("default"))
-
-    arg_parser = argparse.ArgumentParser(
-            description="syncs the local db to the CardDAV server")
-    arg_parser.set_defaults(**defaults)
-    arg_parser.add_argument("-v", "--version", action="version",
-            version=pycarddav.__version__)
-    arg_parser.add_argument("--debug", action="store_true", dest="debug",
-            help="enable debugging; WARNING: shows passwords in cleartext")
-    args = vars(arg_parser.parse_args(remaining_argv))
-    if 'passwd' not in args:
-        args['passwd'] = getpass.getpass(prompt='CardDAV password: ')
-    try:
-        if args['write_support'] == 'YesPleaseIDoHaveABackupOfMyData':
-            args['write_support'] = True
-        else:
-            args['write_support'] = False
-    except KeyError:
-        args['write_support'] = False
-    return args
+        return success
 
 
 def main():
     """this should probably be seperated from the class definitions"""
-    # trying to hide some ugly python code on pressing Ctrl-C
-    logging.basicConfig(level=logging.DEBUG)
-    signal.signal(signal.SIGINT, signal_handler)
-    args = parser()
+    capture_user_interruption()
 
-    logger = logging.getLogger('simple_logger')
-    logger.setLevel(logging.DEBUG)
+    # Read configuration.
+    parser = SyncConfigurationParser()
 
-    syncer = carddav.PyCardDAV(args['resource'],
-                               user=args['user'],
-                               passwd=args['passwd'],
-                               write_support=args['write_support'])
+    conf = parser.parse()
+    if conf is None:
+        sys.exit(1)
+
+    if conf.debug:
+        conf.dump()
+
+    syncer = carddav.PyCardDAV(conf.dav__resource,
+                               user=conf.dav__user,
+                               passwd=conf.dav__passwd,
+                               write_support=conf.write_support)
     try:
-        syncer.insecure_ssl = args['insecure_ssl']
+        syncer.ssl_insecure = conf.ssl__insecure
     except KeyError:
         pass
     try:
-        syncer.ssl_cacert_file = args['ssl_cacert_file']
+        syncer.ssl_cacert = conf.ssl__cacert
     except KeyError:
         pass
 
-    logging.debug("using remote options:\n"
-        "  user: %s\n" % syncer.user + \
-        "  passwd: %s\n" % syncer.passwd + \
-        "  resource: %s\n" % syncer.url.resource + \
-        "  base_url: %s\n" % syncer.url.base + \
-        "  insecureSSL: %s\n" % syncer.insecure_ssl +\
-        "using local options:\n" + \
-        "  db_path: %s\n" % args['db_path'])
 
-    my_dbtool = pycard.PcQuery(args['db_path'], "utf-8", "stricts",
-                               args['debug'])
+    my_dbtool = pycard.PcQuery(conf.sqlite__path, "utf-8", "stricts", conf.debug)
 
     # sync:
     abook = syncer.get_abook()  # type (abook): dict
