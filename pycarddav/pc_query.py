@@ -120,7 +120,7 @@ def main():
                 hreflist = my_dbtool.search(search_string)
             for href in hreflist:
                 vcard = my_dbtool.get_vcard_from_db(href)
-                vcf_file.write(vcard.vcf)
+                vcf_file.write(vcard.vcf.encode('utf-8'))
         sys.exit()
 
     # editing a card:
