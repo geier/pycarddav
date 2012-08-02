@@ -37,6 +37,11 @@ SABREDAV = 'sabredav'
 UNKNOWN = 'unknown server'
 
 
+class UploadFailed(Exception):
+    """uploading the card failed"""
+    pass
+
+
 class PyCardDAV(object):
     """interacts with CardDAV server"""
 
@@ -169,6 +174,7 @@ class PyCardDAV(object):
                     etag = response.headers['etag']
 
                 return (parsed_url.path, etag)
+        raise UploadFailed(response.reason)
             # TODO: should raise an exception if this is ever reached
 
     def _get_xml_props(self):
