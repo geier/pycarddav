@@ -552,7 +552,7 @@ class PcQuery(object):
             self.sql_ex(sql_s, stuple)
 
     def update_href(self, old_href, new_href, etag='', status=OK):
-        stuple = (old_href, new_href, etag, status,)
+        stuple = (new_href, etag, status, old_href)
         sql_s = 'UPDATE vcardtable SET href = ?, etag = ?, status = ? \
              WHERE href = ?;'
         self.sql_ex(sql_s, stuple)
