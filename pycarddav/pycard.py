@@ -583,10 +583,6 @@ class PcQuery(object):
         stuple = (vref, )
         if self.debug:
             print("locally deleting ", vref)
-        cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
-        conn.commit()
-        cursor.execute('DELETE FROM properties WHERE href=(?)', stuple)
-        conn.commit()
         cursor.execute('DELETE FROM vcardtable WHERE href=(?)', stuple)
         conn.commit()
         cursor.close()
