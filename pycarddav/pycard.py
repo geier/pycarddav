@@ -538,7 +538,13 @@ class PcQuery(object):
 
         else:
             if href == '':
-                pass  # TODO
+                for _ in range(10):
+                    href = get_random_href()
+                    if self.href_exists(href) is False:
+                        break
+                    # could not find a (random) href that's not yet in the db
+                    # broken random number generator?
+                    #TODO: what's happens now? exception?
             vcard_s = vcard.serialize()
             stuple = (href, etag, vcard.name, vcard.fname, vcard_s, status)
             sql_s = 'INSERT INTO vcardtable (href, etag, name, fname, vcard, status) \
