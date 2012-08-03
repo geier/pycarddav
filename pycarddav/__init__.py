@@ -120,7 +120,7 @@ class Configuration(object):
         """
         logging.debug('Using configuration:')
         for name, value in sorted(self.__dict__.items()):
-            if name != 'dav_passwd':
+            if name != 'dav__passwd':
                 section, option = Configuration.unmangle_name(name)
                 logging.debug('\t%s: %s', Configuration.prettify_name(
                     section, option), value)
