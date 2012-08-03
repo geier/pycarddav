@@ -13,6 +13,8 @@ syncs the remote database to the local db
 from __future__ import print_function
 
 try:
+    from netrc import netrc
+    from urlparse import urlsplit
     from pycarddav import Configuration, ConfigurationParser
     from pycarddav import capture_user_interruption
     from pycarddav import pycard
@@ -33,19 +35,35 @@ LEVELS = {'debug': logging.DEBUG,
           'critical': logging.CRITICAL,
           }
 
+
 class SyncConfigurationParser(ConfigurationParser):
     """A specialized setup tool for synchronization."""
     def __init__(self):
         ConfigurationParser.__init__(self, "syncs the local db to the CardDAV server")
-        self.set_mandatory_options([(Configuration.SECTIONS.DAV, 'user'),
-                                    (Configuration.SECTIONS.DAV, 'resource'),
+        self.set_mandatory_options([(Configuration.SECTIONS.DAV, 'resource'),
                                     (Configuration.SECTIONS.DB, 'path')])
 
     def check(self, conf):
         success = ConfigurationParser.check(self, conf)
 
         if success and not conf.dav__passwd:
-            conf.dav__passwd = getpass.getpass(prompt='CardDAV password: ')
+            hostname = urlsplit(conf.dav__resource).hostname
+            auths = netrc().authenticators(hostname)
+            if auths:
+                if not conf.dav__user or auths[0] == conf.dav__user:
+                    logging.debug("Read password for user %s on %s in .netrc",
+                                  auths[0], hostname)
+                    conf.dav__user = auths[0]
+                    conf.dav__passwd = auths[2]
+                else:
+                    logging.error("User %s not found for %s in .netrc",
+                                  conf.dav__user, hostname)
+                    success = False
+            elif conf.dav__user:
+                conf.dav__passwd = getpass.getpass(prompt='CardDAV password: ')
+            else:
+                logging.error("Missing credentials for %s", hostname)
+                success = False
 
         return success
 
