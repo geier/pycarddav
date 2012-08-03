@@ -52,11 +52,12 @@ class QueryConfigurationParser(ConfigurationParser):
             help="the string to search for", nargs="?")
         self._arg_parser.add_argument(
             "-b", "--backup", action="store", dest="cmd__backup",
-            help="backup the local db to BACKUP, "
+            metavar="BACKUP",  help="backup the local db to BACKUP, "
             "if a SEARCHSTRING is present, only backup cards matching it.")
         self._arg_parser.add_argument(
-            "-i", "--import", type=argparse.FileType("r"), dest="cmd__importing",
-            help="import vcard from file or STDIN")
+            "-i", "--import", metavar="FILE",
+            type=argparse.FileType("r"), dest="cmd__importing",
+            help="import vcard from FILE or STDIN")
         self._arg_parser.add_argument(
             "--delete", dest="cmd__delete", action="store_true",
             help="delete card matching SEARCHSTRING")
