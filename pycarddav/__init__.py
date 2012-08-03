@@ -1,11 +1,10 @@
 #!/usr/bin/python
 # vim: set fileencoding=utf-8 :
 
-from os import path
-
 import argparse
 import ConfigParser
 import logging
+import os
 import signal
 import sys
 
@@ -30,6 +29,23 @@ def enum(**enums):
     return type('Enum', (object,), enums)
 
 
+class XdgBaseDirectoryHelper(object):
+    def __init__(self):
+        self._home = os.path.expanduser('~')
+
+        self.config_dirs = [os.environ.get('XDG_CONFIG_HOME') or \
+            os.path.join(self._home, '.config')]
+        self.config_dirs.extend(
+            (os.environ.get('XDG_CONFIG_DIRS') or '/etc/xdg').split(':'))
+        self.data_dirs = [os.environ.get('XDG_DATA_HOME') or \
+            os.path.join(self._home, '.local', 'share')]
+        self.data_dirs.extend(
+            (os.environ.get('XDG_DATA_DIRS') or '/usr/local/share:/usr/share').split(':'))
+
+    def build_config_paths(self, resource):
+        return [os.path.join(d, resource) for d in self.config_dirs]
+
+
 class Configuration(object):
     """The pycardsyncer configuration holder.
 
@@ -49,7 +65,8 @@ class Configuration(object):
 
     SECTIONS = enum(CMD='cmd', DAV='dav', DB='sqlite', SSL='ssl', DEFAULT='default')
     DEFAULT_DB_PATH = '~/.pycard/abook.db'
-    DEFAULT_FILE="~/.pycard/pycard.conf"
+    DEFAULT_PATH = "pycard"
+    DEFAULT_FILE = "pycard.conf"
 
     @classmethod
     def mangle_name(cls, section, option):
@@ -141,15 +158,17 @@ class ConfigurationParser(object):
                 str: ConfigParser.SafeConfigParser.get }
 
     def __init__(self, desc):
+        self._xdg_helper = XdgBaseDirectoryHelper()
+
         # Set the configuration current schema.
         self._schema = [
             (Configuration.SECTIONS.DAV, 'user', ''),
             (Configuration.SECTIONS.DAV, 'passwd', ''),
             (Configuration.SECTIONS.DAV, 'resource', ''),
             (Configuration.SECTIONS.SSL, 'insecure', False),
-            (Configuration.SECTIONS.SSL, 'cacert', (path.expanduser, '')),
+            (Configuration.SECTIONS.SSL, 'cacert', (os.path.expanduser, '')),
             (Configuration.SECTIONS.DB, 'path',
-             (path.expanduser, Configuration.DEFAULT_DB_PATH)),
+             (os.path.expanduser, Configuration.DEFAULT_DB_PATH)),
             (Configuration.SECTIONS.DEFAULT, 'debug', False),
             (Configuration.SECTIONS.DEFAULT, 'write_support',
              (lambda x: x == 'YesPleaseIDoHaveABackupOfMyData' or False, False)) ]
@@ -162,8 +181,8 @@ class ConfigurationParser(object):
 
         self._arg_parser.add_argument(
             "-c", "--config", action="store", dest="cmd__inifile",
-            default=Configuration.DEFAULT_FILE, metavar="FILE",
-            help="defaults to %s" % Configuration.DEFAULT_FILE)
+            default=self._get_default_configuration_file(), metavar="FILE",
+            help="an alternate configuration file")
         self._arg_parser.add_argument(
             "--debug", action="store_true", dest="debug", help="enables debugging")
 
@@ -186,11 +205,15 @@ class ConfigurationParser(object):
         # Prepare the logger with the level read from command line.
         logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
-        filename = path.expanduser(args.cmd__inifile)
-        logging.debug('reading config from %s', filename)
-        if not self._conf_parser.read(filename):
+        filename = args.cmd__inifile
+        if not filename:
+            logging.error('Could not find configuration file')
+            return None
+        if not self._conf_parser.read(os.path.expanduser(filename)):
             logging.error('Cannot read %s', filename)
             return None
+        else:
+            logging.debug('Using configuration from %s', filename)
 
         conf = self._read_configuration(args)
 
@@ -267,3 +290,33 @@ class ConfigurationParser(object):
             return f(self._conf_parser.get(section, option))
         except ConfigParser.Error:
             return f(default)
+
+    def _get_default_configuration_file(self):
+        """Return the configuration filename.
+
+        This function builds the list of paths known by pycarddav and
+        then return the first one which exists. The first paths
+        searched are the ones described in the XDG Base Directory
+        Standard. Each one of this path ends with
+        DEFAULT_PATH/DEFAULT_FILE.
+
+        On failure, the path DEFAULT_PATH/DEFAULT_FILE, prefixed with
+        a dot, is searched in the home user directory. Ultimately,
+        DEFAULT_FILE is searched in the current directory.
+        """
+        paths = []
+
+        resource = os.path.join(
+            Configuration.DEFAULT_PATH, Configuration.DEFAULT_FILE)
+        paths.extend(self._xdg_helper.build_config_paths(resource))
+        paths.append(os.path.expanduser(os.path.join('~', '.' + resource)))
+        paths.append(os.path.expanduser(Configuration.DEFAULT_FILE))
+
+        for path in paths:
+            if os.path.exists(path):
+                return path
+
+        return None
+
+    def _get_data_path(self):
+        pass
