@@ -1,15 +1,26 @@
-[default]
+[dav]
+# DAV credentials. Please note that the password is written in plain
+# text here. If the password is missing, it will be claimed at
+# synchronization time.
 user: username
 passwd: yourpassword
-resource: https://carddav.server.tld:80/davical/caldav.php/username/addressbook/
-# or for owncloud
-#resource: https://[server]/owncloud/apps/contacts/carddav.php/addressbooks/[user]/[addressbook name]/
-db_path: /home/localuser/.pycard/abook.db
-DEBUG: 0
 
-# SSL:
-# setting insecure_ssl to 1 disables ALL SSL cert checking and is NOT recommended
-# this corresponds to curl's -k/--insecure flag
-#insecure_ssl: 0
-# corrpesonds to curl's --cacert
-#ssl_cacert_file: /path/to/cacert.pem
+# The path to the CardDAV resource.
+#resource: https://[server]/owncloud/apps/contacts/carddav.php/addressbooks/[user]/[addressbook name]/
+resource: https://carddav.server.tld:80/davical/caldav.php/username/addressbook/
+
+[sqlite]
+# The location of the local SQLite contacts database.
+path: ~/.pycard/abook.db
+
+[ssl]
+# When set to True (or 1), disables ALL SSL CERT checking. This
+# corresponds to curl's -k/--insecure flag.
+# THIS IS NOT RECOMMENDED!
+#insecure: False
+
+# This corresponds to curl's --cacert flag.
+#cacert: /path/to/cacert.pem
+
+[default]
+debug: False

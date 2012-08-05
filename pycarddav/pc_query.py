@@ -13,107 +13,86 @@ utility for querying the database
 from __future__ import print_function
 
 try:
-    import sys
-    import signal
     from os import path
+    from pycarddav import Configuration, ConfigurationParser
+    from pycarddav import capture_user_interruption
+    from pycarddav import pycard
+
     import argparse
-    from ConfigParser import SafeConfigParser
-    import pycard
-    import __init__
+    import sys
+
 except ImportError as error:
-    print(error)
+    sys.stderr.write(str(error))
     sys.exit(1)
 
 
-def signal_handler(signal, frame):
-    """
-    tries to hide some ugly python backtraces from the user after
-    pressing ctrl-c
-    """
-    sys.exit(0)
+class QueryConfigurationParser(ConfigurationParser):
+    """A specialized setup tool for cards query."""
+    def __init__(self, desc):
+        ConfigurationParser.__init__(self, desc)
 
+        self.set_mandatory_options([(Configuration.SECTIONS.DB, 'path')])
 
-def parser():
-    """config and command line option parser"""
-    carg_parser = argparse.ArgumentParser(
-            description=__doc__,
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-            add_help=False
-            )
-    carg_parser.add_argument('-c', '--config',
-            action='store', dest='configfile',
-            default='~/.pycard/pycard.conf', metavar='FILE',
-            help='defaults to ~/.pycard/pycard.conf')
-    args, remaining_argv = carg_parser.parse_known_args()
-
-    config_parser = SafeConfigParser(vars(args))
-    config_parser.read([path.expanduser(args.configfile)])
-    defaults = dict(config_parser.items('default'))
-
-    arg_parser = argparse.ArgumentParser(
-        description='prints contacts cards matching a search string')
-    arg_parser.set_defaults(**defaults)
-    arg_parser.add_argument("-v", "--version", action="version",
-            version=__init__.__version__)
-    arg_parser.add_argument(
-        "-c", "--config", action="store", dest="configfile",
-        default="~/.pycard/pycard.conf",
-        help="defaults to ~/.pycard/pycard.conf")
-    arg_parser.add_argument("-a", action="store_true", dest="display_all",
-            default=False, help="prints the whole card, not only name, "
+        self._arg_parser.add_argument(
+            "-a", action="store_true", dest="cmd__display_all", default=False,
+            help="prints the whole card, not only name, "
             "telephone numbers and email addresses")
-    arg_parser.add_argument("-m", dest="mutt", action="store_true",
-            default=False,
+        self._arg_parser.add_argument(
+            "-m", action="store_true", dest="cmd__mutt", default=False,
             help="only prints email addresses, in a mutt friendly format")
-    arg_parser.add_argument("-e", dest="edit", action="store_true",
-            default="False", help="edit the contact file.\n"
+        self._arg_parser.add_argument(
+            "-e", action="store_true", dest="cmd__edit", default=False,
+            help="edit the contact file.\n"
             "NOTE: this feature is experimental and will probably corrupt "
             "your *local* database. Your remote CardDAV resource will stay "
             "untouched, as long as You don't enable write support for the "
             "syncer.")
-    arg_parser.add_argument("--debug", action="store_true", dest="debug",
-            default="False", help="enable debugging")
-    arg_parser.add_argument("search_string", metavar="SEARCHSTRING",
-            help="the string to search for", nargs='?', default="")
-    arg_parser.add_argument("-b", "--backup", action="store",
-            dest="backup", help="backup the local db to BACKUP, "
+        self._arg_parser.add_argument(
+            "cmd__search_string", metavar="SEARCHSTRING", default="",
+            help="the string to search for", nargs="?")
+        self._arg_parser.add_argument(
+            "-b", "--backup", action="store", dest="cmd__backup",
+            metavar="BACKUP",  help="backup the local db to BACKUP, "
             "if a SEARCHSTRING is present, only backup cards matching it.")
-    arg_parser.add_argument('-i', '--import', type=argparse.FileType('r'),
-            dest='importing', help='import vcard from file or STDIN')
-    arg_parser.add_argument('--delete', dest='delete', action='store_true',
-            help='delete card matching SEARCHSTRING')
-
-    args = vars(arg_parser.parse_args(remaining_argv))
-    return args
+        self._arg_parser.add_argument(
+            "-i", "--import", metavar="FILE",
+            type=argparse.FileType("r"), dest="cmd__importing",
+            help="import vcard from FILE or STDIN")
+        self._arg_parser.add_argument(
+            "--delete", dest="cmd__delete", action="store_true",
+            help="delete card matching SEARCHSTRING")
 
 
 def main():
     """main function, everything starts  here"""
-    args = parser()
+    capture_user_interruption()
 
-    # let's try to hide some ugly python code, at least when hitting Ctrl-C
-    signal.signal(signal.SIGINT, signal_handler)
+    # Read configuration.
+    parser = QueryConfigurationParser('prints contacts cards matching a search string')
 
-    db_path = path.expanduser(args['db_path'])
+    conf = parser.parse()
+    if conf is None:
+        sys.exit(1)
+
     # testing if the db exists
-    if not path.exists(db_path):
-        sys.exit(str(db_path) + " file does not exist, please sync with "
+    if not path.exists(conf.sqlite__path):
+        sys.exit(str(conf.sqlite__path) + " file does not exist, please sync with "
                 "pycardsyncer first.")
 
-    search_string = args['search_string'].decode("utf-8")
+    search_string = conf.cmd__search_string.decode("utf-8")
 
-    my_dbtool = pycard.PcQuery(db_path, "utf-8", "stricts", False)
+    my_dbtool = pycard.PcQuery(conf.sqlite__path, "utf-8", "stricts", False)
 
     #import:
-    if args['importing']:
-        cards = pycard.cards_from_file(args['importing'])
+    if conf.cmd__importing:
+        cards = pycard.cards_from_file(conf.cmd__importing)
         for card in cards:
             my_dbtool.update(card, status=pycard.NEW)
         sys.exit()
 
     # backup:
-    if args['backup']:
-        with open(args['backup'], 'w') as vcf_file:
+    if conf.cmd__backup:
+        with open(conf.cmd__backup, 'w') as vcf_file:
             if search_string == "":
                 hreflist = my_dbtool.get_all_vref_from_db()
             else:
@@ -124,14 +103,14 @@ def main():
         sys.exit()
 
     # editing a card:
-    if (args['edit'] == True):
-        href = my_dbtool.select_entry_urwid(args.search_string.decode('utf-8'))
+    if conf.cmd__edit:
+        href = my_dbtool.select_entry_urwid(search_string)
         if href is None:
             sys.exit("Found no matching cards.")
 
     # print card(s)
-    if (args['delete'] == True):
-        href = my_dbtool.select_entry_urwid(args.search_string.decode('utf-8'))
+    if conf.cmd__delete:
+        href = my_dbtool.select_entry_urwid(search_string)
         if href is None:
             sys.exit('Found no matching cards.')
         my_dbtool.mark_delete(href)
@@ -139,13 +118,13 @@ def main():
             'the server on the next sync')
         sys.exit()
 
-    print("searching for " + args['search_string'] + "...")
-    result = my_dbtool.search(args['search_string'].decode("utf-8"))
+    print("searching for " + conf.cmd__search_string + "...")
+    result = my_dbtool.search(search_string)
     for one in result:
         vcard = my_dbtool.get_vcard_from_db(one)
-        if args['mutt']:
+        if conf.cmd__mutt:
             lines = vcard.print_email()
-        elif args['display_all']:
+        elif conf.cmd__display_all:
             lines = vcard.pretty
         else:
             lines = vcard.pretty_min
