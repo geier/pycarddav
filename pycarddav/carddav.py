@@ -10,16 +10,13 @@
 classes and methods for pycarddav, the carddav class could/should be moved
 to another module for better reusing
 """
-try:
-    import sys
-    import urlparse
-    import lxml.etree as ET
-    from collections import namedtuple
-    import requests
 
-except ImportError, error:
-    sys.stderr.write(error)
-    sys.exit(1)
+from collections import namedtuple
+import requests
+import sys
+import urlparse
+import lxml.etree as ET
+
 
 
 def get_random_href():

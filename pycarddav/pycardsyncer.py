@@ -12,21 +12,21 @@ syncs the remote database to the local db
 """
 from __future__ import print_function
 
-try:
-    from netrc import netrc
-    from urlparse import urlsplit
-    from pycarddav import Configuration, ConfigurationParser
-    from pycarddav import capture_user_interruption
-    from pycarddav import pycard
-    from pycarddav import carddav
+#try:
+from netrc import netrc
+from urlparse import urlsplit
+from pycarddav import Configuration, ConfigurationParser
+from pycarddav import capture_user_interruption
+from pycarddav import pycard
+from pycarddav import carddav
 
-    import getpass
-    import logging
-    import sys
+import getpass
+import logging
+import sys
 
-except ImportError, error:
-    sys.stderr.write(str(error))
-    sys.exit(1)
+#except ImportError, error:
+#    sys.stderr.write(error)
+#    sys.exit(1)
 
 LEVELS = {'debug': logging.DEBUG,
           'info': logging.INFO,
