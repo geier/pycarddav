@@ -183,13 +183,11 @@ class PyCardDAV(object):
 
         :rtype: str() (an xml file)
         """
-
+        headers = {'Depth' : '1'}
         response = self.session.request('PROPFIND',
                                         self.url.resource,
+                                        headers=headers,
                                         **self._settings)
-        response = requests.request('PROPFIND', self.url.resource,
-                                    **self._settings)
-
         try:
             if response.headers['DAV'].count('addressbook') == 0:
                 sys.stderr.write("URL is not a CardDAV resource")
