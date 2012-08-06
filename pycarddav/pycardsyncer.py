@@ -85,16 +85,9 @@ def main():
     syncer = carddav.PyCardDAV(conf.dav__resource,
                                user=conf.dav__user,
                                passwd=conf.dav__passwd,
-                               write_support=conf.write_support)
-    try:
-        syncer.ssl_insecure = conf.ssl__insecure
-    except KeyError:
-        pass
-    try:
-        syncer.ssl_cacert = conf.ssl__cacert
-    except KeyError:
-        pass
-
+                               write_support=conf.write_support,
+                               insecure_ssl = conf.ssl__insecure,
+                               ssl_cacert_file=conf.ssl__cacert)
 
     my_dbtool = pycard.PcQuery(conf.sqlite__path, "utf-8", "stricts", conf.debug)
 

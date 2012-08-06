@@ -40,7 +40,11 @@ class UploadFailed(Exception):
 
 
 class PyCardDAV(object):
-    """interacts with CardDAV server"""
+    """interacts with CardDAV server
+
+    raises:
+        requests.exceptions.SSLError
+    """
 
     def __init__(self, resource, debug='', user='', passwd='',
                 insecure_ssl=False, ssl_cacert_file='', write_support=False):
@@ -50,25 +54,23 @@ class PyCardDAV(object):
                              split_url.scheme + '://' + split_url.netloc,
                              split_url.path)
         self.debug = debug
-        self.user = user
-        self.passwd = passwd
-        self.settings = {'auth': (user, passwd,)}
+        self._settings = {'auth': (user, passwd,), 'verify' : not insecure_ssl}
         self.ssl_cacert_file = ssl_cacert_file
         self.session = requests.session()
+
         self.write_support = write_support
         self.insecure_ssl = insecure_ssl
 
     def _set_insecure_ssl(self, insecure):
-        if insecure is True or 1:
-            self.settings['verify'] = False
-        else:
-            self.settings['verify'] = True
+        self._settings['verify'] = not insecure
 
     def _get_insecure_ssl(self):
-        return self.settings['verify']
+        return self._settings['verify']
+
 
     insecure_ssl = property(_get_insecure_ssl, _set_insecure_ssl)
     del _get_insecure_ssl, _set_insecure_ssl
+
 
     def check_write_support(self):
         """checks if user really wants his data destroyed"""
@@ -108,7 +110,7 @@ class PyCardDAV(object):
         pulls vcard from server
         returns vcard
         """
-        response = self.session.get(self.url.base + vref, **self.settings)
+        response = self.session.get(self.url.base + vref, **self._settings)
         return response.content
 
     def update_vcard(self, card, vref, etag):
@@ -125,7 +127,7 @@ class PyCardDAV(object):
         if etag is not None:
             headers['If-Match'] = etag
         self.session.put(remotepath, data=card, headers=headers,
-                          **self.settings)
+                         **self._settings)
 
     def delete_vcard(self, vref, etag):
         """deletes vcard from server
@@ -144,7 +146,7 @@ class PyCardDAV(object):
         headers = {'content-type': 'text/vcard'}
         if etag is not None:
             headers['If-Match'] = etag
-        self.session.delete(remotepath, headers=headers, **self.settings)
+        self.session.delete(remotepath, headers=headers, **self._settings)
 
     def upload_new_card(self, card):
         """
@@ -161,7 +163,7 @@ class PyCardDAV(object):
             remotepath = str(self.url.resource + '/' + rand_string + ".vcf")
             headers = {'content-type': 'text/vcard', 'If-None-Match': '*'}
             response = requests.put(remotepath, data=card, headers=headers,
-                                        **self.settings)
+                                        **self._settings)
             if response.ok:
                 parsed_url = urlparse.urlparse(remotepath)
 
@@ -182,8 +184,12 @@ class PyCardDAV(object):
         :rtype: str() (an xml file)
         """
 
+        response = self.session.request('PROPFIND',
+                                        self.url.resource,
+                                        **self._settings)
         response = requests.request('PROPFIND', self.url.resource,
-                                    **self.settings)
+                                    **self._settings)
+
         try:
             if response.headers['DAV'].count('addressbook') == 0:
                 sys.stderr.write("URL is not a CardDAV resource")
@@ -193,7 +199,8 @@ class PyCardDAV(object):
             sys.exit(1)
         return response.content
 
-    def _process_xml_props(self, xml):
+    @classmethod
+    def _process_xml_props(cls, xml):
         """processes the xml from PROPFIND, listing all vcard hrefs
 
         :param xml: the xml file
