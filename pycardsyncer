@@ -160,6 +160,8 @@ def getXMLProps():
     header=StringIO.StringIO()
     c = pycurl.Curl()
     c.setopt(pycurl.WRITEFUNCTION, response.write)
+    c.setopt(pycurl.HTTPHEADER, ['depth:1'])
+
     c.setopt(pycurl.HEADERFUNCTION, header.write)
     c.setopt(pycurl.USERPWD, user+":"+passwd)
     c.setopt(pycurl.URL, resource)
