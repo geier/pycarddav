@@ -3,6 +3,9 @@ pyCardDAV
 
 News
 ----
+06.06.2012: pyCardDAV v0.3.4_ released:
+  this fixes an issue with davical > 1.1
+
 27.01.2012: pyCardDAV v0.3.3_ released:
   **New** sabredav/owncloud support, thanks Davide Gerhard.
 
@@ -52,6 +55,7 @@ News
 12.08.2011: pyCardDAV v0.1_ released
   first public version
 
+.. _v0.3.4: http://lostpackets.de/pycarddav/download/pycarddav0.3.34.tgz
 .. _v0.3.3: http://pycarddav.lostpackets.de/download/pycarddav0.3.3.tgz
 .. _v0.3.2: http://pycarddav.lostpackets.de/download/pycarddav0.3.2.tgz
 .. _v0.3.1: http://pycarddav.lostpackets.de/download/pycarddav0.3.1.tgz
