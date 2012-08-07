@@ -44,6 +44,7 @@ try:
     import sqlite3
     import vobject
     import logging
+    import base64
     from os import path
     from collections import defaultdict
 
@@ -128,7 +129,7 @@ BTEXT = '\x1b[1m'
 def vcard_from_vobject(vcard):
     vdict = VCard()
     if vcard.name != "VCARD":
-        raise Exception
+        raise Exception  # TODO proper Exception type
     for line in vcard.getChildren():
         # this might break, was tried/excepted before
         line.transformFromNative()
@@ -137,24 +138,14 @@ def vcard_from_vobject(vcard):
 
         try:
             if line.ENCODING_paramlist == [u'b']:
-                print("found binary")
-#                stuple = (unicode(property_name),
-#                            sqlite3.Binary(property_value),
-#                            vref, unicode(line.params),)
-#                cursor.execute('INSERT INTO blobproperties '
-#                        '(property, value, href, parameters) '
-#                        'VALUES (?,?,?,?);', stuple)
-#                conn.commit()
+                property_value = base64.b64encode(line.value)
 
         except AttributeError:
-            #if property_name in [u'FN', u'N', u'VERSION']:
-            #    continue
-            if type(property_value) == list:
-                property_value = (',').join(property_value)
-            #stuple = (unicode(property_name), property_value,
-            #            vref, unicode(line.params),)
+            pass
+        if type(property_value) == list:
+            property_value = (',').join(property_value)
 
-            vdict[property_name].append((property_value, line.params,))
+        vdict[property_name].append((property_value, line.params,))
     return vdict
 
 
