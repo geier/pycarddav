@@ -14,10 +14,11 @@ Users of python versions < 2.7 will also need to install argparse.
 
 *pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
 NetBSD, Debian and Ubuntu with python 2.6 and 2.7 and against davical 0.9.9.4 -
-1.0.1 (later versions should be ok, too, but 0.9.9.3 and earlier don't seem
+1.1.1 (later versions should be ok, too, but 0.9.9.3 and earlier don't seem
 to work) and owncloud (which uses sabredav).
 
-NetBSD/pkgsrc users can install *pyCardDAV* via pkgsrc_.
+NetBSD/pkgsrc users can install *pyCardDAV* via pkgsrc_, Gentoo users can
+install it via the sunrise overlay.
 
 .. _pkgsrc: http://pkgsrc.se/misc/py-carddav
 
