@@ -47,32 +47,26 @@ class PyCardDAV(object):
     """
 
     def __init__(self, resource, debug='', user='', passwd='',
-                insecure_ssl=False, ssl_cacert_file='', write_support=False):
+                verify=True, write_support=False):
         split_url = urlparse.urlparse(resource)
         url_tuple = namedtuple('url', 'resource base path')
         self.url = url_tuple(resource,
                              split_url.scheme + '://' + split_url.netloc,
                              split_url.path)
         self.debug = debug
-        self._settings = {'auth': (user, passwd,), 'verify' : not insecure_ssl}
-        self.ssl_cacert_file = ssl_cacert_file
         self.session = requests.session()
-
         self.write_support = write_support
-        self.insecure_ssl = insecure_ssl
+        self._settings = {'auth': (user, passwd,), 'verify': verify}
 
-    def _set_insecure_ssl(self, insecure):
-        self._settings['verify'] = not insecure
-
-    def _get_insecure_ssl(self):
+    @property
+    def verify(self):
         return self._settings['verify']
 
+    @verify.setter
+    def verify(self, verify):
+        self._settings['verify'] = verify
 
-    insecure_ssl = property(_get_insecure_ssl, _set_insecure_ssl)
-    del _get_insecure_ssl, _set_insecure_ssl
-
-
-    def check_write_support(self):
+    def _check_write_support(self):
         """checks if user really wants his data destroyed"""
         if not self.write_support:
             sys.stderr.write("Sorry, no write support for you. Please check "
@@ -121,7 +115,7 @@ class PyCardDAV(object):
               remote etag matches. If etag = None the update is forced anyway
          """
          # TODO what happens if etag does not match?
-        self.check_write_support()
+        self._check_write_support()
         remotepath = str(self.url.base + vref)
         headers = {'content-type': 'text/vcard'}
         if etag is not None:
@@ -141,7 +135,7 @@ class PyCardDAV(object):
         :returns: nothing
         """
         # TODO: what happens if etag does not match, url does not exist etc ?
-        self.check_write_support()
+        self._check_write_support()
         remotepath = str(self.url.base + vref)
         headers = {'content-type': 'text/vcard'}
         if etag is not None:
@@ -157,7 +151,7 @@ class PyCardDAV(object):
         :rtype: tuple of string (path of the vcard on the server) and etag of
                 new card (string or None)
         """
-        self.check_write_support()
+        self._check_write_support()
         for _ in range(0, 5):
             rand_string = get_random_href()
             remotepath = str(self.url.resource + '/' + rand_string + ".vcf")

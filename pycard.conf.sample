@@ -9,18 +9,14 @@ passwd: yourpassword
 #resource: https://[server]/owncloud/apps/contacts/carddav.php/addressbooks/[user]/[addressbook name]/
 resource: https://carddav.server.tld:80/davical/caldav.php/username/addressbook/
 
+# if verify is set to False, no SSL Certificate checks are done at all.
+# THIS IS NOT RECOMMENDED!
+# you can also set verify to a path to your CAcert file
+#verify: True
+
 [sqlite]
 # The location of the local SQLite contacts database.
 path: ~/.pycard/abook.db
-
-[ssl]
-# When set to True (or 1), disables ALL SSL CERT checking. This
-# corresponds to curl's -k/--insecure flag.
-# THIS IS NOT RECOMMENDED!
-#insecure: False
-
-# This corresponds to curl's --cacert flag.
-#cacert: /path/to/cacert.pem
 
 [default]
 debug: False
