@@ -46,7 +46,7 @@ class PyCardDAV(object):
     """
 
     def __init__(self, resource, debug='', user='', passwd='',
-                verify=True, write_support=False):
+                 verify=True, write_support=False):
         split_url = urlparse.urlparse(resource)
         url_tuple = namedtuple('url', 'resource base path')
         self.url = url_tuple(resource,
@@ -59,10 +59,12 @@ class PyCardDAV(object):
 
     @property
     def verify(self):
+        """gets verify from settings dict"""
         return self._settings['verify']
 
     @verify.setter
     def verify(self, verify):
+        """set verify"""
         self._settings['verify'] = verify
 
     def _check_write_support(self):
@@ -156,7 +158,7 @@ class PyCardDAV(object):
             remotepath = str(self.url.resource + '/' + rand_string + ".vcf")
             headers = {'content-type': 'text/vcard', 'If-None-Match': '*'}
             response = requests.put(remotepath, data=card, headers=headers,
-                                        **self._settings)
+                                    **self._settings)
             if response.ok:
                 parsed_url = urlparse.urlparse(remotepath)
 
@@ -176,7 +178,7 @@ class PyCardDAV(object):
 
         :rtype: str() (an xml file)
         """
-        headers = {'Depth' : '1'}
+        headers = {'Depth': '1'}
         response = self.session.request('PROPFIND',
                                         self.url.resource,
                                         headers=headers,
@@ -212,9 +214,9 @@ class PyCardDAV(object):
                         href = refprop.text
                     for prop in refprop.iterchildren():
                         for props in prop.iterchildren():
-                            if (props.tag == namespace + "getcontenttype" and \
-                               (props.text == "text/vcard" or \
-                                props.text == "text/x-vcard")):
+                            if (props.tag == namespace + "getcontenttype" and
+                                (props.text == "text/vcard" or
+                                 props.text == "text/x-vcard")):
                                 insert = True
                             if (props.tag == namespace + "getetag"):
                                 etag = props.text
