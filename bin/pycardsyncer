@@ -1,5 +1,62 @@
 #!/usr/bin/env python
 
-from pycarddav import pycardsyncer
-pycardsyncer.main()
+try:
+    from pycarddav import Configuration, ConfigurationParser
+    from pycarddav import controllers
+    from pycarddav import capture_user_interruption
 
+    from netrc import netrc
+    from urlparse import urlsplit
+
+    import getpass
+    import logging
+    import sys
+
+except ImportError as error:
+    sys.stderr.write(str(error))
+    sys.exit(1)
+
+
+class SyncConfigurationParser(ConfigurationParser):
+    """A specialized setup tool for synchronization."""
+    def __init__(self):
+        ConfigurationParser.__init__(self, "syncs the local db to the CardDAV server")
+        self.set_mandatory_options([(Configuration.SECTIONS.DAV, 'resource'),
+                                    (Configuration.SECTIONS.DB, 'path')])
+
+    def check(self, conf):
+        success = ConfigurationParser.check(self, conf)
+
+        if success and not conf.dav__passwd:
+            hostname = urlsplit(conf.dav__resource).hostname
+            auths = netrc().authenticators(hostname)
+            if auths:
+                if not conf.dav__user or auths[0] == conf.dav__user:
+                    logging.debug("Read password for user %s on %s in .netrc",
+                                  auths[0], hostname)
+                    conf.dav__user = auths[0]
+                    conf.dav__passwd = auths[2]
+                else:
+                    logging.error("User %s not found for %s in .netrc",
+                                  conf.dav__user, hostname)
+                    success = False
+            elif conf.dav__user:
+                conf.dav__passwd = getpass.getpass(prompt='CardDAV password: ')
+            else:
+                logging.error("Missing credentials for %s", hostname)
+                success = False
+
+        return success
+
+
+capture_user_interruption()
+
+# Read configuration.
+conf = SyncConfigurationParser().parse()
+if conf is None:
+    sys.exit(1)
+
+if conf.debug:
+    conf.dump()
+
+controllers.sync(conf)
