@@ -165,7 +165,8 @@ class ConfigurationParser(object):
             (Configuration.SECTIONS.DAV, 'user', ''),
             (Configuration.SECTIONS.DAV, 'passwd', ''),
             (Configuration.SECTIONS.DAV, 'resource', ''),
-            (Configuration.SECTIONS.SSL, 'verify', ''),
+            (Configuration.SECTIONS.DAV, 'verify',
+                (self._parse_bool_string, 'True')),
             (Configuration.SECTIONS.DB, 'path',
              (os.path.expanduser, Configuration.DEFAULT_DB_PATH)),
             (Configuration.SECTIONS.DEFAULT, 'debug', False),
@@ -187,6 +188,16 @@ class ConfigurationParser(object):
 
     def set_mandatory_options(self, options):
         self._mandatory = options
+
+    def _parse_bool_string(self, value):
+        """if value is either 'True' or 'False' it returns that value as a bool,
+        otherwise it returns the value"""
+        if value == 'True':
+            return True
+        elif value == 'False':
+            return False
+        else:
+            return os.path.expanduser(value)
 
     def parse(self):
         """Start parsing.

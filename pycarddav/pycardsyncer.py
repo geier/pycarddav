@@ -86,7 +86,7 @@ def main():
                                user=conf.dav__user,
                                passwd=conf.dav__passwd,
                                write_support=conf.write_support,
-                               verify = conf.ssl__verify)
+                               verify = conf.dav__verify)
 
     my_dbtool = pycard.PcQuery(conf.sqlite__path, "utf-8", "stricts", conf.debug)
 

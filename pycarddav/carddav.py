@@ -18,7 +18,6 @@ import urlparse
 import lxml.etree as ET
 
 
-
 def get_random_href():
     """returns a random href"""
     import random
