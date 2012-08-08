@@ -10,77 +10,82 @@
 """
 syncs the remote database to the local db
 """
-from __future__ import print_function
 
-#try:
-from netrc import netrc
-from urlparse import urlsplit
-from pycarddav import Configuration, ConfigurationParser
-from pycarddav import capture_user_interruption
-from pycarddav import pycard
+from pycarddav import backend
 from pycarddav import carddav
+from pycarddav import model
+from pycarddav import ui
 
-import getpass
+from os import path
+
 import logging
 import sys
 
-#except ImportError, error:
-#    sys.stderr.write(error)
-#    sys.exit(1)
+def query(conf):
+    # testing if the db exists
+    if not path.exists(conf.sqlite__path):
+        sys.exit(str(conf.sqlite__path) + " file does not exist, please sync with "
+                "pycardsyncer first.")
 
-LEVELS = {'debug': logging.DEBUG,
-          'info': logging.INFO,
-          'warning': logging.WARNING,
-          'error': logging.ERROR,
-          'critical': logging.CRITICAL,
-          }
+    search_string = conf.cmd__search_string.decode("utf-8")
 
+    my_dbtool = backend.SQLiteDb(conf.sqlite__path, "utf-8", "stricts", False)
 
-class SyncConfigurationParser(ConfigurationParser):
-    """A specialized setup tool for synchronization."""
-    def __init__(self):
-        ConfigurationParser.__init__(self, "syncs the local db to the CardDAV server")
-        self.set_mandatory_options([(Configuration.SECTIONS.DAV, 'resource'),
-                                    (Configuration.SECTIONS.DB, 'path')])
+    #import:
+    if conf.cmd__importing:
+        cards = model.cards_from_file(conf.cmd__importing)
+        for card in cards:
+            my_dbtool.update(card, status=backend.NEW)
+        sys.exit()
 
-    def check(self, conf):
-        success = ConfigurationParser.check(self, conf)
-
-        if success and not conf.dav__passwd:
-            hostname = urlsplit(conf.dav__resource).hostname
-            auths = netrc().authenticators(hostname)
-            if auths:
-                if not conf.dav__user or auths[0] == conf.dav__user:
-                    logging.debug("Read password for user %s on %s in .netrc",
-                                  auths[0], hostname)
-                    conf.dav__user = auths[0]
-                    conf.dav__passwd = auths[2]
-                else:
-                    logging.error("User %s not found for %s in .netrc",
-                                  conf.dav__user, hostname)
-                    success = False
-            elif conf.dav__user:
-                conf.dav__passwd = getpass.getpass(prompt='CardDAV password: ')
+    # backup:
+    if conf.cmd__backup:
+        with open(conf.cmd__backup, 'w') as vcf_file:
+            if search_string == "":
+                hreflist = my_dbtool.get_all_vref_from_db()
             else:
-                logging.error("Missing credentials for %s", hostname)
-                success = False
+                hreflist = my_dbtool.search(search_string)
+            for href in hreflist:
+                vcard = my_dbtool.get_vcard_from_db(href)
+                vcf_file.write(vcard.vcf.encode('utf-8'))
+        sys.exit()
 
-        return success
+    # editing a card:
+    if conf.cmd__edit:
+        names = my_dbtool.select_entry2(search_string)
+        href = ui.select_entry(names)
+        if href is None:
+            sys.exit("Found no matching cards.")
+
+    # print card(s)
+    if conf.cmd__delete:
+        names = my_dbtool.select_entry2(search_string)
+        href = ui.select_entry(names)
+        if href is None:
+            sys.exit('Found no matching cards.')
+        my_dbtool.mark_delete(href)
+        print('vcard %s deleted from local db, will be deleted on ' % href + \
+            'the server on the next sync')
+        sys.exit()
+
+    print("searching for " + conf.cmd__search_string + "...")
+    result = my_dbtool.search(search_string)
+    for one in result:
+        vcard = my_dbtool.get_vcard_from_db(one)
+        if conf.cmd__mutt:
+            lines = vcard.print_email()
+        elif conf.cmd__display_all:
+            lines = vcard.pretty
+        else:
+            lines = vcard.pretty_min
+        if not lines == '':
+            print(lines.encode('utf-8'))
+
+    return 0
 
 
-def main():
+def sync(conf):
     """this should probably be seperated from the class definitions"""
-    capture_user_interruption()
-
-    # Read configuration.
-    parser = SyncConfigurationParser()
-
-    conf = parser.parse()
-    if conf is None:
-        sys.exit(1)
-
-    if conf.debug:
-        conf.dump()
 
     syncer = carddav.PyCardDAV(conf.dav__resource,
                                user=conf.dav__user,
@@ -88,7 +93,7 @@ def main():
                                write_support=conf.write_support,
                                verify = conf.dav__verify)
 
-    my_dbtool = pycard.PcQuery(conf.sqlite__path, "utf-8", "stricts", conf.debug)
+    my_dbtool = backend.SQLiteDb(conf.sqlite__path, "utf-8", "stricts", conf.debug)
 
     # sync:
     abook = syncer.get_abook()  # type (abook): dict
@@ -140,6 +145,3 @@ def main():
     delete = set(rlist).difference(ulist)
     for href in delete:
         my_dbtool.delete_vcard_from_db(href)
-
-if __name__ == "__main__":
-    main()

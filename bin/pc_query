@@ -1,5 +1,63 @@
 #!/usr/bin/env python
 
-from pycarddav import pc_query
-pc_query.main()
+try:
+    from pycarddav import Configuration, ConfigurationParser
+    from pycarddav import controllers
+    from pycarddav import capture_user_interruption
 
+    import argparse
+    import sys
+
+except ImportError as error:
+    sys.stderr.write(str(error))
+    sys.exit(1)
+
+
+class QueryConfigurationParser(ConfigurationParser):
+    """A specialized setup tool for cards query."""
+    def __init__(self):
+        ConfigurationParser.__init__(self, "prints contacts cards matching a search string")
+
+        self.set_mandatory_options([(Configuration.SECTIONS.DB, 'path')])
+
+        self._arg_parser.add_argument(
+            "-a", action="store_true", dest="cmd__display_all", default=False,
+            help="prints the whole card, not only name, "
+            "telephone numbers and email addresses")
+        self._arg_parser.add_argument(
+            "-m", action="store_true", dest="cmd__mutt", default=False,
+            help="only prints email addresses, in a mutt friendly format")
+        self._arg_parser.add_argument(
+            "-e", action="store_true", dest="cmd__edit", default=False,
+            help="edit the contact file.\n"
+            "NOTE: this feature is experimental and will probably corrupt "
+            "your *local* database. Your remote CardDAV resource will stay "
+            "untouched, as long as You don't enable write support for the "
+            "syncer.")
+        self._arg_parser.add_argument(
+            "cmd__search_string", metavar="SEARCHSTRING", default="",
+            help="the string to search for", nargs="?")
+        self._arg_parser.add_argument(
+            "-b", "--backup", action="store", dest="cmd__backup",
+            metavar="BACKUP",  help="backup the local db to BACKUP, "
+            "if a SEARCHSTRING is present, only backup cards matching it.")
+        self._arg_parser.add_argument(
+            "-i", "--import", metavar="FILE",
+            type=argparse.FileType("r"), dest="cmd__importing",
+            help="import vcard from FILE or STDIN")
+        self._arg_parser.add_argument(
+            "--delete", dest="cmd__delete", action="store_true",
+            help="delete card matching SEARCHSTRING")
+
+
+capture_user_interruption()
+
+# Read configuration.
+conf = QueryConfigurationParser().parse()
+if conf is None:
+    sys.exit(1)
+
+if conf.debug:
+    conf.dump()
+
+controllers.query(conf)
