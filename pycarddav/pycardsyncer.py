@@ -15,9 +15,9 @@ from __future__ import print_function
 #try:
 from netrc import netrc
 from urlparse import urlsplit
+from pycarddav import backend
 from pycarddav import Configuration, ConfigurationParser
 from pycarddav import capture_user_interruption
-from pycarddav import pycard
 from pycarddav import carddav
 
 import getpass
@@ -89,7 +89,7 @@ def main():
                                insecure_ssl = conf.ssl__insecure,
                                ssl_cacert_file=conf.ssl__cacert)
 
-    my_dbtool = pycard.PcQuery(conf.sqlite__path, "utf-8", "stricts", conf.debug)
+    my_dbtool = backend.SQLiteDb(conf.sqlite__path, "utf-8", "stricts", conf.debug)
 
     # sync:
     abook = syncer.get_abook()  # type (abook): dict

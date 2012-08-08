@@ -7,9 +7,7 @@
 # this stuff is worth it, you can buy me a beer in return Christian Geier
 # ----------------------------------------------------------------------------
 """
-classes and methods for pycarddav, the carddav class could/should be moved
-to another module for better reusing
-
+The SQLite backend implementation.
 
 Database Layout
 ===============
@@ -38,82 +36,16 @@ vcardtable:
 from __future__ import print_function
 
 try:
+    from pycarddav import model
     import sys
     import ast
-    import urwid
     import sqlite3
-    import vobject
     import logging
-    import base64
     from os import path
-    from collections import defaultdict
 
 except ImportError, error:
     print(error)
     sys.exit(1)
-
-
-def list_clean(string):
-    """ transforms a comma seperated string to a list, stripping whitespaces
-    "HOME, WORK,pref" -> ['HOME', 'WORK', 'pref']
-
-    string: string of comma seperated elements
-    returns: list()
-    """
-
-    string = string.split(',')
-    rstring = list()
-    for element in string:
-        rstring.append(element.strip(' '))
-    return rstring
-
-
-class SelText(urwid.Text):
-    """
-    Selectable Text with an aditional href varibale
-    """
-    def __init__(self, text, href):
-        urwid.Text.__init__(self, text)
-        self.href = href
-
-    def selectable(self):
-        """needs to be implemented"""
-        return True
-
-    def keypress(self, _, key):
-        """needs to be implemented"""
-        return key
-
-
-class SelectedButton(Exception):
-    def __init__(self, exit_token=None):
-        self.exit_token = exit_token
-
-
-class Selected(Exception):
-    """
-    used for signalling that an item was chosen in urwid
-    """
-    pass
-
-
-NO_STRINGS = [u"n", "n", u"no", "no"]
-YES_STRINGS = [u"y", "y", u"yes", "yes"]
-
-PROPERTIES = ['EMAIL', 'TEL']
-PROPS_ALL = ['FN', 'N', 'VERSION', 'NICKNAME', 'PHOTO', 'BDAY', 'ADR',
-             'LABEL', 'TEL', 'EMAIL', 'MAILER', 'TZ', 'GEO', 'TITLE', 'ROLE',
-             'LOGO', 'AGENT', 'ORG', 'NOTE', 'REV', 'SOUND', 'URL', 'UID',
-             'KEY', 'CATEGORIES', 'PRODID', 'REV', 'SORT-STRING', 'SOUND',
-             'URL', 'VERSION', 'UTC-OFFSET']
-PROPS_ALLOWED = ['NICKNAME', 'BDAY', 'ADR', 'LABEL', 'TEL', 'EMAIL',
-                 'MAILER', 'TZ', 'GEO', 'TITLE', 'ROLE', 'AGENT',
-                 'ORG', 'NOTE', 'REV', 'SOUND', 'URL', 'UID', 'KEY',
-                 'CATEGORIES', 'PRODID', 'REV', 'SORT-STRING', 'SOUND',
-                 'URL', 'VERSION', 'UTC-OFFSET']
-PROPS_ONCE = ['FN', 'N', 'VERSION']
-PROPS_LIST = ['NICKNAME', 'CATEGORIES']
-PROPS_BIN = ['PHOTO', 'LOGO', 'SOUND', 'KEY']
 
 
 OK = 0
@@ -121,208 +53,8 @@ NEW = 1
 CHANGED = 2
 DELETED = 9
 
-RTEXT = '\x1b[7m'
-NTEXT = '\x1b[0m'
-BTEXT = '\x1b[1m'
 
-
-def vcard_from_vobject(vcard):
-    vdict = VCard()
-    if vcard.name != "VCARD":
-        raise Exception  # TODO proper Exception type
-    for line in vcard.getChildren():
-        # this might break, was tried/excepted before
-        line.transformFromNative()
-        property_name = line.name
-        property_value = line.value
-
-        try:
-            if line.ENCODING_paramlist == [u'b']:
-                property_value = base64.b64encode(line.value)
-
-        except AttributeError:
-            pass
-        if type(property_value) == list:
-            property_value = (',').join(property_value)
-
-        vdict[property_name].append((property_value, line.params,))
-    return vdict
-
-
-def vcard_from_string(vcard_string):
-    """
-    vcard_string: str() or unicode()
-    returns VCard()
-    """
-    vcard = vobject.readOne(vcard_string)
-    return vcard_from_vobject(vcard)
-
-
-def cards_from_file(cards_f):
-    collector = list()
-    for vcard in vobject.readComponents(cards_f):
-        collector.append(vcard_from_vobject(vcard))
-    return collector
-
-
-class VCard(defaultdict):
-    """
-    internal representation of a VCard. This is dict with some
-    associated methods,
-    each dict item is a list of tuples
-    i.e.:
-    >>> vcard['EMAIL']
-    [('hanz@wurst.com', ['WORK', 'PREF']), ('hanz@wurst.net', ['HOME'])]
-
-
-    h_ref: unique id (really just the url) of the VCard
-    db_path: database file from which to initialize the VCard
-
-    self.edited:
-        0: nothing changed
-        1: name and/or fname changed
-        2: some property was deleted
-    """
-
-    def __init__(self, ddict='', *args):
-
-        if ddict == '':
-            defaultdict.__init__(self, list)
-        else:
-            defaultdict.__init__(self, list, ddict)
-        self.href = ''
-        self.edited = 0
-
-    def serialize(self):
-        return self.items().__repr__()
-
-    @property
-    def name(self):
-        return unicode(self['N'][0][0])
-
-    @property
-    def fname(self):
-        return unicode(self['FN'][0][0])
-
-    def alt_keys(self):
-        keylist = self.keys()
-        for one in ['FN', 'N', 'VERSION']:
-            keylist.remove(one)
-        keylist.sort()
-        return keylist
-
-    def print_email(self):
-        """prints only name, email and type for use with mutt"""
-        collector = list()
-        try:
-            for one in self['EMAIL']:
-                try:
-                    typelist = ','.join(one[1][u'TYPE'])
-                except KeyError:
-                    typelist = ''
-                collector.append(one[0] + "\t" + self.fname + "\t" + typelist)
-            return '\n'.join(collector)
-        except KeyError:
-            return ''
-
-    @property
-    def pretty(self):
-        return self._pretty_base(self.alt_keys())
-
-    @property
-    def pretty_min(self):
-        return self._pretty_base(['TEL', 'EMAIL'])
-
-    def _pretty_base(self, keylist):
-        collector = list()
-        collector.append('\n' + BTEXT + 'Name: ' + self.fname + NTEXT)
-        for key in keylist:
-            for value in self[key]:
-                try:
-                    types = ' (' + ', '.join(value[1]['TYPE']) + ')'
-                except KeyError:
-                    types = ''
-                line = key + types + ': ' + value[0]
-                collector.append(line)
-        return '\n'.join(collector)
-
-    def _line_helper(self, line):
-        collector = list()
-        for key in line[1].keys():
-            collector.append(key + '=' + ','.join(line[1][key]))
-        if collector == list():
-            return ''
-        else:
-            return (';' + ';'.join(collector))
-
-    @property
-    def vcf(self):
-        collector = list()
-        collector.append('BEGIN:VCARD')
-        collector.append('VERSION:3.0')
-        for key in ['FN', 'N']:
-            collector.append(key + ':' + self[key][0][0])
-        for prop in self.alt_keys():
-            for line in self[prop]:
-
-                types = self._line_helper(line)
-                collector.append(prop + types + ':' + line[0])
-        collector.append('END:VCARD')
-        return '\n'.join(collector)
-
-    def edit(self):
-        """proper edit"""
-
-        def buttons():
-            def save_button_callback(button):
-                raise SelectedButton(exit_token='Save')
-            savebutton = urwid.Button('OK', on_press=save_button_callback)
-
-            def cancel_button_callback(button):
-                raise SelectedButton(exit_token='Cancel')
-            cancelbutton = urwid.Button('Cancel',
-                    on_press=cancel_button_callback)
-            return urwid.GridFlow([savebutton, cancelbutton],
-                    10, 7, 1, 'center')
-
-        fieldwidgets = []
-        for prop in self:
-            label = urwid.Text(prop.prop)
-            value = urwid.Edit('', prop.value)
-            editwidget = urwid.Columns([('fixed', 8, label),
-                                        ('flow', value)])
-
-            fieldwidgets.append(urwid.Padding(editwidget, ('fixed left', 3),
-                                                          ('fixed right', 3)))
-
-        fieldwidgets.append(buttons())
-        listwalker = urwid.SimpleListWalker(fieldwidgets)
-        listbox = urwid.ListBox(listwalker)
-        header = urwid.Text('Please edit your contacts')
-        frame = urwid.Frame(listbox, header=header)
-        try:
-            urwid.MainLoop(frame, None).run()
-        except SelectedButton as sel:
-            print(sel.exit_token)
-
-    def edit_name(self):
-        """editing the name attributes (N and FN)
-        BruteForce Style
-        """
-        print(self.fname)
-        name_split = self.name.split(';')
-        name = list()
-        name.append(raw_input('Surname (was: ' + name_split[0] + '):'))
-        name.append(raw_input('Given name (was: ' + name_split[1] + '):'))
-        name.append(raw_input('Additional name (was: ' + name_split[2] + '):'))
-        name.append(raw_input('Prefixes (was: ' + name_split[3] + '):'))
-        name.append(raw_input('Postfixes (was: ' + name_split[4] + '):'))
-        self.fname = raw_input('Displayed name (was: ' + self.fname + '):')
-        self.name = ';'.join(name)
-        self.edited = 1
-
-
-class PcQuery(object):
+class SQLiteDb(object):
     """Querying the addressbook database"""
 
     def __init__(self, db_path="~/.pycard/abook.db",
@@ -360,7 +92,7 @@ class PcQuery(object):
         if len(ids) > 1:
             print("There are several cards matching your search string:")
             for i, j in enumerate(ids):
-                contact = VCard(j, self.db_path)
+                contact = model.VCard(j, self.db_path)
                 print((i + 1), contact.fname)
             while True:  # should break if input not convertible to int
                 id_to_edit = raw_input("Which one do you want to edit: ")
@@ -378,59 +110,18 @@ class PcQuery(object):
         elif len(ids) == 0:
             sys.exit("No matching entry found.")
         print("")
-        card_to_edit = VCard(href_to_edit, self.db_path)
+        card_to_edit = model.VCard(href_to_edit, self.db_path)
         card_to_edit.print_contact_info()
         print("")
         return card_to_edit
 
-    def select_entry_urwid(self, search_string):
+    def select_entry2(self, search_string):
         """interactive href selector (urwid based)
 
         returns: href
         return type: string
         """
-        names = self.get_names_vref_from_db(search_string)
-        if len(names) is 1:
-            return names[0][1]
-        if names == list():
-            return None
-        name_list = list()
-        for one in names:
-            name_list.append(SelText(one[0], one[1]))
-        palette = [('header', 'white', 'black'),
-            ('reveal focus', 'black', 'dark cyan', 'standout'), ]
-        content = urwid.SimpleListWalker([
-            urwid.AttrMap(w, None, 'reveal focus') for w in name_list])
-
-        listbox = urwid.ListBox(content)
-        show_key = urwid.Text(u"", wrap='clip')
-        head = urwid.AttrMap(show_key, 'header')
-        top = urwid.Frame(listbox, head)
-
-        def show_all_input(input, raw):
-            """used for urwid test
-            to be removed
-            """
-            show_key.set_text(u"Pressed: " + u" ".join([
-                unicode(i) for i in input]))
-            return input
-
-        def keystroke(input):
-            """used for urwid test
-            to be removed
-            """
-            if input == 'q':
-                raise urwid.ExitMainLoop()
-            if input is 'enter':
-                listbox.get_focus()[0].original_widget
-                raise Selected()
-
-        loop = urwid.MainLoop(top, palette,
-            input_filter=show_all_input, unhandled_input=keystroke)
-        try:
-            loop.run()
-        except Selected:
-            return names[listbox.get_focus()[1]][1]
+        return self.get_names_vref_from_db(search_string)
 
     def _check_table_version(self):
         """
@@ -518,7 +209,7 @@ class PcQuery(object):
 
     def update(self, vcard, href='', etag='', status=OK):
         if isinstance(vcard, (str, unicode)):
-            vcard = vcard_from_string(vcard)
+            vcard = model.vcard_from_string(vcard)
 
         if self.href_exists(href):  # existing card
             vcard_s = vcard.serialize()
@@ -605,7 +296,7 @@ class PcQuery(object):
         """returns a VCard()"""
         sql_s = 'SELECT vcard FROM vcardtable WHERE href=(?)'
         result = self.sql_ex(sql_s, (href, ))
-        vcard = VCard(ast.literal_eval(result[0][0]))
+        vcard = model.VCard(ast.literal_eval(result[0][0]))
         return vcard
 
     def get_changed(self):
@@ -638,13 +329,6 @@ class PcQuery(object):
         sql_s = 'UPDATE vcardtable SET edited = 0 WHERE href = ?'
         self.sql_ex(sql_s, (href, ))
 
-
-def signal_handler(signal, frame):
-    """
-    tries to hide some ugly python backtraces from the user after
-    pressing ctrl-c
-    """
-    sys.exit(0)
 
 
 def smartencode(string):

@@ -16,7 +16,9 @@ try:
     from os import path
     from pycarddav import Configuration, ConfigurationParser
     from pycarddav import capture_user_interruption
-    from pycarddav import pycard
+    from pycarddav import backend
+    from pycarddav import model
+    from pycarddav import ui
 
     import argparse
     import sys
@@ -81,13 +83,13 @@ def main():
 
     search_string = conf.cmd__search_string.decode("utf-8")
 
-    my_dbtool = pycard.PcQuery(conf.sqlite__path, "utf-8", "stricts", False)
+    my_dbtool = backend.SQLiteDb(conf.sqlite__path, "utf-8", "stricts", False)
 
     #import:
     if conf.cmd__importing:
-        cards = pycard.cards_from_file(conf.cmd__importing)
+        cards = model.cards_from_file(conf.cmd__importing)
         for card in cards:
-            my_dbtool.update(card, status=pycard.NEW)
+            my_dbtool.update(card, status=backend.NEW)
         sys.exit()
 
     # backup:
@@ -104,13 +106,15 @@ def main():
 
     # editing a card:
     if conf.cmd__edit:
-        href = my_dbtool.select_entry_urwid(search_string)
+        names = my_dbtool.select_entry2(search_string)
+        href = ui.select_entry(names)
         if href is None:
             sys.exit("Found no matching cards.")
 
     # print card(s)
     if conf.cmd__delete:
-        href = my_dbtool.select_entry_urwid(search_string)
+        names = my_dbtool.select_entry2(search_string)
+        href = ui.select_entry(names)
         if href is None:
             sys.exit('Found no matching cards.')
         my_dbtool.mark_delete(href)
