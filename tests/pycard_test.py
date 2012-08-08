@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8 :
-import pycarddav.pycard
+import pycarddav.model
 
 vcard1 = """BEGIN:VCARD
 VERSION:3.0
@@ -24,7 +24,8 @@ END:VCARD"""
 
 
 def get_vcard1():
-    return pycarddav.pycard.vcard_from_string(vcard1)
+    return pycarddav.model.vcard_from_string(vcard1)
+
 
 def test_serialize_to_vcf():
     assert get_vcard1().vcf.encode('utf-8') == vcard1_vcf
