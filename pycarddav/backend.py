@@ -88,7 +88,7 @@ class SQLiteDb(object):
         returns: href
         return type: string
         """
-        ids = self.get_contact_id_from_string(search_string)
+        ids = self.search(search_string)
         if len(ids) > 1:
             print("There are several cards matching your search string:")
             for i, j in enumerate(ids):
@@ -280,7 +280,7 @@ class SQLiteDb(object):
         if searchstring is None:
             return self.sql_ex('SELECT fname, href FROM vcardtable ORDER BY name')
         else:
-            hrefs = self.get_contact_id_from_string(searchstring)
+            hrefs = self.search(searchstring)
             temp = list()
             for href in hrefs:
                 try:
