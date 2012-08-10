@@ -66,6 +66,7 @@ class PyCardDAV(object):
         self.write_support = write_support
         self._settings = {'auth': (user, passwd,),
                           'verify': verify}
+        self._default_headers = {"User-Agent": "pyCardDAV"}
 
     @property
     def verify(self):
@@ -76,6 +77,10 @@ class PyCardDAV(object):
     def verify(self, verify):
         """set verify"""
         self._settings['verify'] = verify
+
+    @property
+    def headers(self):
+        return dict(self._default_headers)
 
     def _check_write_support(self):
         """checks if user really wants his data destroyed"""
@@ -90,7 +95,9 @@ class PyCardDAV(object):
         currently supports davical and sabredav (same as owncloud)
         :rtype: string "davical" or "sabredav"
         """
-        response = requests.request('OPTIONS', self.url.base)
+        response = requests.request('OPTIONS',
+                                    self.url.base,
+                                    headers=self.header)
         if "X-Sabre-Version" in response.headers:
             server = SABREDAV
         elif "X-DAViCal-Version" in response.headers:
@@ -116,7 +123,9 @@ class PyCardDAV(object):
         :returns: vcard
         :rtype: string
         """
-        response = self.session.get(self.url.base + vref, **self._settings)
+        response = self.session.get(self.url.base + vref,
+                                    headers=self.headers,
+                                    **self._settings)
         return response.content
 
     def update_vcard(self, card, vref, etag):
@@ -129,7 +138,8 @@ class PyCardDAV(object):
          # TODO what happens if etag does not match?
         self._check_write_support()
         remotepath = str(self.url.base + vref)
-        headers = {'content-type': 'text/vcard'}
+        headers = self.headers
+        headers['content-type'] = 'text/vcard'
         if etag is not None:
             headers['If-Match'] = etag
         self.session.put(remotepath, data=card, headers=headers,
@@ -149,14 +159,16 @@ class PyCardDAV(object):
         # TODO: what happens if etag does not match, url does not exist etc ?
         self._check_write_support()
         remotepath = str(self.url.base + vref)
-        headers = {'content-type': 'text/vcard'}
+        headers = self.headers
+        headers['content-type'] = 'text/vcard'
         if etag is not None:
             headers['If-Match'] = etag
         result = self.session.delete(remotepath,
                                      headers=headers,
                                      **self._settings)
         if not result.ok:
-            raise Exception(result.content)  # TODO define own exception type
+            raise Exception(result.reason, result.content)
+            # TODO define own exception type
 
     def upload_new_card(self, card):
         """
@@ -171,7 +183,9 @@ class PyCardDAV(object):
         for _ in range(0, 5):
             rand_string = get_random_href()
             remotepath = str(self.url.resource + '/' + rand_string + ".vcf")
-            headers = {'content-type': 'text/vcard', 'If-None-Match': '*'}
+            headers = self.headers
+            headers['content-type'] = 'text/vcard'
+            headers['If-None-Match'] = '*'
             response = requests.put(remotepath, data=card, headers=headers,
                                     **self._settings)
             if response.ok:
@@ -193,7 +207,8 @@ class PyCardDAV(object):
 
         :rtype: str() (an xml file)
         """
-        headers = {'Depth': '1'}
+        headers = self.headers
+        headers['Depth'] = '1'
         response = self.session.request('PROPFIND',
                                         self.url.resource,
                                         headers=headers,
