@@ -131,7 +131,7 @@ def sync(conf):
     for href, etag in hrefs_etags:
         logging.info('trying to delete card %s', href)
         syncer.delete_vcard(href, etag)
-        my_dbtool.rm_from_deleted(href)
+        my_dbtool.delete_vcard_from_db(href)
         remote_changed = True
 
     # detecting remote-deleted cards
