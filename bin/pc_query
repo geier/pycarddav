@@ -27,13 +27,13 @@ class QueryConfigurationParser(ConfigurationParser):
         self._arg_parser.add_argument(
             "-m", action="store_true", dest="cmd__mutt", default=False,
             help="only prints email addresses, in a mutt friendly format")
-        self._arg_parser.add_argument(
-            "-e", action="store_true", dest="cmd__edit", default=False,
-            help="edit the contact file.\n"
-            "NOTE: this feature is experimental and will probably corrupt "
-            "your *local* database. Your remote CardDAV resource will stay "
-            "untouched, as long as You don't enable write support for the "
-            "syncer.")
+#        self._arg_parser.add_argument(
+#            "-e", action="store_true", dest="cmd__edit", default=False,
+#            help="edit the contact file.\n"
+#            "NOTE: this feature is experimental and will probably corrupt "
+#            "your *local* database. Your remote CardDAV resource will stay "
+#            "untouched, as long as You don't enable write support for the "
+#            "syncer.")
         self._arg_parser.add_argument(
             "cmd__search_string", metavar="SEARCHSTRING", default="",
             help="the string to search for", nargs="?")
