@@ -15,6 +15,7 @@ from collections import namedtuple
 import requests
 import sys
 import urlparse
+import logging
 import lxml.etree as ET
 
 
@@ -41,8 +42,16 @@ class UploadFailed(Exception):
 class PyCardDAV(object):
     """interacts with CardDAV server
 
+    Since PyCardDAV relies heavily on Requests [1] its SSL verification is also
+    shared by PyCardDAV [2]. For now, only the *verify* keyword is exposed
+    through PyCardDAV.
+
+    [1] http://docs.python-requests.org/
+    [2] http://docs.python-requests.org/en/latest/user/advanced/
+
     raises:
         requests.exceptions.SSLError
+        requests.exceptions.ConnectionError
     """
 
     def __init__(self, resource, debug='', user='', passwd='',
@@ -55,7 +64,8 @@ class PyCardDAV(object):
         self.debug = debug
         self.session = requests.session()
         self.write_support = write_support
-        self._settings = {'auth': (user, passwd,), 'verify': verify}
+        self._settings = {'auth': (user, passwd,),
+                          'verify': verify}
 
     @property
     def verify(self):
@@ -87,8 +97,7 @@ class PyCardDAV(object):
             server = DAVICAL
         else:
             server = UNKNOWN
-        if self.debug:  # TODO proper logging
-            print(server + " detected")
+        logging.info(server + " detected")
         return server
 
     def get_abook(self):
@@ -103,7 +112,9 @@ class PyCardDAV(object):
     def get_vcard(self, vref):
         """
         pulls vcard from server
-        returns vcard
+
+        :returns: vcard
+        :rtype: string
         """
         response = self.session.get(self.url.base + vref, **self._settings)
         return response.content
@@ -141,7 +152,11 @@ class PyCardDAV(object):
         headers = {'content-type': 'text/vcard'}
         if etag is not None:
             headers['If-Match'] = etag
-        self.session.delete(remotepath, headers=headers, **self._settings)
+        result = self.session.delete(remotepath,
+                                     headers=headers,
+                                     **self._settings)
+        if not result.ok:
+            raise Exception(result.content)  # TODO define own exception type
 
     def upload_new_card(self, card):
         """

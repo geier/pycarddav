@@ -124,8 +124,7 @@ class SQLiteDb(object):
         return self.get_names_vref_from_db(search_string)
 
     def _check_table_version(self):
-        """
-        tests for curent db Version
+        """tests for curent db Version
         if the table is still empty, insert db_version
         """
         database_version = 7  # the current db VERSION
@@ -134,7 +133,7 @@ class SQLiteDb(object):
         cursor = conn.cursor()
         cursor.execute('SELECT version FROM version')
         result = cursor.fetchone()
-        if result == None:
+        if result is None:
             stuple = (database_version, )  # database version db Version
             cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
             conn.commit()
@@ -157,7 +156,7 @@ class SQLiteDb(object):
             logging.debug("%s", detail)
         except Exception as error:
             sys.stderr.write('Failed to connect to database,'
-                'Unknown Error: ' + str(error) + "\n")
+                             'Unknown Error: ' + str(error) + "\n")
         conn.commit()
 
         try:
@@ -174,7 +173,7 @@ class SQLiteDb(object):
             logging.debug("%s", detail)
         except Exception as error:
             sys.stderr.write('Failed to connect to database,'
-                'Unknown Error: ' + str(error) + "\n")
+                             'Unknown Error: ' + str(error) + "\n")
         conn.commit()
 
     def sql_ex(self, statement, stuple=''):
@@ -313,9 +312,9 @@ class SQLiteDb(object):
 
     def get_marked_delete(self):
         """returns list of tuples (hrefs, etags) of locally deleted vcards"""
-        sql_s = 'SELECT href FROM vcardtable WHERE status == (?)'
+        sql_s = 'SELECT href, etag FROM vcardtable WHERE status == (?)'
         result = self.sql_ex(sql_s, (DELETED, ))
-        return [row[0] for row in result]
+        return result
 
     def mark_delete(self, href):
         """marks the entry as to be deleted on server on next sync"""
@@ -328,7 +327,6 @@ class SQLiteDb(object):
         """
         sql_s = 'UPDATE vcardtable SET edited = 0 WHERE href = ?'
         self.sql_ex(sql_s, (href, ))
-
 
 
 def smartencode(string):
