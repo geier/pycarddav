@@ -90,7 +90,9 @@ def edit(card):
 def select_entry(names):
     """interactive href selector (urwid based)
 
-    returns: href
+    :param names: list of tuples of (display_string, id_string)
+
+    returns: tuple(display_string, id_string)
     return type: string
     """
     if len(names) is 1:
@@ -133,4 +135,4 @@ def select_entry(names):
     try:
         loop.run()
     except Selected:
-        return names[listbox.get_focus()[1]][1]
+        return names[listbox.get_focus()[1]]

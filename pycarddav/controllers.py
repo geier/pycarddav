@@ -21,11 +21,12 @@ from os import path
 import logging
 import sys
 
+
 def query(conf):
     # testing if the db exists
     if not path.exists(conf.sqlite__path):
-        sys.exit(str(conf.sqlite__path) + " file does not exist, please sync with "
-                "pycardsyncer first.")
+        sys.exit(str(conf.sqlite__path) + " file does not exist, please sync"
+                                          " with pycardsyncer first.")
 
     search_string = conf.cmd__search_string.decode("utf-8")
 
@@ -57,15 +58,15 @@ def query(conf):
         if href is None:
             sys.exit("Found no matching cards.")
 
-    # print card(s)
+    # mark a card for deletion
     if conf.cmd__delete:
-        names = my_dbtool.select_entry2(search_string)
-        href = ui.select_entry(names)
+        names = my_dbtool.get_names_vref_from_db(search_string)
+        name, href = ui.select_entry(names)
         if href is None:
             sys.exit('Found no matching cards.')
         my_dbtool.mark_delete(href)
-        print('vcard %s deleted from local db, will be deleted on ' % href + \
-            'the server on the next sync')
+        print('vcard "%s" deleted from local db, will be deleted on ' % name +
+              'the server on the next sync')
         sys.exit()
 
     print("searching for " + conf.cmd__search_string + "...")
@@ -91,7 +92,7 @@ def sync(conf):
                                user=conf.dav__user,
                                passwd=conf.dav__passwd,
                                write_support=conf.write_support,
-                               verify = conf.dav__verify)
+                               verify=conf.dav__verify)
 
     my_dbtool = backend.SQLiteDb(conf.sqlite__path, "utf-8", "stricts", conf.debug)
 
