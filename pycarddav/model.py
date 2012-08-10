@@ -38,7 +38,6 @@ def list_clean(string):
     return rstring
 
 
-
 NO_STRINGS = [u"n", "n", u"no", "no"]
 YES_STRINGS = [u"y", "y", u"yes", "yes"]
 
@@ -61,7 +60,6 @@ PROPS_BIN = ['PHOTO', 'LOGO', 'SOUND', 'KEY']
 RTEXT = '\x1b[7m'
 NTEXT = '\x1b[0m'
 BTEXT = '\x1b[1m'
-
 
 
 def vcard_from_vobject(vcard):
@@ -215,19 +213,3 @@ class VCard(defaultdict):
                 collector.append(prop + types + ':' + line[0])
         collector.append('END:VCARD')
         return '\n'.join(collector)
-
-    def edit_name(self):
-        """editing the name attributes (N and FN)
-        BruteForce Style
-        """
-        print(self.fname)
-        name_split = self.name.split(';')
-        name = list()
-        name.append(raw_input('Surname (was: ' + name_split[0] + '):'))
-        name.append(raw_input('Given name (was: ' + name_split[1] + '):'))
-        name.append(raw_input('Additional name (was: ' + name_split[2] + '):'))
-        name.append(raw_input('Prefixes (was: ' + name_split[3] + '):'))
-        name.append(raw_input('Postfixes (was: ' + name_split[4] + '):'))
-        self.fname = raw_input('Displayed name (was: ' + self.fname + '):')
-        self.name = ';'.join(name)
-        self.edited = 1
