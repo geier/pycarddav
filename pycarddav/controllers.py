@@ -52,11 +52,11 @@ def query(conf):
         sys.exit()
 
     # editing a card:
-    if conf.cmd__edit:
-        names = my_dbtool.select_entry2(search_string)
-        href = ui.select_entry(names)
-        if href is None:
-            sys.exit("Found no matching cards.")
+    #if conf.cmd__edit:
+    #    names = my_dbtool.select_entry2(search_string)
+    #    href = ui.select_entry(names)
+    #    if href is None:
+    #        sys.exit("Found no matching cards.")
 
     # mark a card for deletion
     if conf.cmd__delete:
