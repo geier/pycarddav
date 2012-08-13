@@ -134,10 +134,12 @@ class VCard(defaultdict):
 
     @property
     def name(self):
-        return unicode(self['N'][0][0])
+        return unicode(self['N'][0][0]) if self['N'] else ''
 
     @name.setter
     def name(self, value):
+        if not self['N']:
+            self['N'] = [('', {})]
         self['N'][0][0] = value
 
     @property
@@ -150,7 +152,7 @@ class VCard(defaultdict):
 
     def alt_keys(self):
         keylist = self.keys()
-        for one in ['FN', 'N', 'VERSION']:
+        for one in [x for x in ['FN', 'N', 'VERSION'] if x in keylist]:
             keylist.remove(one)
         keylist.sort()
         return keylist
