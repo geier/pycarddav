@@ -5,7 +5,7 @@ other (lenna) is has no card in its address book.
 
 use it like this::
 
-    $ vagrant box add pycarddav_box http://lostpackets.de/pycarddav/package.box
+    $ vagrant box add pycarddav_box http://lostpackets.de/pycarddav/vagrant/package.box
     $ vagrant init pycarddav_box
     $ vagrant up
 
