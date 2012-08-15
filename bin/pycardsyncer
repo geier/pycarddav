@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
 try:
+    import getpass
+    import logging
+    import sys
+
     from pycarddav import Configuration, ConfigurationParser
     from pycarddav import controllers
     from pycarddav import capture_user_interruption
 
     from netrc import netrc
     from urlparse import urlsplit
-
-    import getpass
-    import logging
-    import sys
 
 except ImportError as error:
     sys.stderr.write(str(error))
