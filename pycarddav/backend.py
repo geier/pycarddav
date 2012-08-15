@@ -296,6 +296,7 @@ class SQLiteDb(object):
         sql_s = 'SELECT vcard FROM vcardtable WHERE href=(?)'
         result = self.sql_ex(sql_s, (href, ))
         vcard = model.VCard(ast.literal_eval(result[0][0]))
+        vcard.href = href
         return vcard
 
     def get_changed(self):

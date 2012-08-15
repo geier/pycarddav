@@ -1,0 +1,232 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set fileencoding=utf-8 ts=4 sw=4 expandtab sts=4:
+
+"""A pyCardDAV tool to create VCards from one email.
+"""
+
+
+import email
+import email.header
+import os
+import sys
+import traceback
+import urwid
+import urwid.curses_display
+
+import pycarddav
+import pycarddav.backend
+import pycarddav.model
+
+
+# TODO: This object should completed and moved later into the ui module.
+class EditFrame(urwid.Frame):
+    """A frame to edit all the contacts fields."""
+    PALETTE = [('header', 'white', 'black'),
+               ('footer', 'white', 'black'),
+               ('line header', 'black', 'white', 'bold'),
+               ('edit box', 'white', 'dark blue'),
+               ('edit focused', 'white', 'dark blue', 'bold'),
+               ('button', 'black', 'dark cyan'),
+               ('button focused', 'white', 'dark cyan', 'bold')]
+
+    def __init__(self, conf, vcard):
+        self._vcard = vcard
+        self._vcards = []
+        self._db = pycarddav.backend.SQLiteDb(
+            conf.sqlite__path, "utf-8", "stricts", False)
+
+        self._label = vcard.fname if vcard.fname else vcard['EMAIL'][0][0]
+        self._fname_edit = urwid.Edit('', '')
+        self._lname_edit = urwid.Edit('', '')
+        self._email_edits = None
+
+        header = urwid.AttrWrap(urwid.Text(
+            u' %s v.%s' % (pycarddav.__productname__, pycarddav.__version__)), 'header')
+        footer = urwid.AttrWrap(urwid.Text(
+            u' Use Up/Down/PgUp/PgDown to scroll. Esc to cancel. F8 to accept.'), 'footer')
+        urwid.Frame.__init__(self, urwid.AttrWrap(self._build_ui(), 'body'),
+                             header=header, footer=footer)
+
+    def on_card_choice(self, button, state, vcard):
+        if state:
+            if vcard:
+                vcard['EMAIL'].append(self._vcard['EMAIL'][0])
+                self._vcard = vcard
+                self.set_body(self._build_ui())
+
+    def on_button_press(self, button):
+        if button.get_label() == 'Store':
+            self._validate()
+
+        raise urwid.ExitMainLoop()
+
+    def on_unhandled_key(self, key):
+        if key == 'esc':
+            raise urwid.ExitMainLoop()
+        if key == 'f8':
+            self._validate()
+            raise urwid.ExitMainLoop()
+
+    def _build_ui(self):
+        content = [urwid.Divider(), urwid.Text(u'Add contact: %s' % self._label)]
+        content.extend(self._build_names_section())
+
+        self._email_edits = []
+        for mail in self._vcard['EMAIL']:
+            edit = urwid.Edit('', mail[0])
+            self._email_edits.append(edit)
+            content.extend([
+                urwid.Divider(),
+                urwid.Columns([
+                    ('fixed', 15, urwid.AttrWrap(urwid.Text(u'Email'), 'line header')),
+                    urwid.AttrWrap(edit, 'edit box', 'edit focused')])])
+
+        content.extend(self._build_vcards_section())
+        content.extend(self._build_buttons_section())
+
+        return urwid.ListBox(urwid.SimpleListWalker(content))
+
+    def _build_names_section(self):
+        self._lname_edit.set_edit_text(self._vcard.name.split(';')[0])
+        self._fname_edit.set_edit_text(self._vcard.name.split(';')[1])
+
+        return [urwid.Divider('-', 1, 1),
+                urwid.Columns([
+                    ('fixed', 15, urwid.AttrWrap(urwid.Text(u'First Name'), 'line header')),
+                    urwid.AttrWrap(self._fname_edit, 'edit box', 'edit focused')]),
+                urwid.Divider(),
+                urwid.Columns([
+                    ('fixed', 15, urwid.AttrWrap(urwid.Text(u'Last Name'), 'line header')),
+                    urwid.AttrWrap(self._lname_edit, 'edit box', 'edit focused')])]
+
+    def _build_vcards_section(self):
+        refs = []
+        for mail in self._vcard['EMAIL']:
+            refs = set(self._db.search(mail[0]))
+        if self._vcard.name.split(';')[0]:
+            refs.update(self._db.search(self._vcard.name.split(';')[0]))
+
+        group = []
+        options = []
+        options.append(urwid.AttrWrap(urwid.RadioButton(group, 'New VCard'),
+                                  'button','button focused'))
+
+        self._vcards = [self._db.get_vcard_from_db(ref) for ref in refs]
+        for card in self._vcards:
+            button = urwid.RadioButton(group, 'Merge into %s' % card.fname,
+                                       card.href == self._vcard.href,
+                                       self.on_card_choice, card)
+            options.append(urwid.AttrWrap(button, 'button','button focused'))
+
+        # TODO: open a list to select another vcard to merge with.
+        # options.append(urwid.AttrWrap(
+        #     urwid.RadioButton(group, 'Merge with another card'),
+        #     'button','button focused'))
+
+        return [urwid.Divider('-', 1, 1), urwid.Pile(options)]
+
+    def _build_buttons_section(self):
+        buttons = [u'Cancel', u'Store']
+        row = urwid.GridFlow([urwid.AttrWrap(urwid.Button(lbl, self.on_button_press),
+                             'button','button focused') for lbl in buttons],
+                             10, 3, 1, 'left')
+        return [urwid.Divider('-', 1, 1),
+                urwid.Padding(row, 'right', 13 * len(buttons), None, 1, 1)]
+
+    def _validate(self):
+        self._vcard.fname = ' '.join(
+            [self._fname_edit.edit_text, self._lname_edit.edit_text])
+        for i, edit in enumerate(self._email_edits):
+            self._vcard['EMAIL'][i] = (edit.edit_text, self._vcard['EMAIL'][i][1])
+        self._db.update(self._vcard, self._vcard.href)
+
+
+class MailParser(object):
+    def __init__(self, conf, pipe):
+        self._conf = conf
+        self._addresses = []
+
+        msg = email.message_from_string(pipe.read())
+        # TODO: add command-line option to also parse To:, Cc:, whatever...
+        for header in ['From']:
+            self._addresses.append(self.parse_address(msg[header]))
+
+    def frames(self):
+        for mail, display_name in self._addresses:
+            vcard = pycarddav.model.vcard_from_email(display_name, mail)
+            yield EditFrame(self._conf, vcard)
+
+    def parse_address(self, header):
+        address_string = []
+        addresses = email.header.decode_header(header)
+        for string, enc in addresses:
+            try:
+                string = string.decode(enc)
+            except TypeError:
+                string = unicode(string)
+            address_string.append(string)
+
+        address_string = ' '.join(address_string)
+        display_name, address = email.utils.parseaddr(address_string)
+
+        return address, display_name
+
+
+def capture_tty():
+    """Walk the parent processes until a TTY is found.
+
+    See http://stackoverflow.com/questions/1728330/how-to-get-processs-grandparent-id
+    """
+    pid = 'self'
+    input_file = sys.stdin
+    while not input_file.isatty():
+        input_file.close()
+
+        if pid == 1:
+            raise RuntimeError, 'cannot find a TTY'
+
+        with open('/proc/%s/status' % pid) as f:
+            for line in f:
+                if line.startswith('PPid:'):
+                    _, _, pid = line.rpartition("\t")
+                    pid = pid.rstrip()
+                    input_file = open('/proc/%s/fd/0' % pid)
+                    break
+            else:
+                raise RuntimeError, 'cannot find parent of %s' % pid
+
+    if pid != 'self':
+        sys.stdin = input_file
+        sys.stdout = open('/proc/%s/fd/1' % pid, 'wb')
+        sys.stderr = open('/proc/%s/fd/2' % pid, 'wb')
+
+        os.dup2(sys.stdin.fileno(), 0)
+        os.dup2(sys.stdout.fileno(), 1)
+        os.dup2(sys.stderr.fileno(), 2)
+
+
+def release_tty():
+    sys.stdin.close()
+    sys.stdout.close()
+    sys.stderr.close()
+
+
+if __name__ == '__main__':
+    conf = pycarddav.ConfigurationParser('Parse mails from input').parse()
+    if conf is None:
+        sys.exit(1)
+
+    parser = MailParser(conf, sys.stdin)
+
+    capture_tty()
+    try:
+        for frame in parser.frames():
+            loop = urwid.MainLoop(frame, EditFrame.PALETTE,
+                                  unhandled_input=frame.on_unhandled_key)
+            loop.run()
+    except Exception:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+    finally:
+        release_tty()
