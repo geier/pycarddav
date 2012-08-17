@@ -19,6 +19,24 @@ import pycarddav.backend
 import pycarddav.model
 
 
+class ImportConfigurationParser(pycarddav.ConfigurationParser):
+    """A specialized setup tool for importing a contact."""
+    def __init__(self):
+        pycarddav.ConfigurationParser.__init__(self, 'Parse mails from input')
+
+        self._arg_parser.add_argument(
+            '--batch', action='store_true', dest='batch', default=False,
+            help='do not open the editor')
+        self._arg_parser.add_argument(
+            '-n', '--dry-run', action='store_true', dest='dry_run', default=False,
+            help='do not actually update the database (implies --batch)')
+
+    def check(self, conf):
+        if conf.dry_run:
+            conf.batch = True
+        return pycarddav.ConfigurationParser.check(self, conf)
+
+
 # TODO: This object should completed and moved later into the ui module.
 class EditFrame(urwid.Frame):
     """A frame to edit all the contacts fields."""
@@ -30,11 +48,10 @@ class EditFrame(urwid.Frame):
                ('button', 'black', 'dark cyan'),
                ('button focused', 'white', 'dark cyan', 'bold')]
 
-    def __init__(self, conf, vcard):
+    def __init__(self, database, vcard):
         self._vcard = vcard
         self._vcards = []
-        self._db = pycarddav.backend.SQLiteDb(
-            conf.sqlite__path, "utf-8", "stricts", False)
+        self._db = database
 
         self._label = vcard.fname if vcard.fname else vcard['EMAIL'][0][0]
         self._fname_edit = urwid.Edit('', '')
@@ -145,17 +162,22 @@ class EditFrame(urwid.Frame):
 class MailParser(object):
     def __init__(self, conf, pipe):
         self._conf = conf
-        self._addresses = []
+        self._db = pycarddav.backend.SQLiteDb(
+            conf.sqlite__path, "utf-8", "stricts", False)
+        self._msg = email.message_from_string(pipe.read())
 
-        msg = email.message_from_string(pipe.read())
-        # TODO: add command-line option to also parse To:, Cc:, whatever...
-        for header in ['From']:
-            self._addresses.append(self.parse_address(msg[header]))
-
-    def frames(self):
-        for mail, display_name in self._addresses:
-            vcard = pycarddav.model.vcard_from_email(display_name, mail)
-            yield EditFrame(self._conf, vcard)
+    def process_addresses(self, headers):
+        for header in headers:
+            address, display_name = self.parse_address(self._msg[header])
+            vcard = pycarddav.model.vcard_from_email(display_name, address)
+            if self._conf.batch:
+                if not self._conf.dry_run:
+                    self._db.update(vcard, vcard.href)
+            else:
+                frame = EditFrame(self._db, vcard)
+                loop = urwid.MainLoop(frame, EditFrame.PALETTE,
+                                      unhandled_input=frame.on_unhandled_key)
+                loop.run()
 
     def parse_address(self, header):
         address_string = []
@@ -213,20 +235,21 @@ def release_tty():
 
 
 if __name__ == '__main__':
-    conf = pycarddav.ConfigurationParser('Parse mails from input').parse()
+    conf = ImportConfigurationParser().parse()
     if conf is None:
         sys.exit(1)
 
     parser = MailParser(conf, sys.stdin)
 
-    capture_tty()
+    if not conf.batch:
+        capture_tty()
     try:
-        for frame in parser.frames():
-            loop = urwid.MainLoop(frame, EditFrame.PALETTE,
-                                  unhandled_input=frame.on_unhandled_key)
-            loop.run()
+        # TODO: add command-line option to also parse To:, Cc:, whatever...
+        parser.process_addresses(['From'])
+
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
     finally:
-        release_tty()
+        if not conf.batch:
+            release_tty()
