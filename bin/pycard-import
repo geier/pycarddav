@@ -108,13 +108,14 @@ class VCardWalker(urwid.ListWalker):
         label = vcard.fname
         if vcard['EMAIL']:
             label += ' (%s)' % vcard['EMAIL'][0][0]
-        return urwid.AttrMap(VCardWalker.Entry(label), None, 'list'), pos
+        return urwid.AttrMap(VCardWalker.Entry(label), 'list', 'list focused'), pos
 
 
 class Pane(urwid.WidgetWrap):
     """An abstract Pane to be used in a Window object."""
-    def __init__(self, widget):
+    def __init__(self, title, widget):
         urwid.WidgetWrap.__init__(self, widget)
+        self.title = title
         self.window = None
 
 
@@ -128,7 +129,7 @@ class VCardChooserPane(Pane):
     """
     def __init__(self, database, refs=None):
         self._walker = VCardWalker(database, refs)
-        Pane.__init__(self, urwid.ListBox(self._walker))
+        Pane.__init__(self, 'Browse...', urwid.ListBox(self._walker))
 
     def keypress(self, size, key):
         self._w.keypress(size, key)
@@ -149,7 +150,7 @@ class EditorPane(Pane):
         self._lname_edit = urwid.Edit('', '')
         self._email_edits = None
 
-        Pane.__init__(self, self._build_ui())
+        Pane.__init__(self, 'Edit %s' % vcard.fname, self._build_ui())
 
     def keypress(self, size, key):
         self._w.keypress(size, key)
@@ -175,7 +176,7 @@ class EditorPane(Pane):
             self._w = self._build_ui()
 
     def _build_ui(self):
-        content = [urwid.Divider(), urwid.Text(u'Edit contact: %s' % self._label)]
+        content = []
         content.extend(self._build_names_section())
         content.extend(self._build_emails_section())
         content.extend(self._build_buttons_section())
@@ -191,7 +192,7 @@ class EditorPane(Pane):
             self._lname_edit.set_edit_text('')
             self._fname_edit.set_edit_text(names[0])
 
-        return [urwid.Divider('-', 1, 1),
+        return [urwid.Divider(),
                 urwid.Columns([
                     ('fixed', 15, urwid.AttrWrap(urwid.Text(u'First Name'), 'line header')),
                     urwid.AttrWrap(self._fname_edit, 'edit', 'edit focused')]),
@@ -211,6 +212,7 @@ class EditorPane(Pane):
                 urwid.Columns([
                     ('fixed', 15, urwid.AttrWrap(urwid.Text(u'Email'), 'line header')),
                     urwid.AttrWrap(edit, 'edit', 'edit focused')])])
+
         return content
 
     def _build_buttons_section(self):
@@ -243,23 +245,22 @@ class Window(urwid.Frame):
     """
     PALETTE = [('header', 'white', 'black'),
                ('footer', 'white', 'black'),
-               ('list', 'black', 'dark cyan', 'standout'),
                ('line header', 'black', 'white', 'bold'),
-               ('edit', 'white', 'dark blue'),
-               ('edit focused', 'white', 'dark blue', 'bold'),
+               ('list', 'black', 'white'),
+               ('list focused', 'white', 'light blue', 'bold'),
+               ('edit', 'black', 'white'),
+               ('edit focused', 'white', 'light blue', 'bold'),
                ('button', 'black', 'dark cyan'),
-               ('button focused', 'white', 'dark cyan', 'bold')]
+               ('button focused', 'white', 'light blue', 'bold')]
 
-    def __init__(self, pane):
-        self._track = [(pane, None)]
+    def __init__(self):
+        self._track = []
+        self._title = u' %s v.%s' % (pycarddav.__productname__, pycarddav.__version__)
 
-        pane.window = self
-
-        header = urwid.AttrWrap(urwid.Text(
-            u' %s v.%s' % (pycarddav.__productname__, pycarddav.__version__)), 'header')
+        header = urwid.AttrWrap(urwid.Text(self._title), 'header')
         footer = urwid.AttrWrap(urwid.Text(
             u' Use Up/Down/PgUp/PgDown to scroll. Esc to return.'), 'footer')
-        urwid.Frame.__init__(self, pane, header=header, footer=footer)
+        urwid.Frame.__init__(self, urwid.Text(''), header=header, footer=footer)
 
     def open(self, pane, callback=None):
         """Open a new pane.
@@ -270,7 +271,7 @@ class Window(urwid.Frame):
         """
         pane.window = self
         self._track.append((pane, callback))
-        self.set_body(pane)
+        self._update(pane)
 
     def backtrack(self, data=None):
         """Unstack the displayed pane.
@@ -285,7 +286,7 @@ class Window(urwid.Frame):
             cb(data)
 
         if self._track:
-            self.set_body(self._track[-1][0])
+            self._update(self._track[-1][0])
         else:
             raise urwid.ExitMainLoop()
 
@@ -293,6 +294,10 @@ class Window(urwid.Frame):
         """Handle application-wide key strokes."""
         if key == 'esc':
             self.backtrack()
+
+    def _update(self, pane):
+        self.header.w.set_text(u'%s | %s' % (self._title, pane.title))
+        self.set_body(pane)
 
 
 class MailParser(object):
@@ -312,7 +317,8 @@ class MailParser(object):
                 if not self._conf.dry_run:
                     self._db.update(vcard, vcard.href)
             else:
-                frame = Window(EditorPane(self._db, vcard))
+                frame = Window()
+                frame.open(EditorPane(self._db, vcard))
                 loop = urwid.MainLoop(frame, Window.PALETTE,
                                       unhandled_input=frame.on_key_press)
                 loop.run()
