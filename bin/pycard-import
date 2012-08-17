@@ -22,8 +22,9 @@ import pycarddav.model
 class ImportConfigurationParser(pycarddav.ConfigurationParser):
     """A specialized setup tool for importing a contact."""
     def __init__(self):
-        pycarddav.ConfigurationParser.__init__(self, 'Parse mails from input')
+        pycarddav.ConfigurationParser.__init__(self, 'Import contacts from a mail on input.')
 
+        self._arg_parser.epilog = 'Only the From header is parsed if no header is specified.'
         self._arg_parser.add_argument(
             '--batch', action='store_true', dest='batch', default=False,
             help='do not open the editor')
@@ -31,9 +32,26 @@ class ImportConfigurationParser(pycarddav.ConfigurationParser):
             '-n', '--dry-run', action='store_true', dest='dry_run', default=False,
             help='do not actually update the database (implies --batch)')
 
+        # Headers selection. To: is the default.
+        self._arg_parser.add_argument(
+            '-f', '--from', action='append_const', dest='headers', const='From',
+            help='import the content of the From header')
+        self._arg_parser.add_argument(
+            '-t', '--to', action='append_const', dest='headers', const='To',
+            help='import the content of the To header')
+        self._arg_parser.add_argument(
+            '--cc', action='append_const', dest='headers', const='Cc',
+            help='import the content of the Cc header')
+        self._arg_parser.add_argument(
+            '--bcc', action='append_const', dest='headers', const='Bcc',
+            help='import the content of the Bcc header')
+
     def check(self, conf):
         if conf.dry_run:
             conf.batch = True
+        if not conf.headers:
+            conf.headers = ['From']
+
         return pycarddav.ConfigurationParser.check(self, conf)
 
 
@@ -169,6 +187,8 @@ class MailParser(object):
     def process_addresses(self, headers):
         for header in headers:
             address, display_name = self.parse_address(self._msg[header])
+            if address is None:
+                continue
             vcard = pycarddav.model.vcard_from_email(display_name, address)
             if self._conf.batch:
                 if not self._conf.dry_run:
@@ -180,6 +200,9 @@ class MailParser(object):
                 loop.run()
 
     def parse_address(self, header):
+        if header is None:
+            return None, ''
+
         address_string = []
         addresses = email.header.decode_header(header)
         for string, enc in addresses:
@@ -244,8 +267,7 @@ if __name__ == '__main__':
     if not conf.batch:
         capture_tty()
     try:
-        # TODO: add command-line option to also parse To:, Cc:, whatever...
-        parser.process_addresses(['From'])
+        parser.process_addresses(conf.headers)
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
