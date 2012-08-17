@@ -55,20 +55,93 @@ class ImportConfigurationParser(pycarddav.ConfigurationParser):
         return pycarddav.ConfigurationParser.check(self, conf)
 
 
-# TODO: This object should completed and moved later into the ui module.
-class EditFrame(urwid.Frame):
-    """A frame to edit all the contacts fields."""
-    PALETTE = [('header', 'white', 'black'),
-               ('footer', 'white', 'black'),
-               ('line header', 'black', 'white', 'bold'),
-               ('edit box', 'white', 'dark blue'),
-               ('edit focused', 'white', 'dark blue', 'bold'),
-               ('button', 'black', 'dark cyan'),
-               ('button focused', 'white', 'dark cyan', 'bold')]
+class VCardWalker(urwid.ListWalker):
+    """A walker to browse a VCard list.
 
+    This walker returns a selectable Text for each of the passed VCard
+    references. If no references are passed to the constructor, then
+    the whole database is browsed.
+    """
+
+    class Entry(urwid.Text):
+        """A specialized Text which can be used for browsing in a list."""
+        _selectable = True
+
+        def keypress(self, _, key):
+            return key
+
+    def __init__(self, database, refs=None):
+        urwid.ListWalker.__init__(self)
+        self._db = database
+        self._refs = refs or database.get_all_vref_from_db()
+        self._current = 0
+
+    @property
+    def selected_vcard(self):
+        """Return the focused VCard."""
+        return self._db.get_vcard_from_db(self._refs[self._current])
+
+    def get_focus(self):
+        """Return (focused widget, focused position)."""
+        return self._get_at(self._current)
+
+    def set_focus(self, pos):
+        """Focus on pos."""
+        self._current = pos
+        self._modified()
+
+    def get_next(self, pos):
+        """Return (widget after pos, position after pos)."""
+        if pos >= len(self._refs) - 1:
+            return None, None
+        return self._get_at(pos + 1)
+
+    def get_prev(self, pos):
+        """Return (widget before pos, position before pos)."""
+        if pos <= 0:
+            return None, None
+        return self._get_at(pos - 1)
+
+    def _get_at(self, pos):
+        """Return a textual representation of the VCard at pos."""
+        vcard = self._db.get_vcard_from_db(self._refs[pos])
+        label = vcard.fname
+        if vcard['EMAIL']:
+            label += ' (%s)' % vcard['EMAIL'][0][0]
+        return urwid.AttrMap(VCardWalker.Entry(label), None, 'list'), pos
+
+
+class Pane(urwid.WidgetWrap):
+    """An abstract Pane to be used in a Window object."""
+    def __init__(self, widget):
+        urwid.WidgetWrap.__init__(self, widget)
+        self.window = None
+
+
+class VCardChooserPane(Pane):
+    """A VCards chooser.
+
+    This pane allows to browse a list of VCards. If no references are
+    passed to the constructor, then the whole database is browsed. A
+    VCard can be selected to be used in another pane, like the
+    EditorPane.
+    """
+    def __init__(self, database, refs=None):
+        self._walker = VCardWalker(database, refs)
+        Pane.__init__(self, urwid.ListBox(self._walker))
+
+    def keypress(self, size, key):
+        self._w.keypress(size, key)
+        if key in [' ', 'enter']:
+            self.window.backtrack(self._walker.selected_vcard)
+        else:
+            return key
+
+
+class EditorPane(Pane):
+    """A VCard editor."""
     def __init__(self, database, vcard):
         self._vcard = vcard
-        self._vcards = []
         self._db = database
 
         self._label = vcard.fname if vcard.fname else vcard['EMAIL'][0][0]
@@ -76,38 +149,60 @@ class EditFrame(urwid.Frame):
         self._lname_edit = urwid.Edit('', '')
         self._email_edits = None
 
-        header = urwid.AttrWrap(urwid.Text(
-            u' %s v.%s' % (pycarddav.__productname__, pycarddav.__version__)), 'header')
-        footer = urwid.AttrWrap(urwid.Text(
-            u' Use Up/Down/PgUp/PgDown to scroll. Esc to cancel. F8 to accept.'), 'footer')
-        urwid.Frame.__init__(self, urwid.AttrWrap(self._build_ui(), 'body'),
-                             header=header, footer=footer)
+        Pane.__init__(self, self._build_ui())
 
-    def on_card_choice(self, button, state, vcard):
-        if state:
-            if vcard:
-                vcard['EMAIL'].append(self._vcard['EMAIL'][0])
-                self._vcard = vcard
-                self.set_body(self._build_ui())
-
-    def on_button_press(self, button):
-        if button.get_label() == 'Store':
-            self._validate()
-
-        raise urwid.ExitMainLoop()
-
-    def on_unhandled_key(self, key):
-        if key == 'esc':
-            raise urwid.ExitMainLoop()
+    def keypress(self, size, key):
+        self._w.keypress(size, key)
         if key == 'f8':
             self._validate()
-            raise urwid.ExitMainLoop()
+            self.window.backtrack()
+        else:
+            return key
+
+    def on_button_press(self, button):
+        if button.get_label() == 'Merge':
+            self.window.open(VCardChooserPane(self._db), self.on_merge_vcard)
+        else:
+            if button.get_label() == 'Store':
+                self._validate()
+            self.window.backtrack()
+
+    def on_merge_vcard(self, vcard):
+        # TODO: this currently merges only one email field, which is ok to use with mutt.
+        if vcard:
+            vcard['EMAIL'].append(self._vcard['EMAIL'][0])
+            self._vcard = vcard
+            self._w = self._build_ui()
 
     def _build_ui(self):
-        content = [urwid.Divider(), urwid.Text(u'Add contact: %s' % self._label)]
+        content = [urwid.Divider(), urwid.Text(u'Edit contact: %s' % self._label)]
         content.extend(self._build_names_section())
+        content.extend(self._build_emails_section())
+        content.extend(self._build_buttons_section())
 
+        return urwid.ListBox(urwid.SimpleListWalker(content))
+
+    def _build_names_section(self):
+        names = self._vcard.name.split(';')
+        if len(names) > 1:
+            self._lname_edit.set_edit_text(names[0])
+            self._fname_edit.set_edit_text(names[1])
+        else:
+            self._lname_edit.set_edit_text('')
+            self._fname_edit.set_edit_text(names[0])
+
+        return [urwid.Divider('-', 1, 1),
+                urwid.Columns([
+                    ('fixed', 15, urwid.AttrWrap(urwid.Text(u'First Name'), 'line header')),
+                    urwid.AttrWrap(self._fname_edit, 'edit', 'edit focused')]),
+                urwid.Divider(),
+                urwid.Columns([
+                    ('fixed', 15, urwid.AttrWrap(urwid.Text(u'Last Name'), 'line header')),
+                    urwid.AttrWrap(self._lname_edit, 'edit', 'edit focused')])]
+
+    def _build_emails_section(self):
         self._email_edits = []
+        content = []
         for mail in self._vcard['EMAIL']:
             edit = urwid.Edit('', mail[0])
             self._email_edits.append(edit)
@@ -115,54 +210,11 @@ class EditFrame(urwid.Frame):
                 urwid.Divider(),
                 urwid.Columns([
                     ('fixed', 15, urwid.AttrWrap(urwid.Text(u'Email'), 'line header')),
-                    urwid.AttrWrap(edit, 'edit box', 'edit focused')])])
-
-        content.extend(self._build_vcards_section())
-        content.extend(self._build_buttons_section())
-
-        return urwid.ListBox(urwid.SimpleListWalker(content))
-
-    def _build_names_section(self):
-        self._lname_edit.set_edit_text(self._vcard.name.split(';')[0])
-        self._fname_edit.set_edit_text(self._vcard.name.split(';')[1])
-
-        return [urwid.Divider('-', 1, 1),
-                urwid.Columns([
-                    ('fixed', 15, urwid.AttrWrap(urwid.Text(u'First Name'), 'line header')),
-                    urwid.AttrWrap(self._fname_edit, 'edit box', 'edit focused')]),
-                urwid.Divider(),
-                urwid.Columns([
-                    ('fixed', 15, urwid.AttrWrap(urwid.Text(u'Last Name'), 'line header')),
-                    urwid.AttrWrap(self._lname_edit, 'edit box', 'edit focused')])]
-
-    def _build_vcards_section(self):
-        refs = []
-        for mail in self._vcard['EMAIL']:
-            refs = set(self._db.search(mail[0]))
-        if self._vcard.name.split(';')[0]:
-            refs.update(self._db.search(self._vcard.name.split(';')[0]))
-
-        group = []
-        options = []
-        options.append(urwid.AttrWrap(urwid.RadioButton(group, 'New VCard'),
-                                  'button','button focused'))
-
-        self._vcards = [self._db.get_vcard_from_db(ref) for ref in refs]
-        for card in self._vcards:
-            button = urwid.RadioButton(group, 'Merge into %s' % card.fname,
-                                       card.href == self._vcard.href,
-                                       self.on_card_choice, card)
-            options.append(urwid.AttrWrap(button, 'button','button focused'))
-
-        # TODO: open a list to select another vcard to merge with.
-        # options.append(urwid.AttrWrap(
-        #     urwid.RadioButton(group, 'Merge with another card'),
-        #     'button','button focused'))
-
-        return [urwid.Divider('-', 1, 1), urwid.Pile(options)]
+                    urwid.AttrWrap(edit, 'edit', 'edit focused')])])
+        return content
 
     def _build_buttons_section(self):
-        buttons = [u'Cancel', u'Store']
+        buttons = [u'Cancel', u'Merge', u'Store']
         row = urwid.GridFlow([urwid.AttrWrap(urwid.Button(lbl, self.on_button_press),
                              'button','button focused') for lbl in buttons],
                              10, 3, 1, 'left')
@@ -175,6 +227,72 @@ class EditFrame(urwid.Frame):
         for i, edit in enumerate(self._email_edits):
             self._vcard['EMAIL'][i] = (edit.edit_text, self._vcard['EMAIL'][i][1])
         self._db.update(self._vcard, self._vcard.href)
+
+
+class Window(urwid.Frame):
+    """The main user interface frame.
+
+    A window is a frame which displays a header, a footer and a body.
+    The header and the footer are handled by this object, and the body
+    is the space where Panes can be displayed.
+
+    Each Pane is an interface to interact with the database in one
+    way: list the VCards, edit one VCard, and so on. The Window
+    provides a mechanism allowing the panes to chain themselves, and
+    to carry data between them.
+    """
+    PALETTE = [('header', 'white', 'black'),
+               ('footer', 'white', 'black'),
+               ('list', 'black', 'dark cyan', 'standout'),
+               ('line header', 'black', 'white', 'bold'),
+               ('edit', 'white', 'dark blue'),
+               ('edit focused', 'white', 'dark blue', 'bold'),
+               ('button', 'black', 'dark cyan'),
+               ('button focused', 'white', 'dark cyan', 'bold')]
+
+    def __init__(self, pane):
+        self._track = [(pane, None)]
+
+        pane.window = self
+
+        header = urwid.AttrWrap(urwid.Text(
+            u' %s v.%s' % (pycarddav.__productname__, pycarddav.__version__)), 'header')
+        footer = urwid.AttrWrap(urwid.Text(
+            u' Use Up/Down/PgUp/PgDown to scroll. Esc to return.'), 'footer')
+        urwid.Frame.__init__(self, pane, header=header, footer=footer)
+
+    def open(self, pane, callback=None):
+        """Open a new pane.
+
+        The given pane is added to the track and opened. If the given
+        callback is not None, it will be called when this new pane
+        will be closed.
+        """
+        pane.window = self
+        self._track.append((pane, callback))
+        self.set_body(pane)
+
+    def backtrack(self, data=None):
+        """Unstack the displayed pane.
+
+        The current pane is discarded, and the previous one is
+        displayed. If the current pane was opened with a callback,
+        this callback is called with the given data (if any) before
+        the previous pane gets redrawn.
+        """
+        _, cb = self._track.pop()
+        if cb:
+            cb(data)
+
+        if self._track:
+            self.set_body(self._track[-1][0])
+        else:
+            raise urwid.ExitMainLoop()
+
+    def on_key_press(self, key):
+        """Handle application-wide key strokes."""
+        if key == 'esc':
+            self.backtrack()
 
 
 class MailParser(object):
@@ -194,9 +312,9 @@ class MailParser(object):
                 if not self._conf.dry_run:
                     self._db.update(vcard, vcard.href)
             else:
-                frame = EditFrame(self._db, vcard)
-                loop = urwid.MainLoop(frame, EditFrame.PALETTE,
-                                      unhandled_input=frame.on_unhandled_key)
+                frame = Window(EditorPane(self._db, vcard))
+                loop = urwid.MainLoop(frame, Window.PALETTE,
+                                      unhandled_input=frame.on_key_press)
                 loop.run()
 
     def parse_address(self, header):
