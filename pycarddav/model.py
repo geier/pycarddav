@@ -106,7 +106,10 @@ def vcard_from_string(vcard_string):
     vcard_string: str() or unicode()
     returns VCard()
     """
-    vcard = vobject.readOne(vcard_string)
+    try:
+        vcard = vobject.readOne(vcard_string)
+    except vobject.base.ParseError as error:
+        raise Exception(error)  # TODO proper exception
     return vcard_from_vobject(vcard)
 
 
