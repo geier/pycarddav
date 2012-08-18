@@ -180,6 +180,7 @@ class PyCardDAV(object):
                 new card (string or None)
         """
         self._check_write_support()
+        card = card.encode('utf-8')
         for _ in range(0, 5):
             rand_string = get_random_href()
             remotepath = str(self.url.resource + '/' + rand_string + ".vcf")
