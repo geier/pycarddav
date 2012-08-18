@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set fileencoding=utf-8 ts=4 sw=4 expandtab sts=4:
+
+"""A pyCardDAV tool to create VCards from one email.
+"""
+
+
+import email
+import email.header
+import os
+import sys
+import traceback
+
+import pycarddav
+import pycarddav.backend
+import pycarddav.model
+import pycarddav.ui
+
+
+class ImportConfigurationParser(pycarddav.ConfigurationParser):
+    """A specialized setup tool for importing a contact."""
+    def __init__(self):
+        pycarddav.ConfigurationParser.__init__(self, 'Import contacts from a mail on input.')
+
+        self._arg_parser.epilog = 'Only the From header is parsed if no header is specified.'
+        self._arg_parser.add_argument(
+            '--batch', action='store_true', dest='batch', default=False,
+            help='do not open the editor')
+        self._arg_parser.add_argument(
+            '-n', '--dry-run', action='store_true', dest='dry_run', default=False,
+            help='do not actually update the database (implies --batch)')
+
+        # Headers selection. To: is the default.
+        self._arg_parser.add_argument(
+            '-f', '--from', action='append_const', dest='headers', const='From',
+            help='import the content of the From header')
+        self._arg_parser.add_argument(
+            '-t', '--to', action='append_const', dest='headers', const='To',
+            help='import the content of the To header')
+        self._arg_parser.add_argument(
+            '--cc', action='append_const', dest='headers', const='Cc',
+            help='import the content of the Cc header')
+        self._arg_parser.add_argument(
+            '--bcc', action='append_const', dest='headers', const='Bcc',
+            help='import the content of the Bcc header')
+
+    def check(self, conf):
+        if conf.dry_run:
+            conf.batch = True
+        if not conf.headers:
+            conf.headers = ['From']
+
+        return pycarddav.ConfigurationParser.check(self, conf)
+
+
+class MailParser(object):
+    def __init__(self, conf, pipe):
+        self._conf = conf
+        self._db = pycarddav.backend.SQLiteDb(
+            conf.sqlite__path, "utf-8", "stricts", False)
+        self._msg = email.message_from_string(pipe.read())
+
+    def process_addresses(self, headers):
+        for header in headers:
+            address, display_name = self.parse_address(self._msg[header])
+            if address is None:
+                continue
+            vcard = pycarddav.model.vcard_from_email(display_name, address)
+            if self._conf.batch:
+                if not self._conf.dry_run:
+                    self._db.update(vcard, vcard.href)
+            else:
+                pycarddav.ui.start_pane(pycarddav.ui.EditorPane(self._db, vcard))
+
+    def parse_address(self, header):
+        if header is None:
+            return None, ''
+
+        address_string = []
+        addresses = email.header.decode_header(header)
+        for string, enc in addresses:
+            try:
+                string = string.decode(enc)
+            except TypeError:
+                string = unicode(string)
+            address_string.append(string)
+
+        address_string = ' '.join(address_string)
+        display_name, address = email.utils.parseaddr(address_string)
+
+        return address, display_name
+
+
+def capture_tty():
+    """Walk the parent processes until a TTY is found.
+
+    See http://stackoverflow.com/questions/1728330/how-to-get-processs-grandparent-id
+    """
+    pid = 'self'
+    input_file = sys.stdin
+    while not input_file.isatty():
+        input_file.close()
+
+        if pid == 1:
+            raise RuntimeError, 'cannot find a TTY'
+
+        with open('/proc/%s/status' % pid) as f:
+            for line in f:
+                if line.startswith('PPid:'):
+                    _, _, pid = line.rpartition("\t")
+                    pid = pid.rstrip()
+                    input_file = open('/proc/%s/fd/0' % pid)
+                    break
+            else:
+                raise RuntimeError, 'cannot find parent of %s' % pid
+
+    if pid != 'self':
+        sys.stdin = input_file
+        sys.stdout = open('/proc/%s/fd/1' % pid, 'wb')
+        sys.stderr = open('/proc/%s/fd/2' % pid, 'wb')
+
+        os.dup2(sys.stdin.fileno(), 0)
+        os.dup2(sys.stdout.fileno(), 1)
+        os.dup2(sys.stderr.fileno(), 2)
+
+
+def release_tty():
+    sys.stdin.close()
+    sys.stdout.close()
+    sys.stderr.close()
+
+
+def do_import():
+    conf = ImportConfigurationParser().parse()
+    if conf is None:
+        sys.exit(1)
+
+    parser = MailParser(conf, sys.stdin)
+
+    if not conf.batch:
+        capture_tty()
+    try:
+        parser.process_addresses(conf.headers)
+
+    except Exception:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+    finally:
+        if not conf.batch:
+            release_tty()
+
+if __name__ == '__main__':
+    do_import()
