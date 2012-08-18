@@ -16,123 +16,321 @@ try:
     import sys
     import urwid
 
+    import pycarddav
+
 except ImportError, error:
     print(error)
     sys.exit(1)
 
 
-class SelText(urwid.Text):
+class VCardWalker(urwid.ListWalker):
+    """A walker to browse a VCard list.
+
+    This walker returns a selectable Text for each of the passed VCard
+    references. If no references are passed to the constructor, then
+    the whole database is browsed.
     """
-    Selectable Text with an aditional href varibale
-    """
-    def __init__(self, text, href):
-        urwid.Text.__init__(self, text)
-        self.href = href
 
-    def selectable(self):
-        """needs to be implemented"""
-        return True
+    class Entry(urwid.Text):
+        """A specialized Text which can be used for browsing in a list."""
+        _selectable = True
 
-    def keypress(self, _, key):
-        """needs to be implemented"""
-        return key
+        def keypress(self, _, key):
+            return key
 
+    def __init__(self, database, refs=None):
+        urwid.ListWalker.__init__(self)
+        self._db = database
+        self._refs = refs or database.get_all_vref_from_db()
+        self._current = 0
 
-class SelectedButton(Exception):
-    def __init__(self, exit_token=None):
-        Exception.__init__(self)
-        self.exit_token = exit_token
+    @property
+    def selected_vcard(self):
+        """Return the focused VCard."""
+        return self._db.get_vcard_from_db(self._refs[self._current])
 
+    def get_focus(self):
+        """Return (focused widget, focused position)."""
+        return self._get_at(self._current)
 
-class Selected(Exception):
-    """
-    used for signalling that an item was chosen in urwid
-    """
-    pass
+    def set_focus(self, pos):
+        """Focus on pos."""
+        self._current = pos
+        self._modified()
 
+    def get_next(self, pos):
+        """Return (widget after pos, position after pos)."""
+        if pos >= len(self._refs) - 1:
+            return None, None
+        return self._get_at(pos + 1)
 
-def edit(card):
-    """proper edit"""
+    def get_prev(self, pos):
+        """Return (widget before pos, position before pos)."""
+        if pos <= 0:
+            return None, None
+        return self._get_at(pos - 1)
 
-    def buttons():
-        def save_button_callback(button):
-            raise SelectedButton(exit_token='Save')
-        savebutton = urwid.Button('OK', on_press=save_button_callback)
-
-        def cancel_button_callback(button):
-            raise SelectedButton(exit_token='Cancel')
-        cancelbutton = urwid.Button('Cancel',
-                on_press=cancel_button_callback)
-        return urwid.GridFlow([savebutton, cancelbutton],
-                10, 7, 1, 'center')
-
-    fieldwidgets = []
-    for prop in card:
-        label = urwid.Text(prop.prop)
-        value = urwid.Edit('', prop.value)
-        editwidget = urwid.Columns([('fixed', 8, label),
-                                    ('flow', value)])
-
-        fieldwidgets.append(urwid.Padding(editwidget, ('fixed left', 3),
-                                                      ('fixed right', 3)))
-
-    fieldwidgets.append(buttons())
-    listwalker = urwid.SimpleListWalker(fieldwidgets)
-    listbox = urwid.ListBox(listwalker)
-    header = urwid.Text('Please edit your contacts')
-    frame = urwid.Frame(listbox, header=header)
-    try:
-        urwid.MainLoop(frame, None).run()
-    except SelectedButton as sel:
-        print(sel.exit_token)
+    def _get_at(self, pos):
+        """Return a textual representation of the VCard at pos."""
+        vcard = self._db.get_vcard_from_db(self._refs[pos])
+        label = vcard.fname
+        if vcard['EMAIL']:
+            label += ' (%s)' % vcard['EMAIL'][0][0]
+        return urwid.AttrMap(VCardWalker.Entry(label), 'list', 'list focused'), pos
 
 
-def select_entry(names):
-    """interactive href selector (urwid based)
+class Pane(urwid.WidgetWrap):
+    """An abstract Pane to be used in a Window object."""
+    def __init__(self, widget, title=None, description=None):
+        urwid.WidgetWrap.__init__(self, widget)
+        self._title = title or ''
+        self._description = description or ''
+        self.window = None
 
-    :param names: list of tuples of (display_string, id_string)
+    @property
+    def title(self):
+        return self._title
 
-    returns: tuple(display_string, id_string)
-    return type: string
-    """
-    if len(names) is 1:
-        return names[0][1]
-    if names == list():
-        return None
-    name_list = list()
-    for one in names:
-        name_list.append(SelText(one[0], one[1]))
-    palette = [('header', 'white', 'black'),
-        ('reveal focus', 'black', 'dark cyan', 'standout'), ]
-    content = urwid.SimpleListWalker([
-        urwid.AttrMap(w, None, 'reveal focus') for w in name_list])
+    @property
+    def description(self):
+        return self._description
 
-    listbox = urwid.ListBox(content)
-    show_key = urwid.Text(u"", wrap='clip')
-    head = urwid.AttrMap(show_key, 'header')
-    top = urwid.Frame(listbox, head)
+    def get_keys(self):
+        """Return a description of the keystrokes recognized by this pane.
 
-    def show_all_input(input, raw):
-        """used for urwid test
-        to be removed
+        This method returns a list of tuples describing the keys
+        handled by a pane. This list is used to build a contextual
+        pane help. Each tuple is a pair of a list of keys and a
+        description.
+
+        The abstract pane returns the default keys handled by the
+        window. Panes which do not override there keys should extend
+        this list.
         """
-        show_key.set_text(u"Pressed: " + u" ".join([
-            unicode(i) for i in input]))
-        return input
+        return [(['up', 'down', 'pg.up', 'pg.down'], 'navigate through the fields.'),
+                (['esc'], 'backtrack to the previous pane of exit.'),
+                (['F1'], 'open this pane help.')]
 
-    def keystroke(input):
-        """used for urwid test
-        to be removed
+
+class HelpPane(Pane):
+    """A contextual help screen."""
+    def __init__(self, pane):
+        content = []
+        for key_list, description in pane.get_keys():
+            key_text = []
+            for key in key_list:
+                if key_text:
+                    key_text.append(', ')
+                key_text.append(('bright', key))
+            content.append(
+                urwid.Columns(
+                    [urwid.Padding(urwid.Text(key_text), left=10),
+                     urwid.Padding(urwid.Text(description), right=10)]))
+
+        Pane.__init__(self, urwid.ListBox(urwid.SimpleListWalker(content)), 'Help')
+
+
+class VCardChooserPane(Pane):
+    """A VCards chooser.
+
+    This pane allows to browse a list of VCards. If no references are
+    passed to the constructor, then the whole database is browsed. A
+    VCard can be selected to be used in another pane, like the
+    EditorPane.
+    """
+    def __init__(self, database, refs=None):
+        self._walker = VCardWalker(database, refs)
+        Pane.__init__(self, urwid.ListBox(self._walker), 'Browse...')
+
+    def get_keys(self):
+        keys = Pane.get_keys(self)
+        keys.append(([' ', 'enter'], 'select a contact.'))
+        return keys
+
+    def keypress(self, size, key):
+        self._w.keypress(size, key)
+        if key in ['space', 'enter']:
+            self.window.backtrack(self._walker.selected_vcard)
+        else:
+            return key
+
+
+class EditorPane(Pane):
+    """A VCard editor."""
+    def __init__(self, database, vcard):
+        self._vcard = vcard
+        self._db = database
+
+        self._label = vcard.fname if vcard.fname else vcard['EMAIL'][0][0]
+        self._fname_edit = urwid.Edit('', '')
+        self._lname_edit = urwid.Edit('', '')
+        self._email_edits = None
+
+        Pane.__init__(self, self._build_ui(), 'Edit %s' % vcard.fname)
+
+    def get_keys(self):
+        keys = Pane.get_keys(self)
+        keys.append((['F8'], 'save this contact.'))
+        return keys
+
+    def keypress(self, size, key):
+        self._w.keypress(size, key)
+        if key == 'f8':
+            self._validate()
+            self.window.backtrack()
+        else:
+            return key
+
+    def on_button_press(self, button):
+        if button.get_label() == 'Merge':
+            self.window.open(VCardChooserPane(self._db), self.on_merge_vcard)
+        else:
+            if button.get_label() == 'Store':
+                self._validate()
+            self.window.backtrack()
+
+    def on_merge_vcard(self, vcard):
+        # TODO: this currently merges only one email field, which is ok to use with mutt.
+        if vcard:
+            vcard['EMAIL'].append(self._vcard['EMAIL'][0])
+            self._vcard = vcard
+            self._w = self._build_ui()
+
+    def _build_ui(self):
+        content = []
+        content.extend(self._build_names_section())
+        content.extend(self._build_emails_section())
+        content.extend(self._build_buttons_section())
+
+        return urwid.ListBox(urwid.SimpleListWalker(content))
+
+    def _build_names_section(self):
+        names = self._vcard.name.split(';')
+        if len(names) > 1:
+            self._lname_edit.set_edit_text(names[0])
+            self._fname_edit.set_edit_text(names[1])
+        else:
+            self._lname_edit.set_edit_text('')
+            self._fname_edit.set_edit_text(names[0])
+
+        return [urwid.Divider(),
+                urwid.Columns([
+                    ('fixed', 15, urwid.AttrWrap(urwid.Text(u'First Name'), 'line header')),
+                    urwid.AttrWrap(self._fname_edit, 'edit', 'edit focused')]),
+                urwid.Divider(),
+                urwid.Columns([
+                    ('fixed', 15, urwid.AttrWrap(urwid.Text(u'Last Name'), 'line header')),
+                    urwid.AttrWrap(self._lname_edit, 'edit', 'edit focused')])]
+
+    def _build_emails_section(self):
+        self._email_edits = []
+        content = []
+        for mail in self._vcard['EMAIL']:
+            edit = urwid.Edit('', mail[0])
+            self._email_edits.append(edit)
+            content.extend([
+                urwid.Divider(),
+                urwid.Columns([
+                    ('fixed', 15, urwid.AttrWrap(urwid.Text(u'Email'), 'line header')),
+                    urwid.AttrWrap(edit, 'edit', 'edit focused')])])
+
+        return content
+
+    def _build_buttons_section(self):
+        buttons = [u'Cancel', u'Merge', u'Store']
+        row = urwid.GridFlow([urwid.AttrWrap(urwid.Button(lbl, self.on_button_press),
+                             'button','button focused') for lbl in buttons],
+                             10, 3, 1, 'left')
+        return [urwid.Divider('-', 1, 1),
+                urwid.Padding(row, 'right', 13 * len(buttons), None, 1, 1)]
+
+    def _validate(self):
+        self._vcard.fname = ' '.join(
+            [self._fname_edit.edit_text, self._lname_edit.edit_text])
+        for i, edit in enumerate(self._email_edits):
+            self._vcard['EMAIL'][i] = (edit.edit_text, self._vcard['EMAIL'][i][1])
+        self._db.update(self._vcard, self._vcard.href)
+
+
+class Window(urwid.Frame):
+    """The main user interface frame.
+
+    A window is a frame which displays a header, a footer and a body.
+    The header and the footer are handled by this object, and the body
+    is the space where Panes can be displayed.
+
+    Each Pane is an interface to interact with the database in one
+    way: list the VCards, edit one VCard, and so on. The Window
+    provides a mechanism allowing the panes to chain themselves, and
+    to carry data between them.
+    """
+    PALETTE = [('header', 'white', 'black'),
+               ('footer', 'white', 'black'),
+               ('line header', 'black', 'white', 'bold'),
+               ('bright', 'dark blue', 'white', ('bold','standout')),
+               ('list', 'black', 'white'),
+               ('list focused', 'white', 'light blue', 'bold'),
+               ('edit', 'black', 'white'),
+               ('edit focused', 'white', 'light blue', 'bold'),
+               ('button', 'black', 'dark cyan'),
+               ('button focused', 'white', 'light blue', 'bold')]
+
+    def __init__(self):
+        self._track = []
+        self._title = u' %s v.%s' % (pycarddav.__productname__, pycarddav.__version__)
+
+        header = urwid.AttrWrap(urwid.Text(self._title), 'header')
+        footer = urwid.AttrWrap(urwid.Text(
+            u' Use Up/Down/PgUp/PgDown to scroll. Esc to return. F1 for help'), 'footer')
+        urwid.Frame.__init__(self, urwid.Text(''), header=header, footer=footer)
+
+    def open(self, pane, callback=None):
+        """Open a new pane.
+
+        The given pane is added to the track and opened. If the given
+        callback is not None, it will be called when this new pane
+        will be closed.
         """
-        if input == 'q':
+        pane.window = self
+        self._track.append((pane, callback))
+        self._update(pane)
+
+    def backtrack(self, data=None):
+        """Unstack the displayed pane.
+
+        The current pane is discarded, and the previous one is
+        displayed. If the current pane was opened with a callback,
+        this callback is called with the given data (if any) before
+        the previous pane gets redrawn.
+        """
+        _, cb = self._track.pop()
+        if cb:
+            cb(data)
+
+        if self._track:
+            self._update(self._get_current_pane())
+        else:
             raise urwid.ExitMainLoop()
-        if input is 'enter':
-            listbox.get_focus()[0].original_widget
-            raise Selected()
 
-    loop = urwid.MainLoop(top, palette,
-        input_filter=show_all_input, unhandled_input=keystroke)
-    try:
-        loop.run()
-    except Selected:
-        return names[listbox.get_focus()[1]]
+    def on_key_press(self, key):
+        """Handle application-wide key strokes."""
+        if key == 'esc':
+            self.backtrack()
+        elif key == 'f1':
+            self.open(HelpPane(self._get_current_pane()))
+
+    def _update(self, pane):
+        self.header.w.set_text(u'%s | %s' % (self._title, pane.title))
+        self.set_body(pane)
+
+    def _get_current_pane(self):
+        return self._track[-1][0] if self._track else None
+
+
+def start_pane(pane):
+    """Open the user interface with the given initial pane."""
+    frame = Window()
+    frame.open(pane)
+    loop = urwid.MainLoop(frame, Window.PALETTE,
+                          unhandled_input=frame.on_key_press)
+    loop.run()
