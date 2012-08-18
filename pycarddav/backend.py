@@ -82,47 +82,6 @@ class SQLiteDb(object):
         result = self.sql_ex(sql_s, stuple)
         return [row[0] for row in result]
 
-    def select_entry(self, search_string):
-        """select a single entry from a list matching the search_string
-
-        returns: href
-        return type: string
-        """
-        ids = self.search(search_string)
-        if len(ids) > 1:
-            print("There are several cards matching your search string:")
-            for i, j in enumerate(ids):
-                contact = model.VCard(j, self.db_path)
-                print((i + 1), contact.fname)
-            while True:  # should break if input not convertible to int
-                id_to_edit = raw_input("Which one do you want to edit: ")
-                #try:
-                id_to_edit = int(id_to_edit)
-                if (id_to_edit > 0) and (id_to_edit <= len(ids)):
-                    # FIXME what's wrong here again?
-                    href_to_edit = ids[id_to_edit - 1][0]
-                    break
-                #except:
-                #    pass
-                print("Please only type a number between 1 and", len(ids))
-        elif len(ids) != 0:
-            href_to_edit = ids[0][0]
-        elif len(ids) == 0:
-            sys.exit("No matching entry found.")
-        print("")
-        card_to_edit = model.VCard(href_to_edit, self.db_path)
-        card_to_edit.print_contact_info()
-        print("")
-        return card_to_edit
-
-    def select_entry2(self, search_string):
-        """interactive href selector (urwid based)
-
-        returns: href
-        return type: string
-        """
-        return self.get_names_vref_from_db(search_string)
-
     def _check_table_version(self):
         """tests for curent db Version
         if the table is still empty, insert db_version
