@@ -61,6 +61,22 @@ RTEXT = '\x1b[7m'
 NTEXT = '\x1b[0m'
 BTEXT = '\x1b[1m'
 
+def get_names(display_name):
+    first_name, last_name = '', display_name
+
+    if display_name.find(',') > 0:
+        # Parsing something like 'Doe, John Abraham'
+        last_name, first_name = display_name.split(',')
+
+    elif display_name.find(' '):
+        # Parsing something like 'John Abraham Doe'
+        # TODO: This fails for compound names. What is the most common case?
+        name_list = display_name.split(' ')
+        last_name = ''.join(name_list[-1])
+        first_name = ' '.join(name_list[:-1])
+
+    return first_name.strip().capitalize(), last_name.strip().capitalize()
+
 
 def vcard_from_vobject(vcard):
     vdict = VCard()
@@ -91,6 +107,19 @@ def vcard_from_string(vcard_string):
     returns VCard()
     """
     vcard = vobject.readOne(vcard_string)
+    return vcard_from_vobject(vcard)
+
+
+def vcard_from_email(display_name, email):
+    fname, lname = get_names(display_name)
+    vcard = vobject.vCard()
+    vcard.add('n')
+    vcard.n.value = vobject.vcard.Name(family=lname, given=fname)
+    vcard.add('fn')
+    vcard.fn.value = display_name
+    vcard.add('email')
+    vcard.email.value = email
+    vcard.email.type_param = 'INTERNET'
     return vcard_from_vobject(vcard)
 
 
@@ -134,10 +163,12 @@ class VCard(defaultdict):
 
     @property
     def name(self):
-        return unicode(self['N'][0][0])
+        return unicode(self['N'][0][0]) if self['N'] else ''
 
     @name.setter
     def name(self, value):
+        if not self['N']:
+            self['N'] = [('', {})]
         self['N'][0][0] = value
 
     @property
@@ -146,11 +177,11 @@ class VCard(defaultdict):
 
     @fname.setter
     def fname(self, value):
-        self['FN'][0][0] = value
+        self['FN'][0] = (value, {})
 
     def alt_keys(self):
         keylist = self.keys()
-        for one in ['FN', 'N', 'VERSION']:
+        for one in [x for x in ['FN', 'N', 'VERSION'] if x in keylist]:
             keylist.remove(one)
         keylist.sort()
         return keylist
