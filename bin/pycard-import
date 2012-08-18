@@ -113,10 +113,53 @@ class VCardWalker(urwid.ListWalker):
 
 class Pane(urwid.WidgetWrap):
     """An abstract Pane to be used in a Window object."""
-    def __init__(self, title, widget):
+    def __init__(self, widget, title=None, description=None):
         urwid.WidgetWrap.__init__(self, widget)
-        self.title = title
+        self._title = title or ''
+        self._description = description or ''
         self.window = None
+
+    @property
+    def title(self):
+        return self._title
+
+    @property
+    def description(self):
+        return self._description
+
+    def get_keys(self):
+        """Return a description of the keystrokes recognized by this pane.
+
+        This method returns a list of tuples describing the keys
+        handled by a pane. This list is used to build a contextual
+        pane help. Each tuple is a pair of a list of keys and a
+        description.
+
+        The abstract pane returns the default keys handled by the
+        window. Panes which do not override there keys should extend
+        this list.
+        """
+        return [(['up', 'down', 'pg.up', 'pg.down'], 'navigate through the fields.'),
+                (['esc'], 'backtrack to the previous pane of exit.'),
+                (['F1'], 'open this pane help.')]
+
+
+class HelpPane(Pane):
+    """A contextual help screen."""
+    def __init__(self, pane):
+        content = []
+        for key_list, description in pane.get_keys():
+            key_text = []
+            for key in key_list:
+                if key_text:
+                    key_text.append(', ')
+                key_text.append(('bright', key))
+            content.append(
+                urwid.Columns(
+                    [urwid.Padding(urwid.Text(key_text), left=10),
+                     urwid.Padding(urwid.Text(description), right=10)]))
+
+        Pane.__init__(self, urwid.ListBox(urwid.SimpleListWalker(content)), 'Help')
 
 
 class VCardChooserPane(Pane):
@@ -129,11 +172,16 @@ class VCardChooserPane(Pane):
     """
     def __init__(self, database, refs=None):
         self._walker = VCardWalker(database, refs)
-        Pane.__init__(self, 'Browse...', urwid.ListBox(self._walker))
+        Pane.__init__(self, urwid.ListBox(self._walker), 'Browse...')
+
+    def get_keys(self):
+        keys = Pane.get_keys(self)
+        keys.append(([' ', 'enter'], 'select a contact.'))
+        return keys
 
     def keypress(self, size, key):
         self._w.keypress(size, key)
-        if key in [' ', 'enter']:
+        if key in ['space', 'enter']:
             self.window.backtrack(self._walker.selected_vcard)
         else:
             return key
@@ -150,7 +198,12 @@ class EditorPane(Pane):
         self._lname_edit = urwid.Edit('', '')
         self._email_edits = None
 
-        Pane.__init__(self, 'Edit %s' % vcard.fname, self._build_ui())
+        Pane.__init__(self, self._build_ui(), 'Edit %s' % vcard.fname)
+
+    def get_keys(self):
+        keys = Pane.get_keys(self)
+        keys.append((['F8'], 'save this contact.'))
+        return keys
 
     def keypress(self, size, key):
         self._w.keypress(size, key)
@@ -246,6 +299,7 @@ class Window(urwid.Frame):
     PALETTE = [('header', 'white', 'black'),
                ('footer', 'white', 'black'),
                ('line header', 'black', 'white', 'bold'),
+               ('bright', 'dark blue', 'white', ('bold','standout')),
                ('list', 'black', 'white'),
                ('list focused', 'white', 'light blue', 'bold'),
                ('edit', 'black', 'white'),
@@ -259,7 +313,7 @@ class Window(urwid.Frame):
 
         header = urwid.AttrWrap(urwid.Text(self._title), 'header')
         footer = urwid.AttrWrap(urwid.Text(
-            u' Use Up/Down/PgUp/PgDown to scroll. Esc to return.'), 'footer')
+            u' Use Up/Down/PgUp/PgDown to scroll. Esc to return. F1 for help'), 'footer')
         urwid.Frame.__init__(self, urwid.Text(''), header=header, footer=footer)
 
     def open(self, pane, callback=None):
@@ -286,7 +340,7 @@ class Window(urwid.Frame):
             cb(data)
 
         if self._track:
-            self._update(self._track[-1][0])
+            self._update(self._get_current_pane())
         else:
             raise urwid.ExitMainLoop()
 
@@ -294,10 +348,15 @@ class Window(urwid.Frame):
         """Handle application-wide key strokes."""
         if key == 'esc':
             self.backtrack()
+        elif key == 'f1':
+            self.open(HelpPane(self._get_current_pane()))
 
     def _update(self, pane):
         self.header.w.set_text(u'%s | %s' % (self._title, pane.title))
         self.set_body(pane)
+
+    def _get_current_pane(self):
+        return self._track[-1][0] if self._track else None
 
 
 class MailParser(object):
