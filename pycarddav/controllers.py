@@ -60,12 +60,19 @@ def query(conf):
 
     # mark a card for deletion
     if conf.cmd__delete:
-        names = my_dbtool.get_names_vref_from_db(search_string)
-        name, href = ui.select_entry(names)
-        if href is None:
+        hrefs = my_dbtool.search(search_string)
+        if len(hrefs) is 0:
             sys.exit('Found no matching cards.')
+        elif len(hrefs) is 1:
+            href = hrefs[0]
+        else:
+            pane = ui.VCardChooserPane(my_dbtool, href)
+            ui.start_pane(pane)
+            card = pane._walker.selected_vcard
+            href = card.href
+
         my_dbtool.mark_delete(href)
-        print('vcard "%s" deleted from local db, will be deleted on ' % name +
+        print('vcard "%s" deleted from local db, will be deleted on ' % href +
               'the server on the next sync')
         sys.exit()
 
