@@ -66,7 +66,7 @@ def query(conf):
         elif len(hrefs) is 1:
             href = hrefs[0]
         else:
-            pane = ui.VCardChooserPane(my_dbtool, href)
+            pane = ui.VCardChooserPane(my_dbtool, hrefs)
             ui.start_pane(pane)
             card = pane._walker.selected_vcard
             href = card.href
