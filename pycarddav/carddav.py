@@ -67,6 +67,12 @@ class PyCardDAV(object):
         self._settings = {'auth': (user, passwd,),
                           'verify': verify}
         self._default_headers = {"User-Agent": "pyCardDAV"}
+        response = self.session.request('PROPFIND', resource,
+                                    headers=self.headers,
+                                    **self._settings)
+        if not response.ok:
+            print response.reason
+            raise Exception(response.reason)  # TODO own exception type
 
     @property
     def verify(self):
@@ -214,13 +220,11 @@ class PyCardDAV(object):
                                         self.url.resource,
                                         headers=headers,
                                         **self._settings)
-        try:
-            if response.headers['DAV'].count('addressbook') == 0:
-                sys.stderr.write("URL is not a CardDAV resource")
-                sys.exit(1)
-        except AttributeError:
-            print("URL is not a DAV resource")
-            sys.exit(1)
+        if not response.ok:
+            raise Exception()
+        if response.headers['DAV'].count('addressbook') == 0:
+            raise Exception("URL is not a CardDAV resource")
+
         return response.content
 
     @classmethod

@@ -116,6 +116,7 @@ def sync(conf):
     # for now local changes overwritten by remote changes
     logging.info("looking for locally changed vcards...")
     hrefs = my_dbtool.changed
+
     for href in hrefs:
         logging.info("trying to update %s", href)
         card = my_dbtool.get_vcard_from_db(href)
@@ -124,13 +125,14 @@ def sync(conf):
         logging.debug("%s", my_dbtool.get_etag(href))
         syncer.update_vcard(card_string, href, None)
         my_dbtool.reset_flag(href)
+        remote_changed = True
     # uploading
     hrefs = my_dbtool.get_new()
     for href in hrefs:
         logging.info("trying to upload new card %s", href)
         card = my_dbtool.get_vcard_from_db(href)
         (href_new, etag_new) = syncer.upload_new_card(card.vcf)
-        my_dbtool.update_href(href, href_new)
+        my_dbtool.update_href(href, href_new, status=backend.OK)
         remote_changed = True
 
     # deleting locally deleted cards on the server
@@ -142,14 +144,12 @@ def sync(conf):
         remote_changed = True
 
     # detecting remote-deleted cards
-    ulist = list()
     # is there a better way to compare a list of unicode() with a list of str()
     # objects?
+
     if remote_changed:
         abook = syncer.get_abook()  # type (abook): dict
-    for one in abook.keys():
-        ulist.append(unicode(one))
     rlist = my_dbtool.get_all_vref_from_db()
-    delete = set(rlist).difference(ulist)
+    delete = set(rlist).difference(abook.keys())
     for href in delete:
         my_dbtool.delete_vcard_from_db(href)

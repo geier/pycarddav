@@ -75,6 +75,12 @@ class SQLiteDb(object):
         result = self.sql_ex(sql_s, stuple)
         return [row[0] for row in result]
 
+    def _dump(self):
+        """return vcardtable, used for testing"""
+        sql_s = 'SELECT * FROM vcardtable'
+        result = self.sql_ex(sql_s)
+        return result
+
     @property
     def changed(self):
         stuple = (CHANGED, )
