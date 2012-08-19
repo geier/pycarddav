@@ -69,7 +69,7 @@ class MailParser(object):
             vcard = pycarddav.model.vcard_from_email(display_name, address)
             if self._conf.batch:
                 if not self._conf.dry_run:
-                    self._db.update(vcard, vcard.href)
+                    self._db.update(vcard, vcard.href, status=pycarddav.backend.NEW)
             else:
                 pycarddav.ui.start_pane(pycarddav.ui.EditorPane(self._db, vcard))
 
