@@ -24,7 +24,7 @@ setup(
       url = 'http://lostpackets.de/pycarddav',
       license = 'Beerware',
       packages = ['pycarddav'],
-      scripts=['bin/pycardsyncer', 'bin/pc_query'],
+      scripts=['bin/pycardsyncer', 'bin/pc_query', 'bin/pycard-import'],
       requires=requirements,
       classifiers=[
           "Development Status :: 3 - Alpha",
