@@ -57,14 +57,9 @@ def test_db_init(emptydb):
     assert emptydb._dump() == list()
 
 
-output_vcard_insert1 = """[(u'/something.vcf', u'', u'G\xf6del;Fran\xe7ois;;;', u'Fran\xe7ois G\xf6del', u"[(u'TEL', [(u'+49-123-678901', {u'TYPE': [u'WORK', u'VOICE']}), (u'(101) 1234 4123', {u'TYPE': [u'HOME', u'VOICE']})]), (u'N', [(u'G\\xf6del;Fran\\xe7ois;;;', {})]), (u'VERSION', [(u'3.0', {})]), (u'ADR', [(u';;Essal\\xe1g 100;Torshavn;50800;F\\xe6r\\xf8erne;', {u'TYPE': [u'WORK']})]), (u'EMAIL', [(u'francois@goedel.net', {u'TYPE': [u'PREF', u'INTERNET']})]), (u'FN', [(u'Fran\\xe7ois G\\xf6del', {})])]", 0)]"""
-
-import ast
+output_vcard_insert1 = [(u'/something.vcf', u'', u'G\xf6del;Fran\xe7ois;;;', u'Fran\xe7ois G\xf6del', u"[(u'TEL', [(u'+49-123-678901', {u'TYPE': [u'WORK', u'VOICE']}), (u'(101) 1234 4123', {u'TYPE': [u'HOME', u'VOICE']})]), (u'N', [(u'G\\xf6del;Fran\\xe7ois;;;', {})]), (u'VERSION', [(u'3.0', {})]), (u'ADR', [(u';;Essal\\xe1g 100;Torshavn;50800;F\\xe6r\\xf8erne;', {u'TYPE': [u'WORK']})]), (u'EMAIL', [(u'francois@goedel.net', {u'TYPE': [u'PREF', u'INTERNET']})]), (u'FN', [(u'Fran\\xe7ois G\\xf6del', {})])]", 0)]
 
 
 def test_vcard_insert1(emptydb):
-    emptydb.update(vcard1, href='/something.vcf')
-    print emptydb._dump()
-    print type(ast.literal_eval(output_vcard_insert1))
-
-    assert emptydb._dump() == ast.literal_eval(output_vcard_insert1)
+    emptydb.update(get_vcard(u'gödel'), href='/something.vcf')
+    assert emptydb._dump() == output_vcard_insert1
