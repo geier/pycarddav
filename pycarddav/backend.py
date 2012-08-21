@@ -83,6 +83,7 @@ class SQLiteDb(object):
 
     @property
     def changed(self):
+        """get list of CHANGED cards"""
         stuple = (CHANGED, )
         sql_s = 'SELECT href FROM vcardtable WHERE status == (?)'
         result = self.sql_ex(sql_s, stuple)
@@ -103,9 +104,10 @@ class SQLiteDb(object):
             cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
             conn.commit()
         elif not result[0] == database_version:
-            sys.exit(str(self.db_path) + " is probably not a valid or an "
-                "outdated database.\nYou should consider to remove it and "
-                "sync again using pycardsyncer.\n")
+            sys.exit(str(self.db_path) +
+                     " is probably not a valid or an outdated database.\n"
+                     "You should consider to remove it and sync again using "
+                     "pycardsyncer.\n")
         #except Exception as error:
         #    sys.stderr.write('Failed to connect to database,"
         #            "Unknown Error: ' + str(error)+"\n")
@@ -172,6 +174,35 @@ class SQLiteDb(object):
             return False
 
     def update(self, vcard, href='', etag='', status=OK):
+        """insert a new or update an existing card in the db
+
+        :param vcard: vcard to be inserted or updated
+        :type vcard: model.VCard()
+        :param href: href of the card on the server, if this href already
+                     exists in the db the card gets updated. If no href is
+                     given, a random href is chosen and it is implied that this
+                     card does not yet exist on the server, but will be
+                     uploaded there on next sync.
+        :type href: str()
+        :param etag: the etga of the vcard, if this etag does not match the
+                     remote etag on next sync, this card will be updated from
+                     the server. For locally created vcards this should not be
+                     set
+        :type etag: str()
+        :param status: status of the vcard
+                       * OK: card is in sync with remote server
+                       * NEW: card is not yet on the server, this needs to be
+                              set for locally created vcards
+                       * CHANGED: card locally changed, will be updated on the
+                                  server on next sync (if remote card has not
+                                  changed since last sync)
+                       * DELETED: card locally delete, will also be deleted on
+                                  one the server on next sync (if remote card
+                                  has not changed)
+        :type status: one of backend.OK, backend.NEW, backend.CHANGED,
+                      BACKEND.DELETED
+
+        """
         if isinstance(vcard, (str, unicode)):
             vcard = model.vcard_from_string(vcard)
 
@@ -193,17 +224,26 @@ class SQLiteDb(object):
                     #TODO: what's happens now? exception?
             vcard_s = vcard.serialize()
             stuple = (href, etag, vcard.name, vcard.fname, vcard_s, status)
-            sql_s = 'INSERT INTO vcardtable (href, etag, name, fname, vcard, status) \
-                VALUES (?,?,?,?,?,?);'
+            sql_s = ('INSERT INTO vcardtable '
+                     '(href, etag, name, fname, vcard, status) '
+                     'VALUES (?,?,?,?,?,?);')
             self.sql_ex(sql_s, stuple)
 
     def update_href(self, old_href, new_href, etag='', status=OK):
+        """updates old_href to new_href, can also alter etag and status,
+        see update() for an explanation of these parameters"""
         stuple = (new_href, etag, status, old_href)
         sql_s = 'UPDATE vcardtable SET href = ?, etag = ?, status = ? \
              WHERE href = ?;'
         self.sql_ex(sql_s, stuple)
 
     def href_exists(self, href):
+        """returns True if href already exist in db
+
+        :param href: href
+        :type href: str()
+        :returns: True or False
+        """
         sql_s = 'SELECT href FROM vcardtable WHERE href = ?; '
         if len(self.sql_ex(sql_s, (href, ))) == 0:
             return False
@@ -242,7 +282,8 @@ class SQLiteDb(object):
         :return: list of tuples(name, vref) of all entries from the db
         """
         if searchstring is None:
-            return self.sql_ex('SELECT fname, href FROM vcardtable ORDER BY name')
+            return self.sql_ex('SELECT fname, href FROM vcardtable '
+                               'ORDER BY name')
         else:
             hrefs = self.search(searchstring)
             temp = list()
@@ -289,10 +330,10 @@ class SQLiteDb(object):
 
     def reset_flag(self, href):
         """
-        resets the edited flag for a given href to 0 (=not edited locally)
+        resets the status for a given href to 0 (=not edited locally)
         """
-        sql_s = 'UPDATE vcardtable SET edited = 0 WHERE href = ?'
-        self.sql_ex(sql_s, (href, ))
+        sql_s = 'UPDATE vcardtable SET status = ? WHERE href = ?'
+        self.sql_ex(sql_s, (OK, href, ))
 
 
 def smartencode(string):
