@@ -8,11 +8,9 @@ use it like this::
     $ rm Vagrantfile
     $ vagrant box add pycarddav_box http://lostpackets.de/pycarddav/vagrant/package.box
     $ vagrant init pycarddav_box
-    $ vagrant up
 
-    test (automatic tests will be added later)
+    $ py.test test_carddav.py
 
-    $ vagrant destroy # this should reset all changes (type 'y' here)
 
 the usernames/passwords are the following:
 
