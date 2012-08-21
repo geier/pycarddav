@@ -55,7 +55,7 @@ class PyCardDAV(object):
     """
 
     def __init__(self, resource, debug='', user='', passwd='',
-                 verify=True, write_support=False):
+                 verify=True, write_support=False, auth='basic'):
         split_url = urlparse.urlparse(resource)
         url_tuple = namedtuple('url', 'resource base path')
         self.url = url_tuple(resource,
@@ -64,12 +64,16 @@ class PyCardDAV(object):
         self.debug = debug
         self.session = requests.session()
         self.write_support = write_support
-        self._settings = {'auth': (user, passwd,),
-                          'verify': verify}
+        self._settings = {'verify': verify}
+        if auth == 'basic':
+            self._settings['auth'] = (user, passwd,)
+        if auth == 'digest':
+            from requests.auth import HTTPDigestAuth
+            self._settings['auth'] = HTTPDigestAuth(user, passwd)
         self._default_headers = {"User-Agent": "pyCardDAV"}
         response = self.session.request('PROPFIND', resource,
-                                    headers=self.headers,
-                                    **self._settings)
+                                        headers=self.headers,
+                                        **self._settings)
         if not response.ok:
             print response.reason
             raise Exception(response.reason)  # TODO own exception type

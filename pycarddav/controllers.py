@@ -99,7 +99,8 @@ def sync(conf):
                                user=conf.dav__user,
                                passwd=conf.dav__passwd,
                                write_support=conf.write_support,
-                               verify=conf.dav__verify)
+                               verify=conf.dav__verify,
+                               auth=conf.dav__auth)
 
     my_dbtool = backend.SQLiteDb(conf.sqlite__path, "utf-8", "stricts", conf.debug)
 

@@ -165,6 +165,8 @@ class ConfigurationParser(object):
             (Configuration.SECTIONS.DAV, 'user', ''),
             (Configuration.SECTIONS.DAV, 'passwd', ''),
             (Configuration.SECTIONS.DAV, 'resource', ''),
+            (Configuration.SECTIONS.DAV, 'auth',
+                (self._parse_auth, 'basic')),
             (Configuration.SECTIONS.DAV, 'verify',
                 (self._parse_bool_string, 'True')),
             (Configuration.SECTIONS.DB, 'path',
@@ -198,6 +200,13 @@ class ConfigurationParser(object):
             return False
         else:
             return os.path.expanduser(value)
+
+    def _parse_auth(self, value):  #TODO clean this up, exception etc
+        """parse the auth string from the config file"""
+        if value == 'digest' or value == 'basic':
+            return value
+        else:
+            raise Exception('value %s not allowed for auth' % value)
 
     def parse(self):
         """Start parsing.
