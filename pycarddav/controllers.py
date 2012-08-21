@@ -120,10 +120,8 @@ def sync(conf):
     for href in hrefs:
         logging.info("trying to update %s", href)
         card = my_dbtool.get_vcard_from_db(href)
-        card_string = card.serialize()
-        card_string = card_string.replace('###COMMA###', ',')
         logging.debug("%s", my_dbtool.get_etag(href))
-        syncer.update_vcard(card_string, href, None)
+        syncer.update_vcard(card.vcf, href, None)
         my_dbtool.reset_flag(href)
         remote_changed = True
     # uploading
