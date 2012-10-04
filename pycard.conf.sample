@@ -9,13 +9,13 @@ passwd: yourpassword
 #resource: https://[server]/owncloud/apps/contacts/carddav.php/addressbooks/[user]/[addressbook name]/
 resource: https://carddav.server.tld:80/davical/caldav.php/username/addressbook/
 
-# Authentication Method: possible values are: basic (the default), or digest (for servers that need
-# HTTP digest authentification)
+# Authentication Method: possible values are: basic (the default), or digest
+# (for servers that need HTTP digest authentification)
 #auth: basic
 
-# if verify is set to False, no SSL Certificate checks are done at all.
-# THIS IS NOT RECOMMENDED!
-# you can also set verify to a path to your CAcert file
+# If verify is set to False, no SSL Certificate checks are done at all. Please
+# be aware of the security implications. You can also set verify to a path to
+# your CAcert file
 #verify: True
 
 [sqlite]
