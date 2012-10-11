@@ -1,4 +1,51 @@
-basic backup support
-use argparse in pycardsyncer
-read password from command line
-distutils for installing
+News
+====
+
+27.01.2012: pyCardDAV v0.3.3_ released:
+  **New** sabredav/owncloud support, thanks Davide Gerhard.
+
+  Fixes a bug where properties with no type parameters were not printed.
+
+  This release also fixes a small database bug.
+
+  The config file has a new entry (*davserver*) which you can set to
+  either davical or sabredav (depending on your CardDAV server).
+
+  Future:
+  The source code has been cleaned up quite a bit (nearly every line of code
+  has been touched) and some features have been added. Write support is nearly
+  finished in the backend (but will probably not be included in the next
+  release yet), but the frontend is still really buggy and a pain to use. If
+  you want to have a look, check the repository out at github and check the
+  branch *write_support* (but it might me broken).
+
+06.01.2012: pyCardDAV v0.3.2_ released:
+  this is a minor bugfix update, db deleting should not be necessary. If
+  everything is working fine at the moment, there is no need to upgrade.
+
+06.01.2012: pyCardDAV v0.3.1_ released:
+  this bugfix release fixes some bugs on Debian and a formatting bug (thanks to
+  Antoine Sirinelli) and one more unicode bug (thanks to Thomas Klausner). Also,
+  some more meaningful error messages were added.
+
+  **Attention** if you are upgrading:
+  you should delete the old database again and resync using pycardsyncer
+
+08.12.2011: pyCardDAV v0.3_ released:
+  this fixes an unicode bug and has a lot of internal changes
+
+  **Attention** pc-query has been renamed to pc_query,
+  make sure to delete the old database, also the config file
+  format has somewhat changed
+
+10.10.2011: pyCardDAV v0.2.1_ released
+  this fixes a minor bug in the example config file
+
+14.09.2011: pyCardDAV v0.2_ released
+  **New** config files are now supported
+
+13.09.2011: pyCardDAV moved to github_
+  feel free to fork etc.
+
+12.08.2011: pyCardDAV v0.1_ released
+  first public version
