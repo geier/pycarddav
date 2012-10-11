@@ -40,8 +40,8 @@ clean:
 rsync_upload: banner
 	rsync -rvz -e ssh $(OUTPUTDIR)/* $(SSH_USER)@$(SSH_HOST):$(SSH_TARGET_DIR)
 
-ssh_upload: $(OUTPUTDIR)/index.html
-	scp -r $(OUTPUTDIR)/* $(SSH_USER)@$(SSH_HOST):$(SSH_TARGET_DIR)
+#ssh_upload: $(OUTPUTDIR)/index.html
+#	scp -r $(OUTPUTDIR)/* $(SSH_USER)@$(SSH_HOST):$(SSH_TARGET_DIR)
 
 
 github: $(OUTPUTDIR)/index.html
