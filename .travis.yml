@@ -1,4 +1,5 @@
 language: python
+
 python:
   - 2.6
   - 2.7
@@ -9,3 +10,7 @@ install:
         - "if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install argparse; fi"
 # command to run tests, e.g. python setup.py test
 script:  py.test tests/local/
+branches:
+  except:
+    - webpage
+    - master
