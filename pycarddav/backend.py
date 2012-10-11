@@ -336,11 +336,6 @@ class SQLiteDb(object):
         self.sql_ex(sql_s, (OK, href, ))
 
 
-def smartencode(string):
-    """convert everything to utf-8"""
-    return unicode(string).encode("utf-8", "strict")
-
-
 def get_random_href():
     """returns a random href"""
     import random
