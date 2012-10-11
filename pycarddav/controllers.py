@@ -70,10 +70,15 @@ def query(conf):
             ui.start_pane(pane)
             card = pane._walker.selected_vcard
             href = card.href
-
-        my_dbtool.mark_delete(href)
-        print('vcard "%s" deleted from local db, will be deleted on ' % href +
-              'the server on the next sync')
+        if href in my_dbtool.get_new():
+            # cards not yet on the server get deleted directly, otherwise we
+            # will try to delete them on the server later (where they don't
+            # exist) and this will raise an exception
+            my_dbtool.delete_vcard_from_db(href)
+        else:
+            my_dbtool.mark_delete(href)
+            print('vcard "%s" deleted from local db, will be deleted ' % href +
+                  'on the server on the next sync')
         sys.exit()
 
     print("searching for " + conf.cmd__search_string + "...")
