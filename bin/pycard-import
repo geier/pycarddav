@@ -11,6 +11,7 @@ import email.header
 import os
 import sys
 import traceback
+import psutil
 
 import pycarddav
 import pycarddav.backend
@@ -94,44 +95,36 @@ class MailParser(object):
 
 def capture_tty():
     """Walk the parent processes until a TTY is found.
-
-    See http://stackoverflow.com/questions/1728330/how-to-get-processs-grandparent-id
     """
-    pid = 'self'
-    input_file = sys.stdin
-    while not input_file.isatty():
-        input_file.close()
+    process = psutil.Process(psutil.os.getpid())
+    while process.terminal is None:
+        process = psutil.Process(process.ppid)
+    sys.stdin = open(process.terminal, 'wb')
+    sys.stdout = open(process.terminal, 'wb')
+    sys.stderr = open(process.terminal, 'wb')
+    open_files = process.get_open_files()
+    for one in open_files:
+        if one.fd == 0:
+            sys.stdin = open(one.path, 'wb')
+        if one.fd == 1:
+            sys.stdout = open(one.path, 'wb')
+        if one.fd == 2:
+            sys.stderr = open(one.path, 'wb')
 
-        if pid == 1:
-            raise RuntimeError, 'cannot find a TTY'
-
-        with open('/proc/%s/status' % pid) as f:
-            for line in f:
-                if line.startswith('PPid:'):
-                    _, _, pid = line.rpartition("\t")
-                    pid = pid.rstrip()
-                    input_file = open('/proc/%s/fd/0' % pid)
-                    break
-            else:
-                raise RuntimeError, 'cannot find parent of %s' % pid
-
-    if pid != 'self':
-        sys.stdin = input_file
-        sys.stdout = open('/proc/%s/fd/1' % pid, 'wb')
-        sys.stderr = open('/proc/%s/fd/2' % pid, 'wb')
-
-        os.dup2(sys.stdin.fileno(), 0)
-        os.dup2(sys.stdout.fileno(), 1)
-        os.dup2(sys.stderr.fileno(), 2)
+    os.dup2(sys.stdin.fileno(), 0)
+    os.dup2(sys.stdout.fileno(), 1)
+    os.dup2(sys.stderr.fileno(), 2)
 
 
 def release_tty():
+    """closing the files"""
     sys.stdin.close()
     sys.stdout.close()
     sys.stderr.close()
 
 
 def do_import():
+    """does the real work"""
     conf = ImportConfigurationParser().parse()
     if conf is None:
         sys.exit(1)
