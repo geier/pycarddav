@@ -99,13 +99,13 @@ def capture_tty():
     process = psutil.Process(psutil.os.getpid())
     while process.terminal is None:
         process = psutil.Process(process.ppid)
-    sys.stdin = open(process.terminal, 'wb')
+    sys.stdin = open(process.terminal)
     sys.stdout = open(process.terminal, 'wb')
     sys.stderr = open(process.terminal, 'wb')
     open_files = process.get_open_files()
     for one in open_files:
         if one.fd == 0:
-            sys.stdin = open(one.path, 'wb')
+            sys.stdin = open(one.path)
         if one.fd == 1:
             sys.stdout = open(one.path, 'wb')
         if one.fd == 2:
