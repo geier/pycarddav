@@ -87,6 +87,8 @@ def query(conf):
         vcard = my_dbtool.get_vcard_from_db(one)
         if conf.cmd__mutt:
             lines = vcard.print_email()
+        elif conf.cmd__tel:
+            lines = vcard.print_tel()
         elif conf.cmd__display_all:
             lines = vcard.pretty
         else:

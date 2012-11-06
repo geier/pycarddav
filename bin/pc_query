@@ -27,6 +27,10 @@ class QueryConfigurationParser(ConfigurationParser):
         self._arg_parser.add_argument(
             "-m", action="store_true", dest="cmd__mutt", default=False,
             help="only prints email addresses, in a mutt friendly format")
+        self._arg_parser.add_argument(
+            "-t", action="store_true", dest="cmd__tel", default=False,
+            help="only prints telephone number, analogue to -m "
+                 "(but in different sequence)")
 #        self._arg_parser.add_argument(
 #            "-e", action="store_true", dest="cmd__edit", default=False,
 #            help="edit the contact file.\n"

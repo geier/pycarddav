@@ -203,6 +203,20 @@ class VCard(defaultdict):
         except KeyError:
             return ''
 
+    def print_tel(self):
+        """prints only name, email and type for use with mutt"""
+        collector = list()
+        try:
+            for one in self['TEL']:
+                try:
+                    typelist = ','.join(one[1][u'TYPE'])
+                except KeyError:
+                    typelist = ''
+                collector.append(self.fname + "\t" + one[0] + "\t" + typelist)
+            return '\n'.join(collector)
+        except KeyError:
+            return ''
+
     @property
     def pretty(self):
         return self._pretty_base(self.alt_keys())
