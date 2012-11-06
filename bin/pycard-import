@@ -11,7 +11,6 @@ import email.header
 import os
 import sys
 import traceback
-import psutil
 
 import pycarddav
 import pycarddav.backend
@@ -96,20 +95,9 @@ class MailParser(object):
 def capture_tty():
     """Walk the parent processes until a TTY is found.
     """
-    process = psutil.Process(psutil.os.getpid())
-    while process.terminal is None:
-        process = psutil.Process(process.ppid)
-    sys.stdin = open(process.terminal)
-    sys.stdout = open(process.terminal, 'wb')
-    sys.stderr = open(process.terminal, 'wb')
-    open_files = process.get_open_files()
-    for one in open_files:
-        if one.fd == 0:
-            sys.stdin = open(one.path)
-        if one.fd == 1:
-            sys.stdout = open(one.path, 'wb')
-        if one.fd == 2:
-            sys.stderr = open(one.path, 'wb')
+    sys.stdin = open('/dev/tty')
+    sys.stdout = open('/dev/tty', 'wb')
+    sys.stderr = open('/dev/tty', 'wb')
 
     os.dup2(sys.stdin.fileno(), 0)
     os.dup2(sys.stdout.fileno(), 1)
