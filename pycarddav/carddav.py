@@ -140,19 +140,19 @@ class PyCardDAV(object):
         abook = self._process_xml_props(xml)
         return abook
 
-    def get_vcard(self, vref):
+    def get_vcard(self, href):
         """
         pulls vcard from server
 
         :returns: vcard
         :rtype: string
         """
-        response = self.session.get(self.url.base + vref,
+        response = self.session.get(self.url.base + href,
                                     headers=self.headers,
                                     **self._settings)
         return response.content
 
-    def update_vcard(self, card, vref, etag):
+    def update_vcard(self, card, href, etag):
         """
         pushes changed vcard to the server
         card: vcard as unicode string
@@ -161,7 +161,7 @@ class PyCardDAV(object):
          """
          # TODO what happens if etag does not match?
         self._check_write_support()
-        remotepath = str(self.url.base + vref)
+        remotepath = str(self.url.base + href)
         headers = self.headers
         headers['content-type'] = 'text/vcard'
         if etag is not None:
@@ -169,20 +169,20 @@ class PyCardDAV(object):
         self.session.put(remotepath, data=card, headers=headers,
                          **self._settings)
 
-    def delete_vcard(self, vref, etag):
+    def delete_vcard(self, href, etag):
         """deletes vcard from server
 
-        deletes the resource at vref if etag matches,
+        deletes the resource at href if etag matches,
         if etag=None delete anyway
-        :param vref: vref of card to be deleted
-        :type vref: str()
+        :param href: href of card to be deleted
+        :type href: str()
         :param etag: etag of that card, if None card is always deleted
-        :type vref: str()
+        :type href: str()
         :returns: nothing
         """
         # TODO: what happens if etag does not match, url does not exist etc ?
         self._check_write_support()
-        remotepath = str(self.url.base + vref)
+        remotepath = str(self.url.base + href)
         headers = self.headers
         headers['content-type'] = 'text/vcard'
         if etag is not None:
@@ -251,7 +251,7 @@ class PyCardDAV(object):
 
         :param xml: the xml file
         :type xml: str()
-        :rtype: dict() key: vref, value: etag
+        :rtype: dict() key: href, value: etag
         """
         namespace = "{DAV:}"
 
