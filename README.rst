@@ -75,17 +75,17 @@ line::
 
         write_support = YesPleaseIDoHaveABackupOfMyData
 
-in your config file.
+in your config file (in the default section).
 
 You can also import, delete or backup single cards (backup also works for the
 whole collection, but please don't rely on it just yet). See *pc_query --help*
-for how to use these.
+for how to use these and for some more options.
 
 Import Addresses from Mutt
 --------------------------
-You can directly add sender addresses from mutt to pycarddav, either adding them
-to existing contacts or creating a new one. If write support is enabled, they
-will be uploaded on the server during the next sync.
+You can directly add sender addresses from mutt to *pyCardDAV*, either adding
+them to existing contacts or creating a new one. If write support is enabled,
+they will be uploaded on the server during the next sync.
 
 Example from .muttrc::
 
@@ -103,6 +103,9 @@ is not recommended).
 Additional Information
 ----------------------
 For now, VCard properties that have no value are not shown.
+
+Also, you should be able to use *pyCardDAV*'s CardDAV implementation for other
+projects. See the *CardDAV* in *pycarddav/carddav.py*.
 
 
 Feedback
