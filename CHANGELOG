@@ -1,0 +1,8 @@
+0.4
+experimental write support in the backend
+import & export vcards
+import directly from mutt
+speed increase in (initial) sync due to switching from pycurl to requests
+detects removed cards on server and deletes them locally
+can delete cards locally and on server
+can handle base64 encoded images/sounds etc.
