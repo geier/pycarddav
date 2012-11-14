@@ -4,28 +4,29 @@ Usage
 Installation
 ------------
 You can download *pyCardDAV* either from the above download link or check it
-out at github_.  Move pc_query and pycardsyncer to some folder in your PATH.
-Copy and edit the supplied pycard.conf.sample file (default location is
-~/.pycard/pycard.conf). Beware that only you can access this file, if you have
-untrusted users on your machine, since the password is stored in cleartext.
+out at github_. Install *pyCardDAV* by executing *python setup.py install*
 
-Make sure you have pysqlite3, py-vobject, pycurl and py-lxml installed.
-Users of python versions < 2.7 will also need to install argparse.
+Copy and edit the supplied pycard.conf.sample file (default location is
+~/.pycard/pycard.conf). If you don't want to store the password in clear text in
+the config file, *pyCardDAV* will ask for it while syncing.
+
+Make sure you have sqlite3 (normally available by default), vobject, lxml(>2),
+requests (>0.10), urwid (>0.9) installed.  Users of python 2.6 will also need
+to install argparse.
 
 *pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
 NetBSD, Debian and Ubuntu with python 2.6 and 2.7 and against davical 0.9.9.4 -
-1.1.1 (later versions should be ok, too, but 0.9.9.3 and earlier don't seem
-to work) and owncloud (which uses sabredav).
-
-NetBSD/pkgsrc users can install *pyCardDAV* via pkgsrc_, Gentoo users can
-install it via the sunrise overlay.
-
-.. _pkgsrc: http://pkgsrc.se/misc/py-carddav
+1.0.1 (later versions should be ok, too, but 0.9.9.3 and earlier don't seem
+to work), owncloud and sabredav.
 
 Usage
 -----
-Execute pycardsyncer to sync your addresses to the local database (I am
-doing this every 60 minutes via cronjob). You can test pc_query with::
+*pyCardDAV* consists of three scripts, *pycardsyncr* which is used to sync the
+local database with the server, *pc_query* to interact with the local database
+and *pycard-import* to import email addresses from mutt.
+
+Execute pycardsyncer to sync your addresses to the local database. You can test
+pc_query with::
 
         % pc_query searchstring
 
@@ -42,44 +43,41 @@ Example from .muttrc::
 
         set query_command="/home/username/bin/pc_query -m '%s'"
 
-The current version features some experimental write support. If you want to
-test this, first make sure **you have a backup of your data**, then you can put
-the line::
+The current version features experimental write support. If you want to
+test this, first make sure **you have a backup of your data** (but please don
+*NOT* rely on *pc_query --backup* for this just yet), then you can put the
+line::
 
         write_support = YesPleaseIDoHaveABackupOfMyData
 
-in your config file.
+in your config file (in the default section).
+
+You can also import, delete or backup single cards (backup also works for the
+whole collection, but please don't rely on it just yet). See *pc_query --help*
+for how to use these and for some more options.
+
+Import Addresses from Mutt
+--------------------------
+You can directly add sender addresses from mutt to *pyCardDAV*, either adding
+them to existing contacts or creating a new one. If write support is enabled,
+they will be uploaded on the server during the next sync.
+
+Example from .muttrc::
+
+        macro index,pager A "<pipe-message>pycard-import<enter>" "add sender address to pycardsyncer"
 
 SSL
 ---
-*pyCardDAV* uses liburl for all interaction with the CardDAV server, so, by
-default, it uses curl's ssl trust files. If you use SSL to interact with your
-CardDAV Server (you probably should) and you don't have a certificate signed by
-a CA your OS Vendor trusts (like a self-signed certificate or one signed by
-CAcert) you can set *cacert_file* to a path to the CA's root file (must be in
-pem format). If you really don't care about security (you should) you can also
-set *insecure_ssl* to *1* to disable *any* ssl certificate checking.
+If you use SSL to interact with your CardDAV Server (you probably should) and
+you don't have a certificate signed by a CA your OS Vendor trusts (like a
+self-signed certificate or one signed by CAcert) you can set *verify* to a path
+to the CA's root file (must be in pem format). If you don't want any certificate
+checking set *verify* to *false* to disable *any* ssl certificate checking (this
+is not recommended).
 
 Additional Information
 ----------------------
 For now, VCard properties that have no value are not shown.
 
-
-Feedback
---------
-Please do provide feedback if *pyCardDAV* works for you or even more importantly
-if it doesn't. You can reach me by email at pycarddav@lostpackets.de , by
-jabber/XMPP at geier@jabber.ccc.de or via github_
-
-.. _github: https://github.com/geier/pycarddav/
-
-License
--------
-*pyCardDAV* is released as beer-ware
-
-"THE BEER-WARE LICENSE" (Revision 42):
-Christian Geier wrote this file. As long as you retain this notice you
-can do whatever you want with this stuff. If we meet some day, and you think
-this stuff is worth it, you can buy me a beer in return Christian Geier
-
-
+Also, you should be able to use *pyCardDAV*'s CardDAV implementation for other
+projects. See the *CardDAV* class in *pycarddav/carddav.py*.
