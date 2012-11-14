@@ -1,14 +1,16 @@
-pyCardDAV
-=========
-
 About
 -----
-*pyCardDAV* is supposed to provide a simple way of accessing a CardDAV_
-resource, mainly for use with mutt's query_command, but it might be of some
-use solo. *pyCardDAV* is some ugly python code (it's not *that* bad anymore)
-that holds together vobject_, lxml_, requests_ and pysqlite_.
+*pyCardDAV* is a simple to use CardDAV_ CLI client. It has built in support for
+mutt's *query_command* but also works very well solo.
 
-.. _CardDav: http://en.wikipedia.org/wiki/CardDAV
+*pyCardDAV* consists of *pycardsyncer*, a program for syncing your CardDAV
+resource into a local database and of *pc_query*, a program for querying the
+local database. *pyCardDAV* is some ugly python_ code (actually, it's not
+*that* bad anymore…) that holds together vobject_, lxml_, requests_ and
+pysqlite_.
+
+.. _CardDAV: http://en.wikipedia.org/wiki/CardDAV
+.. _python: http://python.org/
 .. _vobject: http://vobject.skyhouseconsulting.com/
 .. _lxml: http://lxml.de/
 .. _pysqlite: http://code.google.com/p/pysqlite/
@@ -105,7 +107,7 @@ Additional Information
 For now, VCard properties that have no value are not shown.
 
 Also, you should be able to use *pyCardDAV*'s CardDAV implementation for other
-projects. See the *CardDAV* in *pycarddav/carddav.py*.
+projects. See the *CardDAV* class in *pycarddav/carddav.py*.
 
 
 Feedback
