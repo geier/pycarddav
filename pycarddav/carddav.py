@@ -21,8 +21,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
-classes and methods for pycarddav, the carddav class could/should be moved
-to another module for better reusing
+contains the class PyCardDAv and some associated functions and definitions
 """
 
 from collections import namedtuple
@@ -54,7 +53,7 @@ class UploadFailed(Exception):
 
 
 class PyCardDAV(object):
-    """interacts with CardDAV server
+    """class for interacting with a CardDAV server
 
     Since PyCardDAV relies heavily on Requests [1] its SSL verification is also
     shared by PyCardDAV [2]. For now, only the *verify* keyword is exposed
@@ -66,6 +65,8 @@ class PyCardDAV(object):
     raises:
         requests.exceptions.SSLError
         requests.exceptions.ConnectionError
+        Exception (shame on me)
+
     """
 
     def __init__(self, resource, debug='', user='', passwd='',
@@ -223,7 +224,6 @@ class PyCardDAV(object):
 
                 return (parsed_url.path, etag)
         raise UploadFailed(response.reason)
-            # TODO: should raise an exception if this is ever reached
 
     def _get_xml_props(self):
         """PROPFIND method
