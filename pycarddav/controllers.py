@@ -136,7 +136,7 @@ def sync(conf):
 
     remote_changed = False
     # for now local changes overwritten by remote changes
-    logging.info("looking for locally changed vcards...")
+    logging.debug("looking for locally changed vcards...")
     hrefs = my_dbtool.changed
 
     for href in hrefs:
