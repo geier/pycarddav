@@ -7,7 +7,7 @@ mutt's *query_command* but also works very well solo.
 for syncing your CardDAV resource into a local database and of *pc_query*, a
 program for querying the local database. *pyCardDAV* is some ugly python_ code
 (actually, it's not *that* bad anymore…) that holds together vobject_, lxml_,
-PyCurl_ and pysqlite_.
+requests_ and pysqlite_ .
 
 .. _CardDAV: http://en.wikipedia.org/wiki/CardDAV
 .. _python: http://python.org/
@@ -32,7 +32,7 @@ Feedback
 --------
 Please do provide feedback if *pyCardDAV* works for you or even more importantly
 if it doesn't. You can reach me by email at pycarddav (a) lostpackets (dot) de , by
-jabber/XMPP at geier (a) jabber.ccc.de or via github_
+jabber/XMPP at geier (a) jabber.ccc.de or via github_ .
 
 .. _github: https://github.com/geier/pycarddav/
 
