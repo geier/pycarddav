@@ -1,6 +1,32 @@
 News
 ====
 
+15.11.20112: pyCardDAV v0.4 released
+
+  pyCardDAV v0.4 is released. This is a mayor rewrite (again), so some previously
+  fixed bugs might be back in. If your upgrading, you should delete your database
+  file first.
+
+  On the plus side, there are some new features in pyCardDAV:
+
+    experimental write support in the backend
+    import & export vCards
+    import addresses directly from mutt
+    speed increase in (initial) sync due to switching from pycurl to requests
+    detects removed cards on server and delete them locally
+    can delete cards locally and then on server
+
+  Also the license has changed to MIT/Expat, see the COPYING file for details
+  (but a beer is still appreciated).
+
+  PyCurl is not required anymore, pyCardDAV relies on requests now (which needs
+  to be installed).
+
+  Special thanks to David Soulayrol who made a lot of this happen.
+
+  Attention: please make sure you have a backup when you enable write support, see
+  Usage for more details.
+
 27.01.2012: pyCardDAV v0.3.3_ released:
   **New** sabredav/owncloud support, thanks Davide Gerhard.
 
