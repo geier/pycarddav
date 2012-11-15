@@ -212,7 +212,7 @@ class PyCardDAV(object):
         card = card.encode('utf-8')
         for _ in range(0, 5):
             rand_string = get_random_href()
-            remotepath = str(self.url.resource + '/' + rand_string + ".vcf")
+            remotepath = str(self.url.resource + rand_string + ".vcf")
             headers = self.headers
             headers['content-type'] = 'text/vcard'
             headers['If-None-Match'] = '*'
