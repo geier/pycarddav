@@ -140,7 +140,7 @@ def sync(conf):
     hrefs = my_dbtool.changed
 
     for href in hrefs:
-        logging.info("trying to update %s", href)
+        logging.debug("trying to update %s", href)
         card = my_dbtool.get_vcard_from_db(href)
         logging.debug("%s", my_dbtool.get_etag(href))
         syncer.update_vcard(card.vcf, href, None)
@@ -149,7 +149,7 @@ def sync(conf):
     # uploading
     hrefs = my_dbtool.get_new()
     for href in hrefs:
-        logging.info("trying to upload new card %s", href)
+        logging.debug("trying to upload new card %s", href)
         card = my_dbtool.get_vcard_from_db(href)
         (href_new, etag_new) = syncer.upload_new_card(card.vcf)
         my_dbtool.update_href(href, href_new, status=backend.OK)
@@ -158,7 +158,7 @@ def sync(conf):
     # deleting locally deleted cards on the server
     hrefs_etags = my_dbtool.get_marked_delete()
     for href, etag in hrefs_etags:
-        logging.info('trying to delete card %s', href)
+        logging.debug('trying to delete card %s', href)
         syncer.delete_vcard(href, etag)
         my_dbtool.delete_vcard_from_db(href)
         remote_changed = True
