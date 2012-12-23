@@ -3,7 +3,7 @@
 
 AUTHOR = u"Christian Geier"
 SITENAME = u"pyCardDAV"
-SITEURL = '/'
+SITEURL = '/pycarddav'
 
 TIMEZONE = 'Europe/Paris'
 
