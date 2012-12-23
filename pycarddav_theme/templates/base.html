@@ -42,7 +42,7 @@
             {% endfor %}
             {% if DISPLAY_PAGES_ON_MENU %}
             	{% for p in PAGES %}
-								<li {% if p == page %}class="active"{% endif %}><a href="{{ SITEURL }}/pages/{{ p.url }}">{{ p.title }}</a></li>
+								<li {% if p == page %}class="active"{% endif %}><a href="{{ SITEURL }}/{{ p.url }}">{{ p.title }}</a></li>
               {% endfor %}
             {% endif %}
 						<li {% if active_page == "archives" %} class="active"{% endif %}>
