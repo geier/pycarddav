@@ -65,6 +65,7 @@ class PyCardDAV(object):
     raises:
         requests.exceptions.SSLError
         requests.exceptions.ConnectionError
+        more requests.exceptions depending on the actual error
         Exception (shame on me)
 
     """
@@ -93,9 +94,7 @@ class PyCardDAV(object):
         response = self.session.request('PROPFIND', resource,
                                         headers=self.headers,
                                         **self._settings)
-        if not response.ok:
-            print response.reason
-            raise Exception(response.reason)  # TODO own exception type
+        response.raise_for_status()   #raises error on not 2XX HTTP status code
 
     @property
     def verify(self):
@@ -155,6 +154,7 @@ class PyCardDAV(object):
         response = self.session.get(self.url.base + href,
                                     headers=self.headers,
                                     **self._settings)
+        response.raise_for_status()
         return response.content
 
     def update_vcard(self, card, href, etag):
@@ -195,9 +195,7 @@ class PyCardDAV(object):
         result = self.session.delete(remotepath,
                                      headers=headers,
                                      **self._settings)
-        if not result.ok:
-            raise Exception(result.reason, result.content)
-            # TODO define own exception type
+        response.raise_for_status()
 
     def upload_new_card(self, card):
         """
@@ -227,7 +225,7 @@ class PyCardDAV(object):
                     etag = response.headers['etag']
 
                 return (parsed_url.path, etag)
-        raise UploadFailed(response.reason)
+        response.raise_for_status()
 
     def _get_xml_props(self):
         """PROPFIND method
@@ -242,8 +240,7 @@ class PyCardDAV(object):
                                         self.url.resource,
                                         headers=headers,
                                         **self._settings)
-        if not response.ok:
-            raise Exception()
+        response.raise_for_status()
         if response.headers['DAV'].count('addressbook') == 0:
             raise Exception("URL is not a CardDAV resource")
 
