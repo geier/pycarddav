@@ -7,7 +7,7 @@ passwd: yourpassword
 
 # The path to the CardDAV resource.
 #resource: https://[server]/owncloud/apps/contacts/carddav.php/addressbooks/[user]/[addressbook name]/
-resource: https://carddav.server.tld:80/davical/caldav.php/username/addressbook/
+resource: https://carddav.server.tld:443/davical/caldav.php/username/addressbook/
 
 # Authentication Method: possible values are: basic (the default), or digest
 # (for servers that need HTTP digest authentification)
