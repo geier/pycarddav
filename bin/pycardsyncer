@@ -50,7 +50,10 @@ class SyncConfigurationParser(ConfigurationParser):
 
         if success and not conf.dav__passwd:
             hostname = urlsplit(conf.dav__resource).hostname
-            auths = netrc().authenticators(hostname)
+            try:
+                auths = netrc().authenticators(hostname)
+            except IOError:
+                auths = tuple()
             if auths:
                 if not conf.dav__user or auths[0] == conf.dav__user:
                     logging.debug("Read password for user %s on %s in .netrc",
