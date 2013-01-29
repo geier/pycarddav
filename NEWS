@@ -1,7 +1,7 @@
 News
 ====
 
-15.11.20112: pyCardDAV v0.4 released
+15.11.2012: pyCardDAV v0.4 released
 
   pyCardDAV v0.4 is released. This is a mayor rewrite (again), so some previously
   fixed bugs might be back in. If your upgrading, you should delete your database
