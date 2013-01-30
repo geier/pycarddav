@@ -190,7 +190,7 @@ class VCard(defaultdict):
 
     @property
     def fname(self):
-        return unicode(self['FN'][0][0])
+        return unicode(self['FN'][0][0]) if self['FN'] else ''
 
     @fname.setter
     def fname(self, value):
