@@ -38,24 +38,24 @@ import sys
 
 def query(conf):
     # testing if the db exists
-    if not path.exists(conf.sqlite__path):
-        sys.exit(str(conf.sqlite__path) + " file does not exist, please sync"
-                                          " with pycardsyncer first.")
+    if not path.exists(conf.sqlite.path):
+        sys.exit(str(conf.sqlite.path) + " file does not exist, please sync"
+                 " with pycardsyncer first.")
 
-    search_string = conf.cmd__search_string.decode("utf-8")
+    search_string = conf.query.search_string.decode("utf-8")
 
-    my_dbtool = backend.SQLiteDb(conf.sqlite__path, "utf-8", "stricts", False)
+    my_dbtool = backend.SQLiteDb(conf.sqlite.path, "utf-8", "stricts", False)
 
     #import:
-    if conf.cmd__importing:
-        cards = model.cards_from_file(conf.cmd__importing)
+    if conf.query.importing:
+        cards = model.cards_from_file(conf.query.importing)
         for card in cards:
             my_dbtool.update(card, status=backend.NEW)
         sys.exit()
 
     # backup:
-    if conf.cmd__backup:
-        with open(conf.cmd__backup, 'w') as vcf_file:
+    if conf.query.backup:
+        with open(conf.query.backup, 'w') as vcf_file:
             if search_string == "":
                 hreflist = my_dbtool.get_all_vref_from_db()
             else:
@@ -66,14 +66,14 @@ def query(conf):
         sys.exit()
 
     # editing a card:
-    #if conf.cmd__edit:
+    #if conf.query.edit:
     #    names = my_dbtool.select_entry2(search_string)
     #    href = ui.select_entry(names)
     #    if href is None:
     #        sys.exit("Found no matching cards.")
 
     # mark a card for deletion
-    if conf.cmd__delete:
+    if conf.query.delete:
         hrefs = my_dbtool.search(search_string)
         if len(hrefs) is 0:
             sys.exit('Found no matching cards.')
@@ -95,15 +95,15 @@ def query(conf):
                   'on the server on the next sync')
         sys.exit()
 
-    print("searching for " + conf.cmd__search_string + "...")
+    print("searching for " + conf.query.search_string + "...")
     result = my_dbtool.search(search_string)
     for one in result:
         vcard = my_dbtool.get_vcard_from_db(one)
-        if conf.cmd__mutt:
+        if conf.query.mutt_format:
             lines = vcard.print_email()
-        elif conf.cmd__tel:
+        elif conf.query.tel:
             lines = vcard.print_tel()
-        elif conf.cmd__display_all:
+        elif conf.query.display_all:
             lines = vcard.pretty
         else:
             lines = vcard.pretty_min

@@ -26,7 +26,7 @@ try:
     import logging
     import sys
 
-    from pycarddav import Configuration, ConfigurationParser
+    from pycarddav import ConfigurationParser
     from pycarddav import controllers
     from pycarddav import capture_user_interruption
 
@@ -42,42 +42,53 @@ class SyncConfigurationParser(ConfigurationParser):
     """A specialized setup tool for synchronization."""
     def __init__(self):
         ConfigurationParser.__init__(self, "syncs the local db to the CardDAV server")
-        self.set_mandatory_options([(Configuration.SECTIONS.DAV, 'resource'),
-                                    (Configuration.SECTIONS.DB, 'path')])
 
     def check(self, conf):
-        success = ConfigurationParser.check(self, conf)
+        ConfigurationParser.check(self, conf)
 
-        if success and not conf.dav__passwd:
-            hostname = urlsplit(conf.dav__resource).hostname
+        result = self.check_property(conf, 'sqlite.path')
+        result &= self.check_property(conf, 'accounts')
+        if result:
+            for account in conf.accounts:
+                result &= self.check_account(account)
+
+        return result
+
+    def check_account(self, account):
+        if not self.check_property(account, 'resource', 'account.resource'):
+            return False
+
+        result = True
+        if not len(account.passwd):
+            hostname = urlsplit(account.resource).hostname
             auths = netrc().authenticators(hostname)
             if auths:
-                if not conf.dav__user or auths[0] == conf.dav__user:
+                if not account.user or auths[0] == account.user:
                     logging.debug("Read password for user %s on %s in .netrc",
                                   auths[0], hostname)
-                    conf.dav__user = auths[0]
-                    conf.dav__passwd = auths[2]
+                    account.user = auths[0]
+                    account.passwd = auths[2]
                 else:
                     logging.error("User %s not found for %s in .netrc",
-                                  conf.dav__user, hostname)
-                    success = False
-            elif conf.dav__user:
-                conf.dav__passwd = getpass.getpass(prompt='CardDAV password: ')
+                                  account.user, hostname)
+                    result = False
+            elif account.user:
+                account.passwd = getpass.getpass(prompt='CardDAV password: ')
             else:
                 logging.error("Missing credentials for %s", hostname)
-                success = False
+                result = False
 
-        return success
-
+        return result
 
 capture_user_interruption()
 
 # Read configuration.
-conf = SyncConfigurationParser().parse()
+conf_parser = SyncConfigurationParser()
+conf = conf_parser.parse()
 if conf is None:
     sys.exit(1)
 
 if conf.debug:
-    conf.dump()
+    conf_parser.dump(conf)
 
 controllers.sync(conf)
