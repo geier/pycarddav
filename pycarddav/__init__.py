@@ -344,9 +344,9 @@ class ConfigurationParser(object):
         for name, value in sorted(dict.copy(conf).iteritems()):
             if type(value) is list:
                 for o in value:
-                    self.dump(o, '\t' + name + ':', tab + 1)
+                    self.dump(o, '\t'*tab + name + ':', tab + 1)
             elif type(value) is Namespace:
-                self.dump(value, '\t' + name + ':', tab + 1)
+                self.dump(value, '\t'*tab + name + ':', tab + 1)
             elif name != 'passwd':
                 logging.debug('%s%s: %s', '\t'*tab, name, value)
 
