@@ -23,11 +23,15 @@
 
 import argparse
 import ConfigParser
+import getpass
 import re
 import logging
 import os
 import signal
 import sys
+
+from netrc import netrc
+from urlparse import urlsplit
 
 __productname__ = 'pyCardDAV'
 __version__ = '0.4'
@@ -154,13 +158,6 @@ class Section(object):
         else:
             return os.path.expanduser(value)
 
-    def _parse_auth(self, value):  #TODO clean this up, exception etc
-        """parse the auth string from the config file"""
-        if value == 'digest' or value == 'basic':
-            return value
-        else:
-            raise Exception('value %s not allowed for auth' % value)
-
 
 class AccountSection(Section):
     def __init__(self, parser):
@@ -169,7 +166,7 @@ class AccountSection(Section):
             ('user', '', None),
             ('passwd', '', None),
             ('resource', '', None),
-            ('auth', 'basic', self._parse_auth),
+            ('auth', 'basic', None),
             ('verify', 'True', self._parse_bool_string),
             ('write_support', False, lambda x: x == 'YesPleaseIDoHaveABackupOfMyData' or False),
         ]
@@ -214,7 +211,6 @@ class ConfigurationParser(object):
         self._conf_parser = ConfigParser.SafeConfigParser()
         self._arg_parser = argparse.ArgumentParser(
             description=desc, version=__version__)
-
         self._arg_parser.add_argument(
             "-c", "--config", action="store", dest="filename",
             default=self._get_default_configuration_file(), metavar="FILE",
@@ -241,11 +237,15 @@ class ConfigurationParser(object):
         if not args.filename:
             logging.error('Could not find configuration file')
             return None
-        if not self._conf_parser.read(os.path.expanduser(args.filename)):
-            logging.error('Cannot read %s', args.filename)
+        try:
+            if not self._conf_parser.read(os.path.expanduser(args.filename)):
+                logging.error('Cannot read %s', args.filename)
+                return None
+            else:
+                logging.debug('Using configuration from %s', args.filename)
+        except ConfigParser.Error, e:
+            logging.error("Could not parse %s: %s", args.filename, e)
             return None
-        else:
-            logging.debug('Using configuration from %s', args.filename)
 
         conf = self._read_configuration(args)
 
@@ -254,22 +254,66 @@ class ConfigurationParser(object):
 
         return conf if self.check(conf) else None
 
-    def check(self, _):
+    def check(self, ns):
         """Check the configuration before returning it from parsing.
 
         This default implementation warns the user of the remaining
-        options found in the configuration file. It always returns
-        True.
+        options found in the configuration file. It then checks the
+        validity of the common configuration values. It returns True
+        on success, False otherwise.
 
         This function can be overriden to augment the checks or the
         configuration tweaks achieved before the parsing function
         returns.
         """
+        result = True
+
         for section in self._conf_parser.sections():
             for option in self._conf_parser.options(section):
                 logging.debug("Ignoring %s:%s in configuration file", section, option)
 
-        return True
+        if self.check_property(ns, 'accounts'):
+            for account in ns.accounts:
+                result &= self.check_account(account)
+        else:
+            logging.error("No account found")
+            result = False
+
+        return result
+
+    def check_account(self, ns):
+        result = True
+
+        if not ns.auth in ['basic', 'digest']:
+            logging.error("Value %s is not allowed for in  Account %s:auth",
+                          ns.auth, ns.name)
+            result = False
+
+        if not self.check_property(ns, 'resource', 'Account %s:resource' % ns.name):
+            return False
+
+        if not len(ns.passwd):
+            hostname = urlsplit(ns.resource).hostname
+            auths = netrc().authenticators(hostname)
+            if auths:
+                if not ns.user or auths[0] == ns.user:
+                    logging.debug("Read password for user %s on %s in .netrc",
+                                  auths[0], hostname)
+                    ns.user = auths[0]
+                    ns.passwd = auths[2]
+                else:
+                    logging.error("User %s not found for %s in .netrc",
+                                  ns.user, hostname)
+                    result = False
+            elif ns.user:
+                # Do not ask for password if execution is already doomed.
+                if result:
+                    ns.passwd = getpass.getpass(prompt='CardDAV password: ')
+            else:
+                logging.error("Missing credentials for %s", hostname)
+                result = False
+
+        return result
 
     def check_property(self, ns, property_, display_name=None):
         names = property_.split('.')
