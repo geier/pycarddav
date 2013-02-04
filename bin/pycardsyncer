@@ -22,16 +22,12 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 try:
-    import getpass
     import logging
     import sys
 
     from pycarddav import ConfigurationParser
     from pycarddav import controllers
     from pycarddav import capture_user_interruption
-
-    from netrc import netrc
-    from urlparse import urlsplit
 
 except ImportError as error:
     sys.stderr.write(str(error))
@@ -43,42 +39,6 @@ class SyncConfigurationParser(ConfigurationParser):
     def __init__(self):
         ConfigurationParser.__init__(self, "syncs the local db to the CardDAV server")
 
-    def check(self, conf):
-        ConfigurationParser.check(self, conf)
-
-        result = self.check_property(conf, 'sqlite.path')
-        result &= self.check_property(conf, 'accounts')
-        if result:
-            for account in conf.accounts:
-                result &= self.check_account(account)
-
-        return result
-
-    def check_account(self, account):
-        if not self.check_property(account, 'resource', 'account.resource'):
-            return False
-
-        result = True
-        if not len(account.passwd):
-            hostname = urlsplit(account.resource).hostname
-            auths = netrc().authenticators(hostname)
-            if auths:
-                if not account.user or auths[0] == account.user:
-                    logging.debug("Read password for user %s on %s in .netrc",
-                                  auths[0], hostname)
-                    account.user = auths[0]
-                    account.passwd = auths[2]
-                else:
-                    logging.error("User %s not found for %s in .netrc",
-                                  account.user, hostname)
-                    result = False
-            elif account.user:
-                account.passwd = getpass.getpass(prompt='CardDAV password: ')
-            else:
-                logging.error("Missing credentials for %s", hostname)
-                result = False
-
-        return result
 
 capture_user_interruption()
 

@@ -73,10 +73,6 @@ class QueryConfigurationParser(ConfigurationParser):
             "--delete", dest="query__delete", action="store_true",
             help="delete card matching SEARCHSTRING")
 
-    def check(self, conf):
-        ConfigurationParser.check(self, conf)
-        return self.check_property(conf, 'sqlite.path')
-
 
 capture_user_interruption()
 
