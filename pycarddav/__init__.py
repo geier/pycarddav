@@ -201,13 +201,14 @@ class ConfigurationParser(object):
     DEFAULT_PATH = "pycard"
     DEFAULT_FILE = "pycard.conf"
 
-    def __init__(self, desc):
+    def __init__(self, desc, check_accounts=True):
         self._xdg_helper = XdgBaseDirectoryHelper()
 
         # Set the configuration current schema.
         self._sections = [ AccountSection, SQLiteSection ]
 
         # Build parsers and set common options.
+        self._check_accounts = check_accounts
         self._conf_parser = ConfigParser.SafeConfigParser()
         self._arg_parser = argparse.ArgumentParser(
             description=desc, version=__version__)
@@ -272,12 +273,13 @@ class ConfigurationParser(object):
             for option in self._conf_parser.options(section):
                 logging.debug("Ignoring %s:%s in configuration file", section, option)
 
-        if self.check_property(ns, 'accounts'):
-            for account in ns.accounts:
-                result &= self.check_account(account)
-        else:
-            logging.error("No account found")
-            result = False
+        if self._check_accounts:
+            if self.check_property(ns, 'accounts'):
+                for account in ns.accounts:
+                    result &= self.check_account(account)
+            else:
+                logging.error("No account found")
+                result = False
 
         return result
 

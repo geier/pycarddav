@@ -38,7 +38,8 @@ except ImportError as error:
 class QueryConfigurationParser(ConfigurationParser):
     """A specialized setup tool for cards query."""
     def __init__(self):
-        ConfigurationParser.__init__(self, "prints contacts cards matching a search string")
+        ConfigurationParser.__init__(self, "prints contacts cards matching a search string",
+                                     check_accounts=False)
 
         self._arg_parser.add_argument(
             "-a", action="store_true", dest="query__display_all", default=False,
