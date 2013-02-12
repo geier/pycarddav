@@ -116,15 +116,18 @@ def query(conf):
 def sync(conf):
     """this should probably be seperated from the class definitions"""
 
-    syncer = carddav.PyCardDAV(conf.accounts[0].resource,
-                               user=conf.accounts[0].user,
-                               passwd=conf.accounts[0].passwd,
-                               write_support=conf.accounts[0].write_support,
-                               verify=conf.accounts[0].verify,
-                               auth=conf.accounts[0].auth)
-
-    my_dbtool = backend.SQLiteDb(conf.sqlite.path, "utf-8", "stricts", conf.debug)
-
+    syncer = carddav.PyCardDAV(conf.account.resource,
+                               user=conf.account.user,
+                               passwd=conf.account.passwd,
+                               write_support=conf.account.write_support,
+                               verify=conf.account.verify,
+                               auth=conf.account.auth)
+    my_dbtool = backend.SQLiteDb(conf.account.name,
+                                 conf.account.resource,
+                                 db_path=conf.sqlite.path,
+                                 encoding="utf-8",
+                                 errors="stricts",
+                                 debug=conf.debug)
     # sync:
     abook = syncer.get_abook()  # type (abook): dict
 
