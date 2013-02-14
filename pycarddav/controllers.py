@@ -128,6 +128,7 @@ def sync(conf):
                                  encoding="utf-8",
                                  errors="stricts",
                                  debug=conf.debug)
+
     # sync:
     abook = syncer.get_abook()  # type (abook): dict
 
