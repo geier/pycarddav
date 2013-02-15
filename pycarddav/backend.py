@@ -86,11 +86,14 @@ class SQLiteDb(object):
         self._check_table_version()
         #self._create_table(self.account)
 
-    def search(self, search_string):
+    def search(self, search_string, accounts):
         """returns list of ids from db matching search_string"""
         stuple = ('%' + search_string + '%', )
-        sql_s = 'SELECT href FROM {} WHERE vcard LIKE (?)'.format(self.account)
-        result = self.sql_ex(sql_s, stuple)
+        result = list()
+        for account in accounts:
+            sql_s = 'SELECT href FROM {} WHERE vcard LIKE (?)'.format(account)
+            vrefs = self.sql_ex(sql_s, stuple)
+            result.append([(vref[0], account) for vref in vrefs])
         return [row[0] for row in result]
 
     def _dump(self):

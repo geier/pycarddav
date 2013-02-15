@@ -38,13 +38,13 @@ import sys
 
 def query(conf):
     # testing if the db exists
-    if not path.exists(conf.sqlite.path):
+    if not path.exists(path.expanduser(conf.sqlite.path)):
         sys.exit(str(conf.sqlite.path) + " file does not exist, please sync"
                  " with pycardsyncer first.")
 
     search_string = conf.query.search_string.decode("utf-8")
 
-    my_dbtool = backend.SQLiteDb(db_path=conf.sqlite.path,
+    my_dbtool = backend.SQLiteDb(db_path=path.expanduser(conf.sqlite.path),
                                  encoding="utf-8",
                                  errors="stricts",
                                  debug=False)
@@ -99,9 +99,10 @@ def query(conf):
         sys.exit()
 
     print("searching for " + conf.query.search_string + "...")
-    result = my_dbtool.search(search_string)
-    for one in result:
-        vcard = my_dbtool.get_vcard_from_db(one)
+
+    result = my_dbtool.search(search_string, conf.sync.accounts)
+    for vref, account in result:
+        vcard = my_dbtool.get_vcard_from_db(vref, account)
         if conf.query.mutt_format:
             lines = vcard.print_email()
         elif conf.query.tel:
