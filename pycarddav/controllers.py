@@ -44,7 +44,10 @@ def query(conf):
 
     search_string = conf.query.search_string.decode("utf-8")
 
-    my_dbtool = backend.SQLiteDb(conf.sqlite.path, "utf-8", "stricts", False)
+    my_dbtool = backend.SQLiteDb(db_path=conf.sqlite.path,
+                                 encoding="utf-8",
+                                 errors="stricts",
+                                 debug=False)
 
     #import:
     if conf.query.importing:
@@ -122,49 +125,48 @@ def sync(conf):
                                write_support=conf.account.write_support,
                                verify=conf.account.verify,
                                auth=conf.account.auth)
-    my_dbtool = backend.SQLiteDb(conf.account.name,
-                                 conf.account.resource,
-                                 db_path=conf.sqlite.path,
+    my_dbtool = backend.SQLiteDb(db_path=conf.sqlite.path,
                                  encoding="utf-8",
                                  errors="stricts",
                                  debug=conf.debug)
-
     # sync:
-    abook = syncer.get_abook()  # type (abook): dict
+    abook = syncer.get_abook()  # type(abook): dict
+    my_dbtool.check_account_table(conf.account.name, conf.account.resource)
 
     for href, etag in abook.iteritems():
-        if my_dbtool.needs_update(href, etag):
+        if my_dbtool.needs_update(href, conf.account.name, etag=etag):
             logging.debug("getting %s etag: %s", href, etag)
             vcard = syncer.get_vcard(href)
-            my_dbtool.update(vcard, href, etag=etag)
+            my_dbtool.update(vcard, conf.account.name, href=href, etag=etag)
 
     remote_changed = False
     # for now local changes overwritten by remote changes
     logging.debug("looking for locally changed vcards...")
-    hrefs = my_dbtool.changed
+
+    hrefs = my_dbtool.get_changed(conf.account.name)
 
     for href in hrefs:
         logging.debug("trying to update %s", href)
-        card = my_dbtool.get_vcard_from_db(href)
-        logging.debug("%s", my_dbtool.get_etag(href))
+        card = my_dbtool.get_vcard_from_db(href, conf.account.name)
+        logging.debug("%s", my_dbtool.get_etag(href, conf.account.name))
         syncer.update_vcard(card.vcf, href, None)
-        my_dbtool.reset_flag(href)
+        my_dbtool.reset_flag(href, conf.account.name)
         remote_changed = True
     # uploading
-    hrefs = my_dbtool.get_new()
+    hrefs = my_dbtool.get_new(conf.account.name)
     for href in hrefs:
         logging.debug("trying to upload new card %s", href)
-        card = my_dbtool.get_vcard_from_db(href)
+        card = my_dbtool.get_vcard_from_db(href, conf.account.name)
         (href_new, etag_new) = syncer.upload_new_card(card.vcf)
-        my_dbtool.update_href(href, href_new, status=backend.OK)
+        my_dbtool.update_href(href, href_new, conf.account.name, status=backend.OK)
         remote_changed = True
 
     # deleting locally deleted cards on the server
-    hrefs_etags = my_dbtool.get_marked_delete()
+    hrefs_etags = my_dbtool.get_marked_delete(conf.account.name)
     for href, etag in hrefs_etags:
         logging.debug('trying to delete card %s', href)
         syncer.delete_vcard(href, etag)
-        my_dbtool.delete_vcard_from_db(href)
+        my_dbtool.delete_vcard_from_db(href, conf.account.name)
         remote_changed = True
 
     # detecting remote-deleted cards
@@ -173,7 +175,7 @@ def sync(conf):
 
     if remote_changed:
         abook = syncer.get_abook()  # type (abook): dict
-    rlist = my_dbtool.get_all_vref_from_db()
+    rlist = my_dbtool.get_all_vref_from_db(conf.account.name)
     delete = set(rlist).difference(abook.keys())
     for href in delete:
-        my_dbtool.delete_vcard_from_db(href)
+        my_dbtool.delete_vcard_from_db(href, conf.account.name)
