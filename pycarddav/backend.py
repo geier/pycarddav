@@ -93,8 +93,8 @@ class SQLiteDb(object):
         for account in accounts:
             sql_s = 'SELECT href FROM {} WHERE vcard LIKE (?)'.format(account)
             vrefs = self.sql_ex(sql_s, stuple)
-            result.append([(vref[0], account) for vref in vrefs])
-        return [row[0] for row in result]
+            result = result + ([(vref[0], account) for vref in vrefs])
+        return result
 
     def _dump(self):
         """return table self.account, used for testing"""
