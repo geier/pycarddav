@@ -60,11 +60,11 @@ def query(conf):
     if conf.query.backup:
         with open(conf.query.backup, 'w') as vcf_file:
             if search_string == "":
-                hreflist = my_dbtool.get_all_vref_from_db()
+                hrefs_account_list = my_dbtool.get_all_vref_from_db(conf.sync.accounts)
             else:
-                hreflist = my_dbtool.search(search_string)
-            for href in hreflist:
-                vcard = my_dbtool.get_vcard_from_db(href)
+                hrefs_account_list = my_dbtool.search(search_string, conf.sync.accounts)
+            for href, account in hrefs_account_list:
+                vcard = my_dbtool.get_vcard_from_db(href, account)
                 vcf_file.write(vcard.vcf.encode('utf-8'))
         sys.exit()
 

@@ -330,11 +330,14 @@ class SQLiteDb(object):
             print("locally deleting ", vref)
         self.sql_ex('DELETE FROM {} WHERE href=(?)'.format(account_name), stuple)
 
-    def get_all_vref_from_db(self, account_name):
+    def get_all_vref_from_db(self, accounts):
         """returns a list with all vrefs
         """
-        result = self.sql_ex('SELECT href FROM {}'.format(account_name))
-        return [row[0] for row in result]
+        result = list()
+        for account in accounts:
+            vrefs = self.sql_ex('SELECT href FROM {}'.format(account))
+            result = result + [(vref[0], account) for vref in vrefs]
+        return result
 
     def get_names_vref_from_db(self, searchstring=None):
         """

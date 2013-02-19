@@ -69,7 +69,7 @@ class QueryConfigurationParser(ConfigurationParser):
         self._arg_parser.add_argument(
             "-i", "--import", metavar="FILE",
             type=argparse.FileType("r"), dest="query__importing",
-            help="import vcard from FILE or STDIN")
+            help="import vcard from FILE or STDIN into the first specified account")
         self._arg_parser.add_argument(
             "--delete", dest="query__delete", action="store_true",
             help="delete card matching SEARCHSTRING")
