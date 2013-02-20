@@ -41,8 +41,9 @@ class VCardWalker(urwid.ListWalker):
     """A walker to browse a VCard list.
 
     This walker returns a selectable Text for each of the passed VCard
-    references. If no references are passed to the constructor, then
-    the whole database is browsed.
+    references. Either accounts or ref_account_list needs to be supplied. If no
+    list of tuples of references are passed to the constructor, then all cards
+    from the specified accounts are browsed.
     """
 
     class Entry(urwid.Text):
@@ -52,16 +53,20 @@ class VCardWalker(urwid.ListWalker):
         def keypress(self, _, key):
             return key
 
-    def __init__(self, database, refs=None):
+    def __init__(self, database, accounts=None, ref_account_list=None):
         urwid.ListWalker.__init__(self)
+        if accounts is None and ref_account_list is None:
+            raise Exception
         self._db = database
-        self._refs = refs or database.get_all_vref_from_db()
+        self._refs_account_list = ref_account_list or database.get_all_vref_from_db(accounts)
         self._current = 0
 
     @property
     def selected_vcard(self):
         """Return the focused VCard."""
-        return self._db.get_vcard_from_db(self._refs[self._current])
+        return self._db.get_vcard_from_db(self._refs_account_list[self._current][0],
+                                          self._refs_account_list[self._current][1]
+                                          )
 
     def get_focus(self):
         """Return (focused widget, focused position)."""
@@ -74,7 +79,7 @@ class VCardWalker(urwid.ListWalker):
 
     def get_next(self, pos):
         """Return (widget after pos, position after pos)."""
-        if pos >= len(self._refs) - 1:
+        if pos >= len(self._refs_account_list) - 1:
             return None, None
         return self._get_at(pos + 1)
 
@@ -86,7 +91,9 @@ class VCardWalker(urwid.ListWalker):
 
     def _get_at(self, pos):
         """Return a textual representation of the VCard at pos."""
-        vcard = self._db.get_vcard_from_db(self._refs[pos])
+        vcard = self._db.get_vcard_from_db(self._refs_account_list[pos][0],
+                                           self._refs_account_list[pos][1]
+                                           )
         label = vcard.fname
         if vcard['EMAIL']:
             label += ' (%s)' % vcard['EMAIL'][0][0]
@@ -152,8 +159,8 @@ class VCardChooserPane(Pane):
     VCard can be selected to be used in another pane, like the
     EditorPane.
     """
-    def __init__(self, database, refs=None):
-        self._walker = VCardWalker(database, refs)
+    def __init__(self, database, refs_account_list=None):
+        self._walker = VCardWalker(database, ref_account_list=refs_account_list)
         Pane.__init__(self, urwid.ListBox(self._walker), 'Browse...')
 
     def get_keys(self):
@@ -253,7 +260,7 @@ class EditorPane(Pane):
     def _build_buttons_section(self):
         buttons = [u'Cancel', u'Merge', u'Store']
         row = urwid.GridFlow([urwid.AttrWrap(urwid.Button(lbl, self.on_button_press),
-                             'button','button focused') for lbl in buttons],
+                             'button', 'button focused') for lbl in buttons],
                              10, 3, 1, 'left')
         return [urwid.Divider('-', 1, 1),
                 urwid.Padding(row, 'right', 13 * len(buttons), None, 1, 1)]
@@ -281,7 +288,7 @@ class Window(urwid.Frame):
     PALETTE = [('header', 'white', 'black'),
                ('footer', 'white', 'black'),
                ('line header', 'black', 'white', 'bold'),
-               ('bright', 'dark blue', 'white', ('bold','standout')),
+               ('bright', 'dark blue', 'white', ('bold', 'standout')),
                ('list', 'black', 'white'),
                ('list focused', 'white', 'light blue', 'bold'),
                ('edit', 'black', 'white'),

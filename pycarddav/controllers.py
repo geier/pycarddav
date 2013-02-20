@@ -77,13 +77,13 @@ def query(conf):
 
     # mark a card for deletion
     if conf.query.delete:
-        hrefs = my_dbtool.search(search_string)
-        if len(hrefs) is 0:
+        hrefs_account_list = my_dbtool.search(search_string, conf.sync.accounts)
+        if len(hrefs_account_list) is 0:
             sys.exit('Found no matching cards.')
-        elif len(hrefs) is 1:
-            href = hrefs[0]
+        elif len(hrefs_account_list) is 1:
+            href, account = hrefs_account_list[0]
         else:
-            pane = ui.VCardChooserPane(my_dbtool, hrefs)
+            pane = ui.VCardChooserPane(my_dbtool, hrefs_account_list)
             ui.start_pane(pane)
             card = pane._walker.selected_vcard
             href = card.href
@@ -176,7 +176,7 @@ def sync(conf):
 
     if remote_changed:
         abook = syncer.get_abook()  # type (abook): dict
-    rlist = my_dbtool.get_all_vref_from_db(conf.account.name)
-    delete = set(rlist).difference(abook.keys())
+    r_href_account_list = my_dbtool.get_all_vref_from_db([conf.account.name])
+    delete = set([href for href, account in r_href_account_list]).difference(abook.keys())
     for href in delete:
-        my_dbtool.delete_vcard_from_db(href, conf.account.name)
+        my_dbtool.delete_vcard_from_db(href[0], conf.account.name)
