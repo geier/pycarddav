@@ -53,7 +53,7 @@ def query(conf):
     if conf.query.importing:
         cards = model.cards_from_file(conf.query.importing)
         for card in cards:
-            my_dbtool.update(card, status=backend.NEW)
+            my_dbtool.update(card, conf.sync.accounts[0], status=backend.NEW)
         sys.exit()
 
     # backup:
