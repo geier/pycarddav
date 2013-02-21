@@ -27,21 +27,21 @@ Database Layout
 ===============
 
 current version number: 8
-tables: version, vcardtable, properties, blobproperties
+tables: version, accounts, account_$ACCOUNTNAME
 
 version:
     version (INT): only one line: current db version
 
-vcardtable:
+account:
+    account (TEXT): name of the account
+    resource (TEXT)
+
+account_$ACCOUNTNAME:
     href (TEXT)
     etag (TEXT)
     name (TEXT): name as in vcard, seperated by ';'
     fname (TEXT): formated name
-    status (INT): status of this card
-        * 0: OK; not touched since last sync
-        * 1: NEW; new card, needs to be created on the server
-        * 2: CHANGED; properties edited or added (news to be pushed to server)
-        * 9: DELETED; marked for deletion (needs to be deleted on server)
+    status (INT): status of this card, see below for meaning
     vcard (TEXT) the content of the vcard minus any binary objects
                 as __repr__() of the object
 
@@ -62,14 +62,18 @@ except ImportError, error:
     sys.exit(1)
 
 
-OK = 0
-NEW = 1
-CHANGED = 2
-DELETED = 9
+OK = 0  # not touched since last sync
+NEW = 1  # new card, needs to be created on the server
+CHANGED = 2  # properties edited or added (news to be pushed to server)
+DELETED = 9  # marked for deletion (needs to be deleted on server)
 
 
 class SQLiteDb(object):
-    """Querying the addressbook database"""
+    """Querying the addressbook database
+
+    the type() of parameters named "account" should be something like str()
+    and of parameters named "accountS" should be an iterable like list()
+    """
 
     def __init__(self,
                  db_path="~/.pycard/abook.db",
