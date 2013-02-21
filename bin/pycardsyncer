@@ -82,7 +82,7 @@ for one in conf.accounts:
             controllers.sync(conf)
         except Exception as error:
             if conf.debug:
-                raise error
+                raise
             logging.critical('While syncing account "{}" an error occured:\n  '.format(one.name) + str(error))
             rvalue = 1
 
