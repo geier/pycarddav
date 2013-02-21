@@ -51,16 +51,18 @@ def test_broken_nobegin():
 def pytest_funcarg__emptydb(request):
     tmpdir = request.getfuncargvalue("tmpdir")
     mydb = pycarddav.backend.SQLiteDb(db_path=tmpdir.strpath + '/abook.db')
+    mydb.check_account_table('test', 'http://test.com')
     return mydb
 
 
 def test_db_init(emptydb):
-    assert emptydb._dump() == list()
+    assert emptydb._dump('test') == list()
 
 
 output_vcard_insert1 = [(u'/something.vcf', u'', u'G\xf6del;Fran\xe7ois;;;', u'Fran\xe7ois G\xf6del', u"[(u'ADR', [(u';;Essal\\xe1g 100;Torshavn;50800;F\\xe6r\\xf8erne;', {u'TYPE': [u'WORK']})]), (u'N', [(u'G\\xf6del;Fran\\xe7ois;;;', {})]), (u'VERSION', [(u'3.0', {})]), (u'TEL', [(u'+49-123-678901', {u'TYPE': [u'WORK', u'VOICE']}), (u'(101) 1234 4123', {u'TYPE': [u'HOME', u'VOICE']})]), (u'EMAIL', [(u'francois@goedel.net', {u'TYPE': [u'PREF', u'INTERNET']})]), (u'FN', [(u'Fran\\xe7ois G\\xf6del', {})])]", 0)]
 
 
 def test_vcard_insert1(emptydb):
-    emptydb.update(get_vcard('gödel').vcf, href='/something.vcf')
-    assert emptydb._dump() == output_vcard_insert1
+    emptydb.update(get_vcard('gödel').vcf, 'test', href='/something.vcf')
+    emptydb.check_account_table('test', 'http://test.com')
+    assert emptydb._dump('test') == output_vcard_insert1
