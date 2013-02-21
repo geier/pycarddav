@@ -100,9 +100,9 @@ class SQLiteDb(object):
             result = result + ([(vref[0], account) for vref in vrefs])
         return result
 
-    def _dump(self):
+    def _dump(self, account_name):
         """return table self.account, used for testing"""
-        sql_s = 'SELECT * FROM {}'.format(self.account)
+        sql_s = 'SELECT * FROM {}'.format(account_name)
         result = self.sql_ex(sql_s)
         return result
 
