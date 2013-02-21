@@ -343,25 +343,25 @@ class SQLiteDb(object):
             result = result + [(vref[0], account) for vref in vrefs]
         return result
 
-    def get_names_vref_from_db(self, searchstring=None):
-        """
-        :return: list of tuples(name, vref) of all entries from the db
-        """
-        if searchstring is None:
-            return self.sql_ex('SELECT fname, href FROM {} '
-                               'ORDER BY name'.format(self.account))
-        else:
-            hrefs = self.search(searchstring)
-            temp = list()
-            for href in hrefs:
-                try:
-                    sql_s = 'SELECT fname, href FROM {} WHERE href =(?)'.format(self.account)
-                    result = self.sql_ex(sql_s, (href, ))
-                    temp.append(result[0])
-                except IndexError as error:
-                    print(href)
-                    print(error)
-            return temp
+#    def get_names_vref_from_db(self, searchstring=None):
+#        """
+#        :return: list of tuples(name, vref) of all entries from the db
+#        """
+#        if searchstring is None:
+#            return self.sql_ex('SELECT fname, href FROM {} '
+#                               'ORDER BY name'.format(self.account))
+#        else:
+#            hrefs = self.search(searchstring)
+#            temp = list()
+#            for href in hrefs:
+#                try:
+#                    sql_s = 'SELECT fname, href FROM {} WHERE href =(?)'.format(self.account)
+#                    result = self.sql_ex(sql_s, (href, ))
+#                    temp.append(result[0])
+#                except IndexError as error:
+#                    print(href)
+#                    print(error)
+#            return temp
 
     def get_vcard_from_db(self, href, account_name):
         """returns a VCard()
