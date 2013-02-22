@@ -95,14 +95,14 @@ class SQLiteDb(object):
         stuple = ('%' + search_string + '%', )
         result = list()
         for account in accounts:
-            sql_s = 'SELECT href FROM {} WHERE vcard LIKE (?)'.format(account)
+            sql_s = 'SELECT href FROM {0} WHERE vcard LIKE (?)'.format(account)
             vrefs = self.sql_ex(sql_s, stuple)
             result = result + ([(vref[0], account) for vref in vrefs])
         return result
 
     def _dump(self, account_name):
         """return table self.account, used for testing"""
-        sql_s = 'SELECT * FROM {}'.format(account_name)
+        sql_s = 'SELECT * FROM {0}'.format(account_name)
         result = self.sql_ex(sql_s)
         return result
 
@@ -110,7 +110,7 @@ class SQLiteDb(object):
     #def changed(self):
         #"""get list of CHANGED cards"""
         #stuple = (CHANGED, )
-        #sql_s = 'SELECT href FROM {} WHERE status == (?)'.format(self.account)
+        #sql_s = 'SELECT href FROM {0} WHERE status == (?)'.format(self.account)
         #result = self.sql_ex(sql_s, stuple)
         #return [row[0] for row in result]
 
@@ -169,7 +169,7 @@ class SQLiteDb(object):
         #conn = sqlite3.connect(self.db_path)
         #cursor = conn.cursor()
         #try:
-            #cursor.execute("""CREATE TABLE {} (
+            #cursor.execute("""CREATE TABLE {0} (
                     #href TEXT,
                     #etag TEXT,
                     #name TEXT,
@@ -180,7 +180,7 @@ class SQLiteDb(object):
             #cursor.execute('INSERT INTO accounts (account, baseurl) '
                            #'VALUES (?, ?)', (self.account, baseurl))
 
-            #logging.debug("created {} table".format(self.account))
+            #logging.debug("created {0} table".format(self.account))
         #except sqlite3.OperationalError as detail:
             #logging.debug("%s", detail)
         #except Exception as error:
@@ -227,7 +227,7 @@ class SQLiteDb(object):
         :return: True or False
         """
         stuple = (href,)
-        sql_s = 'SELECT etag FROM {} WHERE href = ?'.format(account_name)
+        sql_s = 'SELECT etag FROM {0} WHERE href = ?'.format(account_name)
         result = self.sql_ex(sql_s, stuple)
         if len(result) is 0:
             return True
@@ -272,7 +272,7 @@ class SQLiteDb(object):
         if self.href_exists(href, account_name):  # existing card
             vcard_s = vcard.serialize()
             stuple = (etag, vcard.name, vcard.fname, vcard_s, status, href)
-            sql_s = 'UPDATE {} SET etag = ?, name = ?, fname = ?, vcard = ?, \
+            sql_s = 'UPDATE {0} SET etag = ?, name = ?, fname = ?, vcard = ?, \
                     status = ? WHERE href = ?;'.format(account_name)
             self.sql_ex(sql_s, stuple)
 
@@ -287,7 +287,7 @@ class SQLiteDb(object):
                     #TODO: what's happens now? exception?
             vcard_s = vcard.serialize()
             stuple = (href, etag, vcard.name, vcard.fname, vcard_s, status)
-            sql_s = ('INSERT INTO {} '
+            sql_s = ('INSERT INTO {0} '
                      '(href, etag, name, fname, vcard, status) '
                      'VALUES (?,?,?,?,?,?);'.format(account_name))
             self.sql_ex(sql_s, stuple)
@@ -296,7 +296,7 @@ class SQLiteDb(object):
         """updates old_href to new_href, can also alter etag and status,
         see update() for an explanation of these parameters"""
         stuple = (new_href, etag, status, old_href)
-        sql_s = 'UPDATE {} SET href = ?, etag = ?, status = ? \
+        sql_s = 'UPDATE {0} SET href = ?, etag = ?, status = ? \
              WHERE href = ?;'.format(account_name)
         self.sql_ex(sql_s, stuple)
 
@@ -307,7 +307,7 @@ class SQLiteDb(object):
         :type href: str()
         :returns: True or False
         """
-        sql_s = 'SELECT href FROM {} WHERE href = ?;'.format(account_name)
+        sql_s = 'SELECT href FROM {0} WHERE href = ?;'.format(account_name)
         if len(self.sql_ex(sql_s, (href, ))) == 0:
             return False
         else:
@@ -320,7 +320,7 @@ class SQLiteDb(object):
         return: etag
         rtype: str()
         """
-        sql_s = 'SELECT etag FROM {} WHERE href=(?);'.format(account_name)
+        sql_s = 'SELECT etag FROM {0} WHERE href=(?);'.format(account_name)
         etag = self.sql_ex(sql_s, (href,))[0][0]
         return etag
 
@@ -332,14 +332,14 @@ class SQLiteDb(object):
         stuple = (vref, )
         if self.debug:
             print("locally deleting ", vref)
-        self.sql_ex('DELETE FROM {} WHERE href=(?)'.format(account_name), stuple)
+        self.sql_ex('DELETE FROM {0} WHERE href=(?)'.format(account_name), stuple)
 
     def get_all_vref_from_db(self, accounts):
         """returns a list with all vrefs
         """
         result = list()
         for account in accounts:
-            vrefs = self.sql_ex('SELECT href FROM {}'.format(account))
+            vrefs = self.sql_ex('SELECT href FROM {0}'.format(account))
             result = result + [(vref[0], account) for vref in vrefs]
         return result
 
@@ -348,14 +348,14 @@ class SQLiteDb(object):
 #        :return: list of tuples(name, vref) of all entries from the db
 #        """
 #        if searchstring is None:
-#            return self.sql_ex('SELECT fname, href FROM {} '
+#            return self.sql_ex('SELECT fname, href FROM {0} '
 #                               'ORDER BY name'.format(self.account))
 #        else:
 #            hrefs = self.search(searchstring)
 #            temp = list()
 #            for href in hrefs:
 #                try:
-#                    sql_s = 'SELECT fname, href FROM {} WHERE href =(?)'.format(self.account)
+#                    sql_s = 'SELECT fname, href FROM {0} WHERE href =(?)'.format(self.account)
 #                    result = self.sql_ex(sql_s, (href, ))
 #                    temp.append(result[0])
 #                except IndexError as error:
@@ -366,7 +366,7 @@ class SQLiteDb(object):
     def get_vcard_from_db(self, href, account_name):
         """returns a VCard()
         """
-        sql_s = 'SELECT vcard FROM {} WHERE href=(?)'.format(account_name)
+        sql_s = 'SELECT vcard FROM {0} WHERE href=(?)'.format(account_name)
         result = self.sql_ex(sql_s, (href, ))
         vcard = model.VCard(ast.literal_eval(result[0][0]))
         vcard.href = href
@@ -375,14 +375,14 @@ class SQLiteDb(object):
     def get_changed(self, account_name):
         """returns list of hrefs of locally edited vcards
         """
-        sql_s = 'SELECT href FROM {} WHERE status == (?)'.format(account_name)
+        sql_s = 'SELECT href FROM {0} WHERE status == (?)'.format(account_name)
         result = self.sql_ex(sql_s, (CHANGED, ))
         return [row[0] for row in result]
 
     def get_new(self, account_name):
         """returns list of hrefs of locally added vcards
         """
-        sql_s = 'SELECT href FROM {} WHERE status == (?)'.format(account_name)
+        sql_s = 'SELECT href FROM {0} WHERE status == (?)'.format(account_name)
         result = self.sql_ex(sql_s, (NEW, ))
         return [row[0] for row in result]
 
@@ -396,14 +396,14 @@ class SQLiteDb(object):
     def mark_delete(self, href, account_name):
         """marks the entry as to be deleted on server on next sync
         """
-        sql_s = 'UPDATE {} SET STATUS = ? WHERE href = ?'.format(account_name)
+        sql_s = 'UPDATE {0} SET STATUS = ? WHERE href = ?'.format(account_name)
         self.sql_ex(sql_s, (DELETED, href, ))
 
     def reset_flag(self, href, account_name):
         """
         resets the status for a given href to 0 (=not edited locally)
         """
-        sql_s = 'UPDATE {} SET status = ? WHERE href = ?'.format(account_name)
+        sql_s = 'UPDATE {0} SET status = ? WHERE href = ?'.format(account_name)
         self.sql_ex(sql_s, (OK, href, ))
 
 
