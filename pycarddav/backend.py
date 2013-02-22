@@ -200,7 +200,7 @@ class SQLiteDb(object):
 
     def check_account_table(self, account_name, resource):
         try:
-            sql_s = """CREATE TABLE {} (
+            sql_s = """CREATE TABLE {0} (
                     href TEXT,
                     etag TEXT,
                     name TEXT,
@@ -211,7 +211,7 @@ class SQLiteDb(object):
             self.sql_ex(sql_s)
             sql_s = 'INSERT INTO accounts (account, resource) VALUES (?, ?)'
             self.sql_ex(sql_s, (account_name, resource))
-            logging.debug("created {} table".format(account_name))
+            logging.debug("created {0} table".format(account_name))
         except sqlite3.OperationalError as error:
             if not error.message.endswith('already exists'):
                 raise error
@@ -389,7 +389,7 @@ class SQLiteDb(object):
     def get_marked_delete(self, account_name):
         """returns list of tuples (hrefs, etags) of locally deleted vcards
         """
-        sql_s = 'SELECT href, etag FROM {} WHERE status == (?)'.format(account_name)
+        sql_s = 'SELECT href, etag FROM {0} WHERE status == (?)'.format(account_name)
         result = self.sql_ex(sql_s, (DELETED, ))
         return result
 
