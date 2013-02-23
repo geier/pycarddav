@@ -1,8 +1,11 @@
 # vim: set fileencoding=utf-8 :
 import pycarddav.model
+import pycarddav.backend as backend
 import os.path
 import pytest
 
+
+# some helper functions
 
 def get_basename():
     curdir = os.path.basename(os.path.abspath(os.path.curdir))
@@ -12,34 +15,41 @@ def get_basename():
         basepath = './'
     elif os.path.isdir('pycarddav') and curdir == 'pycarddav':
         basepath = 'pycarddav/tests/'
+    elif curdir == 'local':
+        basepath = '../'
     else:
         raise Exception('Cannot find assets dir')
     return basepath
 
 basepath = get_basename()
 
-vcard1_vcf = """BEGIN:VCARD
-VERSION:3.0
-FN:François Gödel
-N:Gödel;François;;;
-ADR;TYPE=WORK:;;Essalág 100;Torshavn;50800;Færøerne;
-EMAIL;TYPE=PREF,INTERNET:francois@goedel.net
-TEL;TYPE=WORK,VOICE:+49-123-678901
-TEL;TYPE=HOME,VOICE:(101) 1234 4123
-END:VCARD"""
-
-import pycarddav.backend
-
 
 def get_vcard(cardname):
+    """gets a vcard from the assets directory"""
     filename = basepath + 'assets/' + cardname + '.vcf'
     with file(filename) as vcard:
             cardstring = vcard.read()
     return pycarddav.model.vcard_from_string(cardstring)
 
 
+def get_output(function_name):
+    with file('output/' + function_name + '.out') as output_file:
+        output = output_file.readlines()
+    return ''.join(output).strip('\n')
+
+# \helper functions
+
+
+def pytest_funcarg__emptydb(request):
+    mydb = backend.SQLiteDb(db_path=':memory:')
+    mydb.check_account_table('test', 'http://test.com')
+    return mydb
+
+## tests
+
+
 def test_serialize_to_vcf():
-    assert get_vcard('gödel').vcf.encode('utf-8') == vcard1_vcf
+    assert get_vcard('gödel').vcf.encode('utf-8') == get_output('serialize_to_vcf')
 
 
 def test_broken_nobegin():
@@ -48,21 +58,20 @@ def test_broken_nobegin():
         print error
 
 
-def pytest_funcarg__emptydb(request):
-    tmpdir = request.getfuncargvalue("tmpdir")
-    mydb = pycarddav.backend.SQLiteDb(db_path=tmpdir.strpath + '/abook.db')
-    mydb.check_account_table('test', 'http://test.com')
-    return mydb
-
-
 def test_db_init(emptydb):
     assert emptydb._dump('test') == list()
 
 
-output_vcard_insert1 = [(u'/something.vcf', u'', u'G\xf6del;Fran\xe7ois;;;', u'Fran\xe7ois G\xf6del', u"[(u'ADR', [(u';;Essal\\xe1g 100;Torshavn;50800;F\\xe6r\\xf8erne;', {u'TYPE': [u'WORK']})]), (u'N', [(u'G\\xf6del;Fran\\xe7ois;;;', {})]), (u'VERSION', [(u'3.0', {})]), (u'TEL', [(u'+49-123-678901', {u'TYPE': [u'WORK', u'VOICE']}), (u'(101) 1234 4123', {u'TYPE': [u'HOME', u'VOICE']})]), (u'EMAIL', [(u'francois@goedel.net', {u'TYPE': [u'PREF', u'INTERNET']})]), (u'FN', [(u'Fran\\xe7ois G\\xf6del', {})])]", 0)]
-
-
 def test_vcard_insert1(emptydb):
-    emptydb.update(get_vcard('gödel').vcf, 'test', href='/something.vcf')
     emptydb.check_account_table('test', 'http://test.com')
-    assert emptydb._dump('test') == output_vcard_insert1
+    emptydb.update(get_vcard('gödel').vcf, 'test', href='/something.vcf')
+    assert str(emptydb._dump('test')) == get_output('vcard_insert1')
+
+
+def test_vcard_insert_with_status(emptydb):
+    emptydb.check_account_table('test', 'http://test.com')
+    emptydb.update(get_vcard('gödel').vcf,
+                   'test',
+                   href='/something.vcf',
+                   status=backend.NEW)
+    assert str(emptydb._dump('test')) == get_output('vcard_insert_with_status')
