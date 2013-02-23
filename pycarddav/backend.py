@@ -80,7 +80,9 @@ class SQLiteDb(object):
                  encoding="utf-8",
                  errors="strict",
                  debug=False):
-        self.db_path = path.expanduser(db_path)
+        db_path = path.expanduser(db_path)
+        self.conn = sqlite3.connect(db_path)
+        self.cursor = self.conn.cursor()
         self.encoding = encoding
         self.errors = errors
         self.debug = debug
@@ -89,6 +91,9 @@ class SQLiteDb(object):
         self._create_default_tables()
         self._check_table_version()
         #self._create_table(self.account)
+
+    def __del__(self):
+        self.conn.close()
 
     def search(self, search_string, accounts):
         """returns list of ids from db matching search_string"""
@@ -120,14 +125,12 @@ class SQLiteDb(object):
         """
         database_version = 8  # the current db VERSION
         #try:
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute('SELECT version FROM version')
-        result = cursor.fetchone()
+        self.cursor.execute('SELECT version FROM version')
+        result = self.cursor.fetchone()
         if result is None:
             stuple = (database_version, )  # database version db Version
-            cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
-            conn.commit()
+            self.cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
+            self.conn.commit()
         elif not result[0] == database_version:
             sys.exit(str(self.db_path) +
                      " is probably not a valid or an outdated database.\n"
@@ -140,19 +143,17 @@ class SQLiteDb(object):
     def _create_default_tables(self):
         """creates version and account tables and instert table version number
         """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
         try:
-            cursor.execute('''CREATE TABLE version ( version INTEGER )''')
+            self.cursor.execute('''CREATE TABLE version ( version INTEGER )''')
             logging.debug("created version table")
         except sqlite3.OperationalError as detail:
             logging.debug("%s", detail)
         except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                              'Unknown Error: ' + str(error) + "\n")
-        conn.commit()
+        self.conn.commit()
         try:
-            cursor.execute('''CREATE TABLE accounts (
+            self.cursor.execute('''CREATE TABLE accounts (
                 account TEXT NOT NULL,
                 resource TEXT NOT NULL
                 )''')
@@ -162,7 +163,7 @@ class SQLiteDb(object):
         except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                              'Unknown Error: ' + str(error) + "\n")
-        conn.commit()
+        self.conn.commit()
         self._check_table_version()  # insert table version
 
     #def _create_table(self, baseurl):
@@ -190,12 +191,9 @@ class SQLiteDb(object):
 
     def sql_ex(self, statement, stuple=''):
         """wrapper for sql statements, does a "fetchall" """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(statement, stuple)
-        result = cursor.fetchall()
-        conn.commit()
-        cursor.close()
+        self.cursor.execute(statement, stuple)
+        result = self.cursor.fetchall()
+        self.conn.commit()
         return result
 
     def check_account_table(self, account_name, resource):
