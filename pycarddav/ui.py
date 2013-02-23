@@ -178,9 +178,10 @@ class VCardChooserPane(Pane):
 
 class EditorPane(Pane):
     """A VCard editor."""
-    def __init__(self, database, vcard):
+    def __init__(self, database, account, vcard):
         self._vcard = vcard
         self._db = database
+        self._account = account
 
         self._label = vcard.fname if vcard.fname else vcard['EMAIL'][0][0]
         self._fname_edit = urwid.Edit('', '')
@@ -270,7 +271,7 @@ class EditorPane(Pane):
             [self._fname_edit.edit_text, self._lname_edit.edit_text])
         for i, edit in enumerate(self._email_edits):
             self._vcard['EMAIL'][i] = (edit.edit_text, self._vcard['EMAIL'][i][1])
-        self._db.update(self._vcard, self._vcard.href, status=pycarddav.backend.NEW)
+        self._db.update(self._vcard, self._account, self._vcard.href, status=pycarddav.backend.NEW)
 
 
 class Window(urwid.Frame):

@@ -31,6 +31,7 @@ import email.header
 import os
 import sys
 import traceback
+import logging
 
 import pycarddav
 import pycarddav.backend
@@ -50,7 +51,9 @@ class ImportConfigurationParser(pycarddav.ConfigurationParser):
         self._arg_parser.add_argument(
             '-n', '--dry-run', action='store_true', dest='dry_run', default=False,
             help='do not actually update the database (implies --batch)')
-
+        self._arg_parser.add_argument(
+            "-a", "--account", action="store", dest="sync__account",
+            metavar="NAME", help="add to NAME account (can be used only once), if no valid acconut name is given, the first one from the config will be used")
         # Headers selection. To: is the default.
         self._arg_parser.add_argument(
             '-f', '--from', action='append_const', dest='headers', const='From',
@@ -66,6 +69,14 @@ class ImportConfigurationParser(pycarddav.ConfigurationParser):
             help='import the content of the Bcc header')
 
     def check(self, conf):
+        accounts = [account.name for account in conf.accounts]
+        if conf.sync.account:
+            if conf.sync.account not in accounts:
+                logging.critical(conf.sync.account + ' is not a valid account')
+                sys.exit(1)
+        else:
+            conf.sync.account = accounts[0]
+
         if conf.dry_run:
             conf.batch = True
         if not conf.headers:
@@ -78,7 +89,7 @@ class MailParser(object):
     def __init__(self, conf, pipe):
         self._conf = conf
         self._db = pycarddav.backend.SQLiteDb(
-            conf.sqlite__path, "utf-8", "stricts", False)
+            conf.sqlite.path, "utf-8", "stricts", False)
         self._msg = email.message_from_string(pipe.read())
 
     def process_addresses(self, headers):
@@ -89,9 +100,10 @@ class MailParser(object):
             vcard = pycarddav.model.vcard_from_email(display_name, address)
             if self._conf.batch:
                 if not self._conf.dry_run:
-                    self._db.update(vcard, vcard.href, status=pycarddav.backend.NEW)
+
+                    self._db.update(vcard, self._conf.sync.account, vcard.href, status=pycarddav.backend.NEW)
             else:
-                pycarddav.ui.start_pane(pycarddav.ui.EditorPane(self._db, vcard))
+                pycarddav.ui.start_pane(pycarddav.ui.EditorPane(self._db, self._conf.sync.account, vcard))
 
     def parse_address(self, header):
         if header is None:
