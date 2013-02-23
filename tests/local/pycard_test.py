@@ -18,7 +18,7 @@ def get_basename():
     elif curdir == 'local':
         basepath = '../'
     else:
-        raise Exception('Cannot find assets dir')
+        raise Exception("don't know where I'm")
     return basepath
 
 basepath = get_basename()
@@ -33,7 +33,7 @@ def get_vcard(cardname):
 
 
 def get_output(function_name):
-    with file('output/' + function_name + '.out') as output_file:
+    with file(basepath + 'local/output/' + function_name + '.out') as output_file:
         output = output_file.readlines()
     return ''.join(output).strip('\n')
 
