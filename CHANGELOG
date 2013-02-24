@@ -1,3 +1,7 @@
+0.5
+multi account support
+support for more contenttypes/carddav servers
+
 0.4
 experimental write support in the backend
 import & export vcards
