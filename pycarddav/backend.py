@@ -328,8 +328,7 @@ class SQLiteDb(object):
         returns nothing
         """
         stuple = (vref, )
-        if self.debug:
-            print("locally deleting ", vref)
+        logging.debug("locally deleting " + str(vref))
         self.sql_ex('DELETE FROM {0} WHERE href=(?)'.format(account_name), stuple)
 
     def get_all_vref_from_db(self, accounts):
