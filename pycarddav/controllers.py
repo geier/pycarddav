@@ -147,28 +147,38 @@ def sync(conf):
     hrefs = my_dbtool.get_changed(conf.account.name)
 
     for href in hrefs:
-        logging.debug("trying to update %s", href)
-        card = my_dbtool.get_vcard_from_db(href, conf.account.name)
-        logging.debug("%s", my_dbtool.get_etag(href, conf.account.name))
-        syncer.update_vcard(card.vcf, href, None)
-        my_dbtool.reset_flag(href, conf.account.name)
-        remote_changed = True
+        try:
+            logging.debug("trying to update %s", href)
+            card = my_dbtool.get_vcard_from_db(href, conf.account.name)
+            logging.debug("%s", my_dbtool.get_etag(href, conf.account.name))
+            syncer.update_vcard(card.vcf, href, None)
+            my_dbtool.reset_flag(href, conf.account.name)
+            remote_changed = True
+        except carddav.NoWriteSupport:
+            logging.info('failed to upload changed card %s, you need to enable write support, see the documentation', href)
     # uploading
     hrefs = my_dbtool.get_new(conf.account.name)
     for href in hrefs:
-        logging.debug("trying to upload new card %s", href)
-        card = my_dbtool.get_vcard_from_db(href, conf.account.name)
-        (href_new, etag_new) = syncer.upload_new_card(card.vcf)
-        my_dbtool.update_href(href, href_new, conf.account.name, status=backend.OK)
-        remote_changed = True
+        try:
+            logging.debug("trying to upload new card %s", href)
+            card = my_dbtool.get_vcard_from_db(href, conf.account.name)
+            (href_new, etag_new) = syncer.upload_new_card(card.vcf)
+            my_dbtool.update_href(href, href_new, conf.account.name, status=backend.OK)
+            remote_changed = True
+        except carddav.NoWriteSupport:
+            logging.info('failed to upload card %s, you need to enable write support, see the documentation', href)
 
     # deleting locally deleted cards on the server
     hrefs_etags = my_dbtool.get_marked_delete(conf.account.name)
+
     for href, etag in hrefs_etags:
-        logging.debug('trying to delete card %s', href)
-        syncer.delete_vcard(href, etag)
-        my_dbtool.delete_vcard_from_db(href, conf.account.name)
-        remote_changed = True
+        try:
+            logging.debug('trying to delete card %s', href)
+            syncer.delete_vcard(href, etag)
+            my_dbtool.delete_vcard_from_db(href, conf.account.name)
+            remote_changed = True
+        except carddav.NoWriteSupport:
+            logging.info('failed to delete card %s, you need to enable write support, see the documentation', href)
 
     # detecting remote-deleted cards
     # is there a better way to compare a list of unicode() with a list of str()

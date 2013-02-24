@@ -26,7 +26,6 @@ contains the class PyCardDAv and some associated functions and definitions
 
 from collections import namedtuple
 import requests
-import sys
 import urlparse
 import logging
 import lxml.etree as ET
@@ -42,13 +41,13 @@ def get_random_href():
     return "-".join(tmp_list).upper()
 
 
-DAVICAL = 'davical'
-SABREDAV = 'sabredav'
-UNKNOWN = 'unknown server'
-
-
 class UploadFailed(Exception):
     """uploading the card failed"""
+    pass
+
+
+class NoWriteSupport(Exception):
+    """write support has not been enabled"""
     pass
 
 
@@ -94,7 +93,7 @@ class PyCardDAV(object):
         response = self.session.request('PROPFIND', resource,
                                         headers=self.headers,
                                         **self._settings)
-        response.raise_for_status()   #raises error on not 2XX HTTP status code
+        response.raise_for_status()   # raises error on not 2XX HTTP status code
 
     @property
     def verify(self):
@@ -108,32 +107,13 @@ class PyCardDAV(object):
 
     @property
     def headers(self):
+        """returns the headers"""
         return dict(self._default_headers)
 
     def _check_write_support(self):
         """checks if user really wants his data destroyed"""
         if not self.write_support:
-            sys.stderr.write("Sorry, no write support for you. Please check "
-                             "the documentation.\n")
-            sys.exit(1)
-
-    def _detect_server(self):
-        """detects CardDAV server type
-
-        currently supports davical and sabredav (same as owncloud)
-        :rtype: string "davical" or "sabredav"
-        """
-        response = requests.request('OPTIONS',
-                                    self.url.base,
-                                    headers=self.header)
-        if "X-Sabre-Version" in response.headers:
-            server = SABREDAV
-        elif "X-DAViCal-Version" in response.headers:
-            server = DAVICAL
-        else:
-            server = UNKNOWN
-        logging.info(server + " detected")
-        return server
+            raise NoWriteSupport
 
     def get_abook(self):
         """does the propfind and processes what it returns
@@ -192,9 +172,9 @@ class PyCardDAV(object):
         headers['content-type'] = 'text/vcard'
         if etag is not None:
             headers['If-Match'] = etag
-        result = self.session.delete(remotepath,
-                                     headers=headers,
-                                     **self._settings)
+        response = self.session.delete(remotepath,
+                                       headers=headers,
+                                       **self._settings)
         response.raise_for_status()
 
     def upload_new_card(self, card):
