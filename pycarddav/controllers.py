@@ -38,49 +38,52 @@ import sys
 
 def query(conf):
     # testing if the db exists
-    if not path.exists(conf.sqlite__path):
-        sys.exit(str(conf.sqlite__path) + " file does not exist, please sync"
-                                          " with pycardsyncer first.")
+    if not path.exists(path.expanduser(conf.sqlite.path)):
+        sys.exit(str(conf.sqlite.path) + " file does not exist, please sync"
+                 " with pycardsyncer first.")
 
-    search_string = conf.cmd__search_string.decode("utf-8")
+    search_string = conf.query.search_string.decode("utf-8")
 
-    my_dbtool = backend.SQLiteDb(conf.sqlite__path, "utf-8", "stricts", False)
+    my_dbtool = backend.SQLiteDb(db_path=path.expanduser(conf.sqlite.path),
+                                 encoding="utf-8",
+                                 errors="stricts",
+                                 debug=False)
 
     #import:
-    if conf.cmd__importing:
-        cards = model.cards_from_file(conf.cmd__importing)
+    if conf.query.importing:
+        cards = model.cards_from_file(conf.query.importing)
         for card in cards:
-            my_dbtool.update(card, status=backend.NEW)
+            my_dbtool.update(card, conf.sync.accounts[0], status=backend.NEW)
         sys.exit()
 
     # backup:
-    if conf.cmd__backup:
-        with open(conf.cmd__backup, 'w') as vcf_file:
+    if conf.query.backup:
+        with open(conf.query.backup, 'w') as vcf_file:
             if search_string == "":
-                hreflist = my_dbtool.get_all_vref_from_db()
+                hrefs_account_list = my_dbtool.get_all_vref_from_db(conf.sync.accounts)
             else:
-                hreflist = my_dbtool.search(search_string)
-            for href in hreflist:
-                vcard = my_dbtool.get_vcard_from_db(href)
+                hrefs_account_list = my_dbtool.search(search_string, conf.sync.accounts)
+            for href, account in hrefs_account_list:
+                vcard = my_dbtool.get_vcard_from_db(href, account)
                 vcf_file.write(vcard.vcf.encode('utf-8'))
         sys.exit()
 
     # editing a card:
-    #if conf.cmd__edit:
+    #if conf.query.edit:
     #    names = my_dbtool.select_entry2(search_string)
     #    href = ui.select_entry(names)
     #    if href is None:
     #        sys.exit("Found no matching cards.")
 
     # mark a card for deletion
-    if conf.cmd__delete:
-        hrefs = my_dbtool.search(search_string)
-        if len(hrefs) is 0:
+    if conf.query.delete:
+        hrefs_account_list = my_dbtool.search(search_string, conf.sync.accounts)
+        if len(hrefs_account_list) is 0:
             sys.exit('Found no matching cards.')
-        elif len(hrefs) is 1:
-            href = hrefs[0]
+        elif len(hrefs_account_list) is 1:
+            href, account = hrefs_account_list[0]
         else:
-            pane = ui.VCardChooserPane(my_dbtool, hrefs)
+            pane = ui.VCardChooserPane(my_dbtool, hrefs_account_list)
             ui.start_pane(pane)
             card = pane._walker.selected_vcard
             href = card.href
@@ -95,15 +98,16 @@ def query(conf):
                   'on the server on the next sync')
         sys.exit()
 
-    print("searching for " + conf.cmd__search_string + "...")
-    result = my_dbtool.search(search_string)
-    for one in result:
-        vcard = my_dbtool.get_vcard_from_db(one)
-        if conf.cmd__mutt:
+    print("searching for " + conf.query.search_string + "...")
+
+    result = my_dbtool.search(search_string, conf.sync.accounts)
+    for vref, account in result:
+        vcard = my_dbtool.get_vcard_from_db(vref, account)
+        if conf.query.mutt_format:
             lines = vcard.print_email()
-        elif conf.cmd__tel:
+        elif conf.query.tel:
             lines = vcard.print_tel()
-        elif conf.cmd__display_all:
+        elif conf.query.display_all:
             lines = vcard.pretty
         else:
             lines = vcard.pretty_min
@@ -116,51 +120,54 @@ def query(conf):
 def sync(conf):
     """this should probably be seperated from the class definitions"""
 
-    syncer = carddav.PyCardDAV(conf.dav__resource,
-                               user=conf.dav__user,
-                               passwd=conf.dav__passwd,
-                               write_support=conf.write_support,
-                               verify=conf.dav__verify,
-                               auth=conf.dav__auth)
-
-    my_dbtool = backend.SQLiteDb(conf.sqlite__path, "utf-8", "stricts", conf.debug)
-
+    syncer = carddav.PyCardDAV(conf.account.resource,
+                               user=conf.account.user,
+                               passwd=conf.account.passwd,
+                               write_support=conf.account.write_support,
+                               verify=conf.account.verify,
+                               auth=conf.account.auth)
+    my_dbtool = backend.SQLiteDb(db_path=conf.sqlite.path,
+                                 encoding="utf-8",
+                                 errors="stricts",
+                                 debug=conf.debug)
     # sync:
-    abook = syncer.get_abook()  # type (abook): dict
+    abook = syncer.get_abook()  # type(abook): dict
+    my_dbtool.check_account_table(conf.account.name, conf.account.resource)
 
     for href, etag in abook.iteritems():
-        if my_dbtool.needs_update(href, etag):
+        if my_dbtool.needs_update(href, conf.account.name, etag=etag):
             logging.debug("getting %s etag: %s", href, etag)
             vcard = syncer.get_vcard(href)
-            my_dbtool.update(vcard, href, etag=etag)
+            my_dbtool.update(vcard, conf.account.name, href=href, etag=etag)
 
     remote_changed = False
     # for now local changes overwritten by remote changes
     logging.debug("looking for locally changed vcards...")
-    hrefs = my_dbtool.changed
+
+    hrefs = my_dbtool.get_changed(conf.account.name)
 
     for href in hrefs:
         logging.debug("trying to update %s", href)
-        card = my_dbtool.get_vcard_from_db(href)
-        logging.debug("%s", my_dbtool.get_etag(href))
+        card = my_dbtool.get_vcard_from_db(href, conf.account.name)
+        logging.debug("%s", my_dbtool.get_etag(href, conf.account.name))
         syncer.update_vcard(card.vcf, href, None)
-        my_dbtool.reset_flag(href)
+        my_dbtool.reset_flag(href, conf.account.name)
         remote_changed = True
     # uploading
-    hrefs = my_dbtool.get_new()
+    hrefs = my_dbtool.get_new(conf.account.name)
     for href in hrefs:
         logging.debug("trying to upload new card %s", href)
-        card = my_dbtool.get_vcard_from_db(href)
+        card = my_dbtool.get_vcard_from_db(href, conf.account.name)
         (href_new, etag_new) = syncer.upload_new_card(card.vcf)
-        my_dbtool.update_href(href, href_new, status=backend.OK)
+        my_dbtool.update_href(href, href_new, conf.account.name, status=backend.OK)
         remote_changed = True
 
     # deleting locally deleted cards on the server
-    hrefs_etags = my_dbtool.get_marked_delete()
+    hrefs_etags = my_dbtool.get_marked_delete(conf.account.name)
     for href, etag in hrefs_etags:
         logging.debug('trying to delete card %s', href)
         syncer.delete_vcard(href, etag)
-        my_dbtool.delete_vcard_from_db(href)
+        my_dbtool.delete_vcard_from_db(href, conf.account.name)
         remote_changed = True
 
     # detecting remote-deleted cards
@@ -169,7 +176,7 @@ def sync(conf):
 
     if remote_changed:
         abook = syncer.get_abook()  # type (abook): dict
-    rlist = my_dbtool.get_all_vref_from_db()
-    delete = set(rlist).difference(abook.keys())
+    r_href_account_list = my_dbtool.get_all_vref_from_db([conf.account.name])
+    delete = set([href for href, account in r_href_account_list]).difference(abook.keys())
     for href in delete:
-        my_dbtool.delete_vcard_from_db(href)
+        my_dbtool.delete_vcard_from_db(href[0], conf.account.name)

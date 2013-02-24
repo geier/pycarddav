@@ -22,16 +22,12 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 try:
-    import getpass
     import logging
     import sys
 
-    from pycarddav import Configuration, ConfigurationParser
+    from pycarddav import ConfigurationParser
     from pycarddav import controllers
     from pycarddav import capture_user_interruption
-
-    from netrc import netrc
-    from urlparse import urlsplit
 
 except ImportError as error:
     sys.stderr.write(str(error))
@@ -42,45 +38,52 @@ class SyncConfigurationParser(ConfigurationParser):
     """A specialized setup tool for synchronization."""
     def __init__(self):
         ConfigurationParser.__init__(self, "syncs the local db to the CardDAV server")
-        self.set_mandatory_options([(Configuration.SECTIONS.DAV, 'resource'),
-                                    (Configuration.SECTIONS.DB, 'path')])
 
-    def check(self, conf):
-        success = ConfigurationParser.check(self, conf)
+        self._arg_parser.add_argument(
+            "-a", "--account", action="append", dest="sync__accounts",
+            metavar="NAME", help="use only the NAME account (can be used more than once)")
 
-        if success and not conf.dav__passwd:
-            hostname = urlsplit(conf.dav__resource).hostname
-            try:
-                auths = netrc().authenticators(hostname)
-            except IOError:
-                auths = tuple()
-            if auths:
-                if not conf.dav__user or auths[0] == conf.dav__user:
-                    logging.debug("Read password for user %s on %s in .netrc",
-                                  auths[0], hostname)
-                    conf.dav__user = auths[0]
-                    conf.dav__passwd = auths[2]
-                else:
-                    logging.error("User %s not found for %s in .netrc",
-                                  conf.dav__user, hostname)
-                    success = False
-            elif conf.dav__user:
-                conf.dav__passwd = getpass.getpass(prompt='CardDAV password: ')
-            else:
-                logging.error("Missing credentials for %s", hostname)
-                success = False
+    def check(self, ns):
+        result = ConfigurationParser.check(self, ns)
 
-        return success
+        accounts = [account.name for account in ns.accounts]
+        if ns.sync.accounts:
+            for name in set(ns.sync.accounts):
+                if not name in [a.name for a in ns.accounts]:
+                    logging.warn('Uknown account %s', name)
+                    ns.sync.accounts.remove(name)
+            if len(ns.sync.accounts) == 0:
+                logging.error('No valid account selected')
+                result = False
+        else:
+            ns.sync.accounts = accounts
 
+        ns.sync.accounts = set(ns.sync.accounts)
+
+        return result
 
 capture_user_interruption()
 
 # Read configuration.
-conf = SyncConfigurationParser().parse()
+conf_parser = SyncConfigurationParser()
+conf = conf_parser.parse()
 if conf is None:
     sys.exit(1)
 
 if conf.debug:
-    conf.dump()
+    conf_parser.dump(conf)
 
-controllers.sync(conf)
+rvalue = 0
+for one in conf.accounts:
+    if one.name in conf.sync.accounts:
+        logging.debug('start syncing account {0}'.format(one.name))
+        conf.account = one
+        try:
+            controllers.sync(conf)
+        except Exception as error:
+            if conf.debug:
+                raise
+            logging.critical('While syncing account "{0}" an error occured:\n  '.format(one.name) + str(error))
+            rvalue = 1
+
+sys.exit(rvalue)
