@@ -1,4 +1,4 @@
-[dav]
+[Account work]
 # DAV credentials. Please note that the password is written in plain
 # text here. If the password is missing, it will be claimed at
 # synchronization time.
@@ -14,9 +14,15 @@ resource: https://carddav.server.tld:443/davical/caldav.php/username/addressbook
 #auth: basic
 
 # If verify is set to False, no SSL Certificate checks are done at all. Please
-# be aware of the security implications. You can also set verify to a path to
-# your CAcert file
+# be aware of the security implications. The default value is True You can also
+# set verify to a path to your CAcert file
 #verify: True
+
+[Account private]
+user: anothername
+passwd: otherPasswd
+
+resource: https://domain.tld/contacts/addressbook/
 
 [sqlite]
 # The location of the local SQLite contacts database.
