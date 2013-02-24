@@ -176,7 +176,7 @@ def sync(conf):
 
     if remote_changed:
         abook = syncer.get_abook()  # type (abook): dict
-    r_href_account_list = my_dbtool.get_all_vref_from_db([conf.account.name])
+    r_href_account_list = my_dbtool.get_all_vref_from_db_not_new([conf.account.name])
     delete = set([href for href, account in r_href_account_list]).difference(abook.keys())
     for href in delete:
-        my_dbtool.delete_vcard_from_db(href[0], conf.account.name)
+        my_dbtool.delete_vcard_from_db(href, conf.account.name)
