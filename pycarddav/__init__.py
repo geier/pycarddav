@@ -29,7 +29,7 @@ import signal
 import sys
 
 __productname__ = 'pyCardDAV'
-__version__ = '0.4'
+__version__ = '0.4.1-dev'
 __author__ = 'Christian Geier'
 __author_email__ = 'pycarddav@lostpackets.de'
 __description__ = 'A CardDAV based address book tool'
