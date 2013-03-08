@@ -248,8 +248,12 @@ class VCard(defaultdict):
                     types = ' (' + ', '.join(value[1]['TYPE']) + ')'
                 except KeyError:
                     types = ''
-                line = key + types + ': ' + value[0]
-                collector.append(line)
+                try:
+                    line = key + types + ': ' + value[0]
+                except UnicodeDecodeError:
+                    pass
+                else:
+                    collector.append(line)
         return '\n'.join(collector)
 
     def _line_helper(self, line):
