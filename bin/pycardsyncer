@@ -69,6 +69,8 @@ class SyncConfigurationParser(ConfigurationParser):
             else:
                 logging.error("Missing credentials for %s", hostname)
                 success = False
+        if conf.dav__resource[-1] != '/':
+            conf.dav__resource = conf.dav__resource + '/'
 
         return success
 
