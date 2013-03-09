@@ -291,6 +291,15 @@ class SQLiteDb(object):
         result = self.sql_ex('SELECT href FROM vcardtable')
         return [row[0] for row in result]
 
+    def get_all_vref_from_db_not_new(self):
+        """
+        :returns: list of not new vrefs
+        """
+        sql_s = 'SELECT href FROM vcardtable WHERE STATUS != (?)'
+        stuple = (NEW,)
+        result = self.sql_ex(sql_s, stuple)
+        return [one[0] for one in result]
+
     def get_names_vref_from_db(self, searchstring=None):
         """
         :return: list of tuples(name, vref) of all entries from the db

@@ -138,7 +138,6 @@ def sync(conf):
     # for now local changes overwritten by remote changes
     logging.debug("looking for locally changed vcards...")
     hrefs = my_dbtool.changed
-
     for href in hrefs:
         logging.debug("trying to update %s", href)
         card = my_dbtool.get_vcard_from_db(href)
@@ -169,7 +168,7 @@ def sync(conf):
 
     if remote_changed:
         abook = syncer.get_abook()  # type (abook): dict
-    rlist = my_dbtool.get_all_vref_from_db()
+    rlist = my_dbtool.get_all_vref_from_db_not_new()
     delete = set(rlist).difference(abook.keys())
     for href in delete:
         my_dbtool.delete_vcard_from_db(href)
