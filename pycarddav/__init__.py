@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # vim: set fileencoding=utf-8 :
-# Copyright (c) 2011-2012 Christian Geier, David Soulayrol
+# Copyright (c) 2011-2013 Christian Geier & contributors
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -31,10 +31,11 @@ import sys
 __productname__ = 'pyCardDAV'
 __version__ = '0.4.1-dev'
 __author__ = 'Christian Geier'
+__copyright__ = 'Copyright 2011-2013 Christian Geier & contributors'
 __author_email__ = 'pycarddav@lostpackets.de'
 __description__ = 'A CardDAV based address book tool'
 __license__ = 'Expat/MIT, see COPYING'
-__homepage__ = 'http://pycarddav.lostpackets.de'
+__homepage__ = 'http://lostpackets.de/pycarddav/'
 
 
 def capture_user_interruption():
