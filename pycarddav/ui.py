@@ -176,8 +176,8 @@ class EditorPane(Pane):
         self._db = database
 
         self._label = vcard.fname if vcard.fname else vcard['EMAIL'][0][0]
-        self._fname_edit = urwid.Edit('', '')
-        self._lname_edit = urwid.Edit('', '')
+        self._fname_edit = urwid.Edit(u'', u'')
+        self._lname_edit = urwid.Edit(u'', u'')
         self._email_edits = None
 
         Pane.__init__(self, self._build_ui(), 'Edit %s' % vcard.fname)
@@ -224,7 +224,7 @@ class EditorPane(Pane):
             self._lname_edit.set_edit_text(names[0])
             self._fname_edit.set_edit_text(names[1])
         else:
-            self._lname_edit.set_edit_text('')
+            self._lname_edit.set_edit_text(u'')
             self._fname_edit.set_edit_text(names[0])
 
         return [urwid.Divider(),
