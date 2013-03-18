@@ -80,8 +80,8 @@ class SQLiteDb(object):
                  encoding="utf-8",
                  errors="strict",
                  debug=False):
-        db_path = path.expanduser(db_path)
-        self.conn = sqlite3.connect(db_path)
+        self.db_path = path.expanduser(db_path)
+        self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
         self.encoding = encoding
         self.errors = errors
