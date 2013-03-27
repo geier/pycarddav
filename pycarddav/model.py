@@ -248,7 +248,10 @@ class VCard(defaultdict):
                     types = ' (' + ', '.join(value[1]['TYPE']) + ')'
                 except KeyError:
                     types = ''
-                line = key + types + ': ' + value[0]
+                try:
+                    line = key + types + ': ' + value[0]
+                except UnicodeDecodeError:
+                    line = key + types + ': ' + '<BINARY DATA>'
                 collector.append(line)
         return '\n'.join(collector)
 
