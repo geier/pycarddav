@@ -1,4 +1,7 @@
-0.4
+0.4.1
+assorted bugfixes, see the git log
+
+0.4.0
 experimental write support in the backend
 import & export vcards
 import directly from mutt

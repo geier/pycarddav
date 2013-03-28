@@ -21,7 +21,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
-contains the class PyCardDAv and some associated functions and definitions
+contains the class PyCardDAV and some associated functions and definitions
 """
 
 from collections import namedtuple
@@ -95,6 +95,7 @@ class PyCardDAV(object):
                                         headers=self.headers,
                                         **self._settings)
         response.raise_for_status()   #raises error on not 2XX HTTP status code
+
 
     @property
     def verify(self):
