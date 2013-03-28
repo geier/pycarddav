@@ -17,6 +17,6 @@ LINKS =  (
 SOCIAL = (
          )
 
-TAG_FEED=('feeds/%s.atom.xml')
+TAG_FEED_ATOM=('feeds/%s.atom.xml')
 
 DEFAULT_PAGINATION = 10
