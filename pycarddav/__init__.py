@@ -34,7 +34,7 @@ from netrc import netrc
 from urlparse import urlsplit
 
 __productname__ = 'pyCardDAV'
-__version__ = '0.4'
+__version__ = '0.5-dev'
 __author__ = 'Christian Geier'
 __author_email__ = 'pycarddav@lostpackets.de'
 __description__ = 'A CardDAV based address book tool'
