@@ -158,6 +158,14 @@ class Section(object):
         else:
             return os.path.expanduser(value)
 
+    def _parse_write_support(self, value):
+        """returns True if value is YesPlease..., this is a rather dirty
+        solution, but it works fine (TM)"""
+        value = value.strip()
+        if value == 'YesPleaseIDoHaveABackupOfMyData':
+            return True
+        else:
+            return False
 
 class AccountSection(Section):
     def __init__(self, parser):
@@ -168,7 +176,7 @@ class AccountSection(Section):
             ('resource', '', None),
             ('auth', 'basic', None),
             ('verify', 'True', self._parse_bool_string),
-            ('write_support', False, lambda x: x == 'YesPleaseIDoHaveABackupOfMyData' or False),
+            ('write_support', '', self._parse_write_support),
         ]
 
     def is_collection(self):

@@ -23,13 +23,14 @@ Example from .muttrc::
         set query_command="/home/username/bin/pc_query -m '%s'"
 
 The current version features experimental write support. If you want to
-test this, first make sure **you have a backup of your data** (but please don
+test this, first make sure **you have a backup of your data** (but please do
 *NOT* rely on *pc_query --backup* for this just yet), then you can put the
 line::
 
         write_support = YesPleaseIDoHaveABackupOfMyData
 
-in your config file (in the default section).
+in your config file (needs to be put into each *Account* section you want to
+enable write support for).
 
 You can also import, delete or backup single cards (backup also works for the
 whole collection, but please don't rely on it just yet). See *pc_query --help*
