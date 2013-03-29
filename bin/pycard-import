@@ -42,7 +42,8 @@ import pycarddav.ui
 class ImportConfigurationParser(pycarddav.ConfigurationParser):
     """A specialized setup tool for importing a contact."""
     def __init__(self):
-        pycarddav.ConfigurationParser.__init__(self, 'Import contacts from a mail on input.')
+        pycarddav.ConfigurationParser.__init__(self, 'Import contacts from a mail on input.',
+                                               check_accounts=False)
 
         self._arg_parser.epilog = 'Only the From header is parsed if no header is specified.'
         self._arg_parser.add_argument(
