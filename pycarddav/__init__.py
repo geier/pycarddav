@@ -437,3 +437,36 @@ class ConfigurationParser(object):
                 return path
 
         return None
+
+class SyncConfigurationParser(ConfigurationParser):
+    """A specialized setup tool for synchronization."""
+    def __init__(self):
+        ConfigurationParser.__init__(self, "syncs the local db to the CardDAV server")
+
+        self._arg_parser.add_argument(
+            "-a", "--account", action="append", dest="sync__accounts",
+            metavar="NAME", help="use only the NAME account (can be used more than once)")
+
+    def check(self, ns):
+        result = ConfigurationParser.check(self, ns)
+
+        accounts = [account.name for account in ns.accounts]
+
+        if ns.sync.accounts:
+            for name in set(ns.sync.accounts):
+                if not name in [a.name for a in ns.accounts]:
+                    logging.warn('Uknown account %s', name)
+                    ns.sync.accounts.remove(name)
+            if len(ns.sync.accounts) == 0:
+                logging.error('No valid account selected')
+                result = False
+        else:
+            ns.sync.accounts = accounts
+
+        for account in ns.accounts:
+            if account.resource[-1] != '/':
+                account.resource = account.resource + '/'
+
+        ns.sync.accounts = set(ns.sync.accounts)
+
+        return result
