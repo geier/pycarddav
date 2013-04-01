@@ -39,7 +39,7 @@ __author__ = 'Christian Geier'
 __author_email__ = 'pycarddav@lostpackets.de'
 __description__ = 'A CardDAV based address book tool'
 __license__ = 'Expat/MIT, see COPYING'
-__homepage__ = 'http://pycarddav.lostpackets.de'
+__homepage__ = 'http://lostpackets.de/pycarddav/'
 
 
 def capture_user_interruption():
