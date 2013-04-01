@@ -266,6 +266,19 @@ class VCard(defaultdict):
 
     @property
     def vcf(self):
+        """serialize to VCARD as specified in RFC2624,
+        if no UID is specified yet, one will be added (as a UID is mandatory
+        for carddav as specified in RF6352
+        TODO make shure this random uid is unique"""
+        import string
+        import random
+        def generate_random_uid():
+            """generate a random uid, when random isn't broken, getting a
+            random UID from a pool of roughly 10^56 should be good enough"""
+            choice = string.ascii_uppercase + string.digits
+            return ''.join([random.choice(choice) for _ in range(36)])
+        if 'UID' not in self.keys():
+            self['UID'] = [(generate_random_uid(), dict())]
         collector = list()
         collector.append('BEGIN:VCARD')
         collector.append('VERSION:3.0')
