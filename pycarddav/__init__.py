@@ -470,3 +470,4 @@ class SyncConfigurationParser(ConfigurationParser):
         ns.sync.accounts = set(ns.sync.accounts)
 
         return result
+

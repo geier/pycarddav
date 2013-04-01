@@ -5,6 +5,7 @@ import os.path
 import sys
 
 from pycarddav import ConfigurationParser
+from pycarddav import SyncConfigurationParser
 
 # some helper functions
 
@@ -44,7 +45,7 @@ def test_basic_config():
         assert accounts_conf.write_support == ''
         assert accounts_conf.resource == 'http://test.com/abook/collection'
         assert accounts_conf.name == 'work'
-        assert accounts_conf.passwd == ''
+        assert accounts_conf.passwd == 'foobar'
         assert accounts_conf.verify == False
         assert accounts_conf.auth == 'basic'
         assert accounts_conf.user == 'testman'
@@ -53,7 +54,7 @@ def test_basic_config():
         assert accounts_conf.write_support == True
         assert accounts_conf.resource == 'https://carddavcentral.com:4443/caldav.php/tester/abook/'
         assert accounts_conf.name == 'davical'
-        assert accounts_conf.passwd == ''
+        assert accounts_conf.passwd == 'barfoo23'
         assert accounts_conf.verify == '/home/testman/.pycard/cacert.pem'
         assert accounts_conf.auth == 'digest'
         assert accounts_conf.user == 'tester'
@@ -85,7 +86,7 @@ def test_basic_debug():
         assert accounts_conf.write_support == ''
         assert accounts_conf.resource == 'http://test.com/abook/collection'
         assert accounts_conf.name == 'work'
-        assert accounts_conf.passwd == ''
+        assert accounts_conf.passwd == 'foobar'
         assert accounts_conf.verify == False
         assert accounts_conf.auth == 'basic'
         assert accounts_conf.user == 'testman'
@@ -94,7 +95,7 @@ def test_basic_debug():
         assert accounts_conf.write_support == True
         assert accounts_conf.resource == 'https://carddavcentral.com:4443/caldav.php/tester/abook/'
         assert accounts_conf.name == 'davical'
-        assert accounts_conf.passwd == ''
+        assert accounts_conf.passwd == 'barfoo23'
         assert accounts_conf.verify == '/home/testman/.pycard/cacert.pem'
         assert accounts_conf.auth == 'digest'
         assert accounts_conf.user == 'tester'
@@ -111,3 +112,44 @@ def test_basic_debug():
             assert True == 'this should not be reached'
     assert count == 2
 
+
+def test_sync_conf_parser():
+    """testing the basic configuration parser"""
+    sys.argv = ['pycardsyncer', '-c',
+                '{0}/assets/configs/base.conf'.format(basepath),
+                '-a', 'work',]
+    conf_parser = SyncConfigurationParser()
+    conf = conf_parser.parse()
+    assert conf.debug == False
+    assert conf.sqlite.path == '/home/testman/.pycard/abook.db'
+    assert conf.filename.endswith('tests//assets/configs/base.conf') == True
+    assert conf.sync.accounts == set(['work'])
+    def assert_work(accounts_conf):
+        assert accounts_conf.write_support == ''
+        assert accounts_conf.resource == 'http://test.com/abook/collection/'
+        assert accounts_conf.name == 'work'
+        assert accounts_conf.passwd == 'foobar'
+        assert accounts_conf.verify == False
+        assert accounts_conf.auth == 'basic'
+        assert accounts_conf.user == 'testman'
+
+    def assert_davical(accounts_conf):
+        assert accounts_conf.write_support == True
+        assert accounts_conf.resource == 'https://carddavcentral.com:4443/caldav.php/tester/abook/'
+        assert accounts_conf.name == 'davical'
+        assert accounts_conf.passwd == 'barfoo23'
+        assert accounts_conf.verify == '/home/testman/.pycard/cacert.pem'
+        assert accounts_conf.auth == 'digest'
+        assert accounts_conf.user == 'tester'
+
+    count = 0
+    for one in conf.accounts:
+        if one.name == 'work':
+            assert_work(one)
+            count += 1
+        elif one.name == 'davical':
+            assert_davical(one)
+            count += 1
+        else:
+            assert True == 'this should not be reached'
+    assert count == 2
