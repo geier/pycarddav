@@ -192,7 +192,8 @@ class PyCardDAV(object):
             rand_string = get_random_href()
             remotepath = str(self.url.resource + rand_string + ".vcf")
             headers = self.headers
-            headers['content-type'] = 'text/vcard'
+            headers['content-type'] = 'text/vcard'  # TODO perhaps this should
+            # be set to the value this carddav server uses itself
             headers['If-None-Match'] = '*'
             response = requests.put(remotepath, data=card, headers=headers,
                                     **self._settings)
@@ -251,7 +252,9 @@ class PyCardDAV(object):
                             if (props.tag == namespace + "getcontenttype" and
                                 (props.text == "text/vcard" or
                                  props.text == "text/x-vcard" or
-                                 props.text == "text/x-vcard; charset=utf-8")):
+                                 props.text == "text/x-vcard; charset=utf-8" or
+                                 props.text == "text/directory;profile=vCard" or
+                                 props.text == "text/directory")):
                                 insert = True
                             if (props.tag == namespace + "getetag"):
                                 etag = props.text
