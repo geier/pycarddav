@@ -3,6 +3,7 @@ import pycarddav.model
 import pycarddav.backend as backend
 import os.path
 import pytest
+import random
 
 
 # some helper functions
@@ -49,6 +50,7 @@ def pytest_funcarg__emptydb(request):
 
 
 def test_serialize_to_vcf():
+    random.seed(1)
     assert get_vcard('gödel').vcf.encode('utf-8') == get_output('serialize_to_vcf')
 
 
@@ -63,12 +65,14 @@ def test_db_init(emptydb):
 
 
 def test_vcard_insert1(emptydb):
+    random.seed(1)
     emptydb.check_account_table('test', 'http://test.com')
     emptydb.update(get_vcard('gödel').vcf, 'test', href='/something.vcf')
     assert str(emptydb._dump('test')) == get_output('vcard_insert1')
 
 
 def test_vcard_insert_with_status(emptydb):
+    random.seed(1)
     emptydb.check_account_table('test', 'http://test.com')
     emptydb.update(get_vcard('gödel').vcf,
                    'test',
