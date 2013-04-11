@@ -111,8 +111,9 @@ class PyCardDAV(object):
             from requests.auth import HTTPDigestAuth
             self._settings['auth'] = HTTPDigestAuth(user, passwd)
         self._default_headers = {"User-Agent": "pyCardDAV"}
-        response = self.session.request('PROPFIND', resource,
-                                        headers=self.headers,
+        response = self.session.request('PROPFIND',
+                                        self.url.resource,
+                                        headers=dict(self.headers, **{'Depth': 1}),
                                         **self._settings)
         response.raise_for_status()   #raises error on not 2XX HTTP status code
 
