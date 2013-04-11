@@ -290,10 +290,13 @@ class PyCardDAV(object):
                         href = refprop.text
                     for prop in refprop.iterchildren():
                         for props in prop.iterchildren():
-                            if (props.tag == namespace + "getcontenttype" and
-                                (props.text == "text/vcard" or
-                                 props.text == "text/x-vcard" or
-                                 props.text == "text/x-vcard; charset=utf-8")):
+                            if (
+                                props.tag == namespace + "getcontenttype" and
+                                map(
+                                    str.strip,
+                                    props.text.split(";")
+                                ).pop(0) in ("text/vcard", "text/x-vcard")
+                            ):
                                 insert = True
                             if (props.tag == namespace + "getetag"):
                                 etag = props.text
