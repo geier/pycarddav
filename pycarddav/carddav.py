@@ -214,7 +214,7 @@ class PyCardDAV(object):
         headers['content-type'] = 'text/vcard'
         if etag is not None:
             headers['If-Match'] = etag
-        result = self.session.delete(remotepath,
+        response = self.session.delete(remotepath,
                                      headers=headers,
                                      **self._settings)
         response.raise_for_status()
