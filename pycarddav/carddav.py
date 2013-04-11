@@ -26,6 +26,9 @@ contains the class PyCardDAV and some associated functions and definitions
 
 from collections import namedtuple
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.poolmanager import PoolManager
+
 import sys
 import urlparse
 import logging
@@ -70,8 +73,23 @@ class PyCardDAV(object):
 
     """
 
+    class SSLAdapter(HTTPAdapter):
+        """An HTTPS Transport Adapter that uses an arbitrary SSL version.
+
+           Cory Benfield's solution as per http://lukasa.co.uk/2013/01/Choosing_SSL_Version_In_Requests/
+        """
+        def __init__(self, ssl_version=None, **kwargs):
+            self.ssl_version = ssl_version
+            super(PyCardDAV.SSLAdapter, self).__init__(kwargs)
+
+        def init_poolmanager(self, connections, maxsize):
+            self.poolmanager = PoolManager(num_pools=connections,
+                                           maxsize=maxsize,
+                                           ssl_version=self.ssl_version)
+
+
     def __init__(self, resource, debug='', user='', passwd='',
-                 verify=True, write_support=False, auth='basic'):
+                 verify=True, write_support=False, auth='basic', ssl_version=None):
         #shutup url3
         urllog = logging.getLogger('requests.packages.urllib3.connectionpool')
         urllog.setLevel(logging.CRITICAL)
@@ -83,6 +101,8 @@ class PyCardDAV(object):
                              split_url.path)
         self.debug = debug
         self.session = requests.session()
+        if ssl_version:
+            self.session.mount('https://', PyCardDAV.SSLAdapter(ssl_version=ssl_version))
         self.write_support = write_support
         self._settings = {'verify': verify}
         if auth == 'basic':
