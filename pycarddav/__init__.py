@@ -190,6 +190,8 @@ class ConfigurationParser(object):
                 (self._parse_auth, 'basic')),
             (Configuration.SECTIONS.DAV, 'verify',
                 (self._parse_bool_string, 'True')),
+            (Configuration.SECTIONS.DAV, 'SSLv3',
+             (self._parse_bool_string, 'True')),
             (Configuration.SECTIONS.DB, 'path',
              (os.path.expanduser, Configuration.DEFAULT_DB_PATH)),
             (Configuration.SECTIONS.DEFAULT, 'debug', False),

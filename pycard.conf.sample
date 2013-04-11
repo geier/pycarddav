@@ -18,6 +18,10 @@ resource: https://carddav.server.tld:443/davical/caldav.php/username/addressbook
 # your CAcert file
 #verify: True
 
+# Force use of SSLv3 as a workaround to TLS negotiation bug in certain environments resulting in
+#       requests.exceptions.SSLError: [Errno 8] _ssl.c:503: EOF occurred in violation of protocol
+# SSLv3: True
+
 [sqlite]
 # The location of the local SQLite contacts database.
 path: ~/.pycard/abook.db

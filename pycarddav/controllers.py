@@ -34,6 +34,7 @@ from os import path
 
 import logging
 import sys
+import ssl
 
 
 def query(conf):
@@ -121,7 +122,8 @@ def sync(conf):
                                passwd=conf.dav__passwd,
                                write_support=conf.write_support,
                                verify=conf.dav__verify,
-                               auth=conf.dav__auth)
+                               auth=conf.dav__auth,
+                               ssl_version=ssl.PROTOCOL_SSLv3 if conf.dav__SSLv3 else None)
 
     my_dbtool = backend.SQLiteDb(conf.sqlite__path, "utf-8", "stricts", conf.debug)
 
