@@ -89,7 +89,6 @@ class SQLiteDb(object):
         self.print_function = "print_contact_info"
         self._create_default_tables()
         self._check_table_version()
-        #self._create_table(self.account)
 
     def __del__(self):
         self.conn.close()
@@ -126,9 +125,6 @@ class SQLiteDb(object):
                      " is probably not a valid or an outdated database.\n"
                      "You should consider to remove it and sync again using "
                      "pycardsyncer.\n")
-        #except Exception as error:
-        #    sys.stderr.write('Failed to connect to database,"
-        #            "Unknown Error: ' + str(error)+"\n")
 
     def _create_default_tables(self):
         """creates version and account tables and instert table version number
@@ -155,29 +151,6 @@ class SQLiteDb(object):
                              'Unknown Error: ' + str(error) + "\n")
         self.conn.commit()
         self._check_table_version()  # insert table version
-
-    #def _create_table(self, baseurl):
-        #conn = sqlite3.connect(self.db_path)
-        #cursor = conn.cursor()
-        #try:
-            #cursor.execute("""CREATE TABLE {0} (
-                    #href TEXT,
-                    #etag TEXT,
-                    #name TEXT,
-                    #fname TEXT,
-                    #vcard TEXT,
-                    #status INT NOT NULL
-                    #)""".format(self.account))
-            #cursor.execute('INSERT INTO accounts (account, baseurl) '
-                           #'VALUES (?, ?)', (self.account, baseurl))
-
-            #logging.debug("created {0} table".format(self.account))
-        #except sqlite3.OperationalError as detail:
-            #logging.debug("%s", detail)
-        #except Exception as error:
-            #sys.stderr.write('Failed to connect to database,'
-                             #'Unknown Error: ' + str(error) + "\n")
-        #conn.commit()
 
     def sql_ex(self, statement, stuple=''):
         """wrapper for sql statements, does a "fetchall" """
