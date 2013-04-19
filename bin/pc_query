@@ -92,7 +92,7 @@ class QueryConfigurationParser(ConfigurationParser):
         else:
             ns.sync.accounts = accounts
 
-        ns.sync.accounts = set(ns.sync.accounts)
+        ns.sync.accounts = list(set(ns.sync.accounts))
 
         return result
 
