@@ -121,7 +121,7 @@ class SQLiteDb(object):
             self.cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
             self.conn.commit()
         elif not result[0] == database_version:
-            sys.exit(str(self.db_path) +
+            raise Exception(str(self.db_path) +
                      " is probably not a valid or an outdated database.\n"
                      "You should consider to remove it and sync again using "
                      "pycardsyncer.\n")
