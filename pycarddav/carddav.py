@@ -90,10 +90,16 @@ class PyCardDAV(object):
             from requests.auth import HTTPDigestAuth
             self._settings['auth'] = HTTPDigestAuth(user, passwd)
         self._default_headers = {"User-Agent": "pyCardDAV"}
-        response = self.session.request('PROPFIND', resource,
-                                        headers=self.headers,
+
+        headers = self.headers
+        headers['Depth'] = '1'
+        response = self.session.request('OPTIONS',
+                                        self.url.resource,
+                                        headers=headers,
                                         **self._settings)
-        response.raise_for_status()   # raises error on not 2XX HTTP status code
+        response.raise_for_status()   #raises error on not 2XX HTTP status code
+        if response.headers['DAV'].count('addressbook') == 0:
+            raise Exception("URL is not a CardDAV resource")
 
     @property
     def verify(self):

@@ -2,7 +2,15 @@
 multi account support
 support for more contenttypes/carddav servers
 
-0.4
+0.4.2
+searching for non ascii characters should work
+doing an OPTIONS request now to check for carddav capabilities
+  this should speed up the syncing process and increase compatibility (SOGo)
+
+0.4.1
+assorted bugfixes, see the git log
+
+0.4.0
 experimental write support in the backend
 import & export vcards
 import directly from mutt
