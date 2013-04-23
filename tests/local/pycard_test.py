@@ -59,7 +59,6 @@ def test_broken_nobegin():
         get_vcard('broken_nobegin')
         print error
 
-
 def test_db_init(emptydb):
     assert emptydb._dump('test') == list()
 
