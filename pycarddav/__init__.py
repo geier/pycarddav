@@ -27,6 +27,7 @@ import logging
 import os
 import signal
 import sys
+import xdg.BaseDirectory
 
 __productname__ = 'pyCardDAV'
 __version__ = '0.4.1'
@@ -50,23 +51,6 @@ def enum(**enums):
     return type('Enum', (object,), enums)
 
 
-class XdgBaseDirectoryHelper(object):
-    def __init__(self):
-        self._home = os.path.expanduser('~')
-
-        self.config_dirs = [os.environ.get('XDG_CONFIG_HOME') or \
-            os.path.join(self._home, '.config')]
-        self.config_dirs.extend(
-            (os.environ.get('XDG_CONFIG_DIRS') or '/etc/xdg').split(':'))
-        self.data_dirs = [os.environ.get('XDG_DATA_HOME') or \
-            os.path.join(self._home, '.local', 'share')]
-        self.data_dirs.extend(
-            (os.environ.get('XDG_DATA_DIRS') or '/usr/local/share:/usr/share').split(':'))
-
-    def build_config_paths(self, resource):
-        return [os.path.join(d, resource) for d in self.config_dirs]
-
-
 class Configuration(object):
     """The pycardsyncer configuration holder.
 
@@ -85,7 +69,7 @@ class Configuration(object):
     """
 
     SECTIONS = enum(CMD='cmd', DAV='dav', DB='sqlite', SSL='ssl', DEFAULT='default')
-    DEFAULT_DB_PATH = '~/.pycard/abook.db'
+    DEFAULT_DB_PATH = xdg.BaseDirectory.save_data_path('pycard', 'abook.db')
     DEFAULT_PATH = "pycard"
     DEFAULT_FILE = "pycard.conf"
 
@@ -179,8 +163,6 @@ class ConfigurationParser(object):
                 str: ConfigParser.SafeConfigParser.get }
 
     def __init__(self, desc):
-        self._xdg_helper = XdgBaseDirectoryHelper()
-
         # Set the configuration current schema.
         self._schema = [
             (Configuration.SECTIONS.DAV, 'user', ''),
@@ -348,7 +330,8 @@ class ConfigurationParser(object):
 
         resource = os.path.join(
             Configuration.DEFAULT_PATH, Configuration.DEFAULT_FILE)
-        paths.extend(self._xdg_helper.build_config_paths(resource))
+        paths.extend([os.path.join(path, resource)
+            for path in xdg.BaseDirectory.xdg_data_dirs])
         paths.append(os.path.expanduser(os.path.join('~', '.' + resource)))
         paths.append(os.path.expanduser(Configuration.DEFAULT_FILE))
 

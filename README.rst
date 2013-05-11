@@ -37,8 +37,8 @@ If you feel more adventurous you can always the *develop* branch on github, whic
 be installed via pip install pycarddav or easy_install pycarddav.
 
 Copy and edit the supplied pycard.conf.sample file (default location is
-~/.pycard/pycard.conf). If you don't want to store the password in clear text in
-the config file, *pyCardDAV* will ask for it while syncing.
+~/.config/pycard/pycard.conf). If you don't want to store the password in
+clear text in the config file, *pyCardDAV* will ask for it while syncing.
 
 Make sure you have sqlite3 (normally available by default), vobject, lxml(>2),
 requests (>0.10), urwid (>0.9) installed.  Users of python 2.6 will also need
