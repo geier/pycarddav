@@ -26,7 +26,8 @@ resource: https://domain.tld/contacts/addressbook/
 
 [sqlite]
 # The location of the local SQLite contacts database.
-path: ~/.pycard/abook.db
+# Defaults to $XDG_DATA_HOME/pycard/abook.db
+#path: ~/.pycard/abook.db
 
 [default]
 debug: False
