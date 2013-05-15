@@ -331,7 +331,7 @@ class ConfigurationParser(object):
         resource = os.path.join(
             Configuration.DEFAULT_PATH, Configuration.DEFAULT_FILE)
         paths.extend([os.path.join(path, resource)
-            for path in xdg.BaseDirectory.xdg_data_dirs])
+            for path in xdg.BaseDirectory.xdg_config_dirs])
         paths.append(os.path.expanduser(os.path.join('~', '.' + resource)))
         paths.append(os.path.expanduser(Configuration.DEFAULT_FILE))
 
