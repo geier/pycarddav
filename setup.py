@@ -8,7 +8,8 @@ requirements = [
     'lxml',
     'vobject',
     'requests',
-    'urwid'
+    'urwid',
+    'pyxdg'
 ]
 if sys.version_info[:2] in ((2, 6),):
     # there is no argparse in python2.6
