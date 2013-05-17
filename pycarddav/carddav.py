@@ -228,8 +228,6 @@ class PyCardDAV(object):
                                         headers=headers,
                                         **self._settings)
         response.raise_for_status()
-        if response.headers['DAV'].count('addressbook') == 0:
-            raise Exception("URL is not a CardDAV resource")
 
         return response.content
 
