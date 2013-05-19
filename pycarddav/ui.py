@@ -159,8 +159,8 @@ class VCardChooserPane(Pane):
     VCard can be selected to be used in another pane, like the
     EditorPane.
     """
-    def __init__(self, database, refs_account_list=None):
-        self._walker = VCardWalker(database, ref_account_list=refs_account_list)
+    def __init__(self, database, accounts=None, refs_account_list=None):
+        self._walker = VCardWalker(database, accounts=accounts, ref_account_list=refs_account_list)
         Pane.__init__(self, urwid.ListBox(self._walker), 'Browse...')
 
     def get_keys(self):
@@ -205,7 +205,7 @@ class EditorPane(Pane):
 
     def on_button_press(self, button):
         if button.get_label() == 'Merge':
-            self.window.open(VCardChooserPane(self._db), self.on_merge_vcard)
+            self.window.open(VCardChooserPane(self._db, accounts=[self._account]), self.on_merge_vcard)
         else:
             if button.get_label() == 'Store':
                 self._validate()
