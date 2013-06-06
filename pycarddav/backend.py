@@ -51,7 +51,6 @@ from __future__ import print_function
 try:
     from pycarddav import model
     import sys
-    import ast
     import sqlite3
     import logging
     from os import path
@@ -122,30 +121,26 @@ class SQLiteDb(object):
             self.conn.commit()
         elif not result[0] == database_version:
             raise Exception(str(self.db_path) +
-                     " is probably not a valid or an outdated database.\n"
-                     "You should consider to remove it and sync again using "
-                     "pycardsyncer.\n")
+                            " is probably an invalid or outdated database.\n"
+                            "You should consider to remove it and sync again "
+                            "using pycardsyncer.\n")
 
     def _create_default_tables(self):
         """creates version and account tables and instert table version number
         """
         try:
-            self.cursor.execute('''CREATE TABLE version ( version INTEGER )''')
+            self.cursor.execute('''CREATE TABLE IF NOT EXISTS version ( version INTEGER )''')
             logging.debug("created version table")
-        except sqlite3.OperationalError as detail:
-            logging.debug("%s", detail)
         except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                              'Unknown Error: ' + str(error) + "\n")
         self.conn.commit()
         try:
-            self.cursor.execute('''CREATE TABLE accounts (
+            self.cursor.execute('''CREATE TABLE IF NOT EXISTS accounts (
                 account TEXT NOT NULL,
                 resource TEXT NOT NULL
                 )''')
             logging.debug("created accounts table")
-        except sqlite3.OperationalError as detail:
-            logging.debug("%s", detail)
         except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                              'Unknown Error: ' + str(error) + "\n")
@@ -160,22 +155,18 @@ class SQLiteDb(object):
         return result
 
     def check_account_table(self, account_name, resource):
-        try:
-            sql_s = """CREATE TABLE {0} (
-                    href TEXT,
-                    etag TEXT,
-                    name TEXT,
-                    fname TEXT,
-                    vcard TEXT,
-                    status INT NOT NULL
-                    )""".format(account_name)
-            self.sql_ex(sql_s)
-            sql_s = 'INSERT INTO accounts (account, resource) VALUES (?, ?)'
-            self.sql_ex(sql_s, (account_name, resource))
-            logging.debug("created {0} table".format(account_name))
-        except sqlite3.OperationalError as error:
-            if not error.message.endswith('already exists'):
-                raise error
+        sql_s = """CREATE TABLE IF NOT EXISTS {0} (
+                href TEXT,
+                etag TEXT,
+                name TEXT,
+                fname TEXT,
+                vcard TEXT,
+                status INT NOT NULL
+                )""".format(account_name)
+        self.sql_ex(sql_s)
+        sql_s = 'INSERT INTO accounts (account, resource) VALUES (?, ?)'
+        self.sql_ex(sql_s, (account_name, resource))
+        logging.debug("created {0} table".format(account_name))
 
     def needs_update(self, href, account_name, etag=''):
         """checks if we need to update this vcard
@@ -316,7 +307,6 @@ class SQLiteDb(object):
             vrefs = self.sql_ex(sql_s, stuple)
             result = result + [(vref[0], account) for vref in vrefs]
         return result
-
 
 #    def get_names_vref_from_db(self, searchstring=None):
 #        """
