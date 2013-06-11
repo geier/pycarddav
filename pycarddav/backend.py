@@ -50,6 +50,7 @@ from __future__ import print_function
 
 try:
     from pycarddav import model
+    import xdg.BaseDirectory
     import sys
     import sqlite3
     import logging
@@ -74,10 +75,12 @@ class SQLiteDb(object):
     """
 
     def __init__(self,
-                 db_path="~/.pycard/abook.db",
+                 db_path=None,
                  encoding="utf-8",
                  errors="strict",
                  debug=False):
+        if db_path is None:
+            db_path = xdg.BaseDirectory.save_data_path('pycard') + 'abook.db'
         self.db_path = path.expanduser(db_path)
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
