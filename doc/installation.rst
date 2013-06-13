@@ -19,3 +19,6 @@ NetBSD, Debian and Ubuntu with python 2.6 and 2.7 and against davical 0.9.9.4 -
 1.0.1 (later versions should be ok, too, but 0.9.9.3 and earlier don't seem
 to work), owncloud and sabredav.
 
+.. _pypi: https://pypi.python.org/pypi/pyCardDAV/
+.. _github: http://github.com/geier/pycarddav/
+

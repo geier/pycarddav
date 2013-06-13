@@ -1,5 +1,5 @@
 About
------
+=====
 *pyCardDAV* is a simple to use CardDAV_ CLI client. It has built in support for
 mutt's *query_command* but also works very well solo.
 
@@ -31,8 +31,8 @@ Features
 Feedback
 --------
 Please do provide feedback if *pyCardDAV* works for you or even more importantly
-if it doesn't. You can reach me by email at pycarddav@lostpackets.de , by
-jabber/XMPP at geier@jabber.ccc.de or via github_
+if it doesn't. You can reach me by email at pycarddav (at) lostpackets (dot) de , by
+jabber/XMPP at geier (at) jabber (dot) ccc (dot) de or via github_
 
 .. _github: https://github.com/geier/pycarddav/
 
