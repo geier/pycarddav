@@ -253,12 +253,16 @@ class PyCardDAV(object):
                         href = refprop.text
                     for prop in refprop.iterchildren():
                         for props in prop.iterchildren():
+                            # different servers give different getcontenttypes:
+                            # e.g.:
+                            #  "text/vcard"
+                            #  "text/x-vcard"
+                            #  "text/x-vcard; charset=utf-8"
+                            #  "text/directory;profile=vCard"
+                            #  "text/directory"
+                            #  "text/vcard; charset=utf-8"  CalendarServer
                             if (props.tag == namespace + "getcontenttype" and
-                                (props.text == "text/vcard" or
-                                 props.text == "text/x-vcard" or
-                                 props.text == "text/x-vcard; charset=utf-8" or
-                                 props.text == "text/directory;profile=vCard" or
-                                 props.text == "text/directory")):
+                                props.text.split(';')[0].strip() in ['text/vcard', 'text/x-vcard']):
                                 insert = True
                             if (props.tag == namespace + "getetag"):
                                 etag = props.text
