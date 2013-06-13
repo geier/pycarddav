@@ -36,6 +36,27 @@ jabber/XMPP at geier@jabber.ccc.de or via github_
 
 .. _github: https://github.com/geier/pycarddav/
 
+Installation
+------------
+You can download *pyCardDAV* either from the above download link or check it
+out at github_. Then install *pyCardDAV* by executing *python setup.py install*.
+If you feel more adventurous you can always the *develop* branch on github, which
+*should* always be in a usable state. pyCardDAV is also available on pypi_ and can
+be installed via pip install pycarddav or easy_install pycarddav.
+
+Copy and edit the supplied pycard.conf.sample file (default location is
+~/.config/pycard/pycard.conf). If you don't want to store the password in
+clear text in the config file, *pyCardDAV* will ask for it while syncing.
+
+Make sure you have sqlite3 (normally available by default), vobject, lxml(>2),
+requests (>0.10), urwid (>0.9) installed.  Users of python 2.6 will also need
+to install argparse.
+
+*pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
+NetBSD, Debian and Ubuntu with python 2.6 and 2.7 and against davical 0.9.9.4 -
+1.0.1 (later versions should be ok, too, but 0.9.9.3 and earlier don't seem
+to work), owncloud and sabredav.
+
 Usage
 -----
 *pyCardDAV* consists of three scripts, *pycardsyncr* which is used to sync the
@@ -49,7 +70,7 @@ pc_query with::
 
 By default *pyCardDAV* only prints the names, email addresses and telephone
 numbers of contacts matching the search string, to see all vCard properties use
-the "-a" option.
+the "-A" option.
 
 
 For usage with mutt etc., *pyCardDAV* can also print only email addresses in a
@@ -73,6 +94,12 @@ enable write support for).
 You can also import, delete or backup single cards (backup also works for the
 whole collection, but please don't rely on it just yet). See *pc_query --help*
 for how to use these and for some more options.
+
+*pycarddav* can be configured to use different CardDAV accounts, see the example
+config for details. An account can be specified with *-a account_name* with all
+three utilies. If no account is chosen all searching and syncing actions will
+use all configured accounts, while on adding cards the first configured account
+will be used.
 
 Import Addresses from Mutt
 --------------------------
@@ -104,7 +131,7 @@ License
 -------
 *pyCardDAV* is released under the Expat/MIT License:
 
-Copyright (c) 2011-2013 Christian Geier & contributors
+Copyright (c) 2011-2012 Christian Geier, David Soulayrol
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

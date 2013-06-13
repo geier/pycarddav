@@ -11,7 +11,7 @@ pc_query with::
 
 By default *pyCardDAV* only prints the names, email addresses and telephone
 numbers of contacts matching the search string, to see all vCard properties use
-the "-a" option.
+the "-A" option.
 
 
 For usage with mutt etc., *pyCardDAV* can also print only email addresses in a
@@ -35,6 +35,12 @@ enable write support for).
 You can also import, delete or backup single cards (backup also works for the
 whole collection, but please don't rely on it just yet). See *pc_query --help*
 for how to use these and for some more options.
+
+*pycarddav* can be configured to use different CardDAV accounts, see the example
+config for details. An account can be specified with *-a account_name* with all
+three utilies. If no account is chosen all searching and syncing actions will
+use all configured accounts, while on adding cards the first configured account
+will be used.
 
 Import Addresses from Mutt
 --------------------------
