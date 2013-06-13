@@ -410,7 +410,6 @@ class ConfigurationParser(object):
 
         resource = os.path.join(
             ConfigurationParser.DEFAULT_PATH, ConfigurationParser.DEFAULT_FILE)
-        paths.extend(self._xdg_helper.build_config_paths(resource))
         paths.extend([os.path.join(path, resource)
             for path in xdg.BaseDirectory.xdg_config_dirs])
 
