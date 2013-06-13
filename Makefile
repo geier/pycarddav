@@ -23,10 +23,15 @@ help:
 	@echo '   dropbox_upload                   upload the web site using Dropbox '
 	@echo '                                                                      '
 
-test:
+assemble: doc/about.rst doc/license.rst doc/usage.rst doc/installation.rst
+	echo "Usage\n=====\n" > src/pages/usage.rst
+	cat doc/installation.rst doc/usage.rst >> src/pages/usage.rst
+	cat doc/about.rst doc/license.rst > src/pages/about.rst
+
+test: html
 	cd output && python -mSimpleHTTPServer
 
-html: clean $(OUTPUTDIR)/index.html
+html: clean assemble $(OUTPUTDIR)/index.html
 	@echo 'Done'
 
 $(OUTPUTDIR)/%.html:
