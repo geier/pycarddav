@@ -3,3 +3,4 @@ vobject
 pytest
 urwid
 lxml
+pyxdg
