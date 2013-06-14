@@ -1,6 +1,19 @@
 News
 ====
 
+XX.06.2013: pyCardDAV v.0.5.0 released
+
+ **NEW** This release brings support for multiple CardDAV accounts. See the
+ usage instructions, the supplied example config and/or pc_query --help. Also
+ support for more CardDAV servers is included. If you are upgrading, you need to
+ delete the local database, otherwise pyCardDAV will refuse to work.
+
+28.03.2013: pyCardDAV v0.4.1 released
+
+  pyCardDAV v0.4.1 is released. This is a bugfix release, if everything works
+  fine for you, there is no need to upgrade. Database deletion should not be
+  necessary.
+
 15.11.2012: pyCardDAV v0.4 released
 
   pyCardDAV v0.4 is released. This is a mayor rewrite (again), so some previously
