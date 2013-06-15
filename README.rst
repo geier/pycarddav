@@ -1,5 +1,5 @@
 About
------
+=====
 *pyCardDAV* is a simple to use CardDAV_ CLI client. It has built in support for
 mutt's *query_command* but also works very well solo.
 
@@ -31,8 +31,8 @@ Features
 Feedback
 --------
 Please do provide feedback if *pyCardDAV* works for you or even more importantly
-if it doesn't. You can reach me by email at pycarddav@lostpackets.de , by
-jabber/XMPP at geier@jabber.ccc.de or via github_
+if it doesn't. You can reach me by email at pycarddav (at) lostpackets (dot) de , by
+jabber/XMPP at geier (at) jabber (dot) ccc (dot) de or via github_
 
 .. _github: https://github.com/geier/pycarddav/
 
@@ -49,17 +49,20 @@ Copy and edit the supplied pycard.conf.sample file (default location is
 clear text in the config file, *pyCardDAV* will ask for it while syncing.
 
 Make sure you have sqlite3 (normally available by default), vobject, lxml(>2),
-requests (>0.10), urwid (>0.9) installed.  Users of python 2.6 will also need
-to install argparse.
+requests (>0.10), urwid (>0.9) pyxdg, installed. Users of python 2.6 will also
+need to install argparse.
 
 *pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
 NetBSD, Debian and Ubuntu with python 2.6 and 2.7 and against davical 0.9.9.4 -
 1.0.1 (later versions should be ok, too, but 0.9.9.3 and earlier don't seem
 to work), owncloud and sabredav.
 
+.. _pypi: https://pypi.python.org/pypi/pyCardDAV/
+.. _github: http://github.com/geier/pycarddav/
+
 Usage
 -----
-*pyCardDAV* consists of three scripts, *pycardsyncr* which is used to sync the
+*pyCardDAV* consists of three scripts, *pycardsyncer* which is used to sync the
 local database with the server, *pc_query* to interact with the local database
 and *pycard-import* to import email addresses from mutt.
 
@@ -127,11 +130,14 @@ For now, VCard properties that have no value are not shown.
 Also, you should be able to use *pyCardDAV*'s CardDAV implementation for other
 projects. See the *CardDAV* class in *pycarddav/carddav.py*.
 
+In accordance with RFC 6352 all VCards that are imported or changed by pyCadDAV
+will automatically get a random UID (if they haven't one already), as some
+CardDAV servers, e.g. Owncloud require these.
 License
 -------
 *pyCardDAV* is released under the Expat/MIT License:
 
-Copyright (c) 2011-2012 Christian Geier, David Soulayrol
+Copyright (c) 2011-2013 Christian Geier and contributors
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

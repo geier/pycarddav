@@ -1,6 +1,6 @@
 Usage
 -----
-*pyCardDAV* consists of three scripts, *pycardsyncr* which is used to sync the
+*pyCardDAV* consists of three scripts, *pycardsyncer* which is used to sync the
 local database with the server, *pc_query* to interact with the local database
 and *pycard-import* to import email addresses from mutt.
 
