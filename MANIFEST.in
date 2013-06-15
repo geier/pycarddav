@@ -1,5 +1,5 @@
 include pycard.conf.sample
-include README.txt
+include README.rst
 include CONTRIBUTING.txt
 include CONTRIBUTORS.txt
 include COPYING
