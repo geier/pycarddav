@@ -11,8 +11,8 @@ Copy and edit the supplied pycard.conf.sample file (default location is
 clear text in the config file, *pyCardDAV* will ask for it while syncing.
 
 Make sure you have sqlite3 (normally available by default), vobject, lxml(>2),
-requests (>0.10), urwid (>0.9) installed.  Users of python 2.6 will also need
-to install argparse.
+requests (>0.10), urwid (>0.9) pyxdg, installed. Users of python 2.6 will also
+need to install argparse.
 
 *pyCardDAV* has so far been successfully tested on recent versions of FreeBSD,
 NetBSD, Debian and Ubuntu with python 2.6 and 2.7 and against davical 0.9.9.4 -
