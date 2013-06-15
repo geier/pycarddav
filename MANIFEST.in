@@ -1,2 +1,6 @@
 include pycard.conf.sample
 include README.txt
+include CONTRIBUTING.txt
+include CONTRIBUTORS.txt
+include COPYING
+include NEWS.txt
