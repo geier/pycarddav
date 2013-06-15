@@ -1,0 +1,6 @@
+The *master* branch on github should always contain the latest released
+stable version. Development mostly happens in the *develop* branch, or
+in the next point release *dev*-branch (e.g. *4.2-dev*). So please check
+out the *develop* branch before starting to hack on pycarddav.
+
+Before requesting a pull, please add yourself to *CONTRIBUTORS.txt*.
