@@ -39,7 +39,7 @@ jabber/XMPP at geier (at) jabber (dot) ccc (dot) de or via github_
 Installation
 ------------
 You can download *pyCardDAV* either from the above download link or check it
-out at github_. Then install *pyCardDAV* by executing *python setup.py install*.
+out from git (at github). Then install *pyCardDAV* by executing *python setup.py install*.
 If you feel more adventurous you can always the *develop* branch on github, which
 *should* always be in a usable state. pyCardDAV is also available on pypi_ and can
 be installed via pip install pycarddav or easy_install pycarddav.
@@ -58,7 +58,7 @@ NetBSD, Debian and Ubuntu with python 2.6 and 2.7 and against davical 0.9.9.4 -
 to work), owncloud and sabredav.
 
 .. _pypi: https://pypi.python.org/pypi/pyCardDAV/
-.. _github: http://github.com/geier/pycarddav/
+.. _git: http://github.com/geier/pycarddav/
 
 Usage
 -----
@@ -133,6 +133,7 @@ projects. See the *CardDAV* class in *pycarddav/carddav.py*.
 In accordance with RFC 6352 all VCards that are imported or changed by pyCadDAV
 will automatically get a random UID (if they haven't one already), as some
 CardDAV servers, e.g. Owncloud require these.
+
 License
 -------
 *pyCardDAV* is released under the Expat/MIT License:
