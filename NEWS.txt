@@ -3,10 +3,15 @@ News
 
 15.06.2013: pyCardDAV v.0.5.0 released
 
- **NEW** This release brings support for multiple CardDAV accounts. See the
+ **New** This release brings support for multiple CardDAV accounts. See the
  usage instructions, the supplied example config and/or pc_query --help. Also
  support for more CardDAV servers is included. If you are upgrading, you need to
  delete the local database, otherwise pyCardDAV will refuse to work.
+
+ **Attention** In accordance with RFC 6352 all VCards that are imported
+ or changed by pyCadDAV will automatically get a random UID (if they
+ haven't one already), as some CardDAV servers, e.g. Owncloud require
+ these.
 
 28.03.2013: pyCardDAV v0.4.1 released
 

@@ -68,3 +68,6 @@ For now, VCard properties that have no value are not shown.
 Also, you should be able to use *pyCardDAV*'s CardDAV implementation for other
 projects. See the *CardDAV* class in *pycarddav/carddav.py*.
 
+In accordance with RFC 6352 all VCards that are imported or changed by pyCadDAV
+will automatically get a random UID (if they haven't one already), as some
+CardDAV servers, e.g. Owncloud require these.

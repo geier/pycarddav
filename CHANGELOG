@@ -1,6 +1,7 @@
 0.5
 multi account support
 support for more contenttypes/carddav servers
+all vcards should have a UID (required by RFC 6352 and enforced by Owncloud 5)
 
 0.4.2
 searching for non ascii characters should work
