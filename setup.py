@@ -17,7 +17,7 @@ if sys.version_info[:2] in ((2, 6),):
 
 setup(
     name='pyCardDAV',
-    version='0.5-dev',
+    version='0.5.0',
     description='A CardDAV based address book tool',
     long_description=open('README.rst').read(),
     author='Christian Geier',

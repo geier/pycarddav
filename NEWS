@@ -1,7 +1,7 @@
 News
 ====
 
-XX.06.2013: pyCardDAV v.0.5.0 released
+15.06.2013: pyCardDAV v.0.5.0 released
 
  **NEW** This release brings support for multiple CardDAV accounts. See the
  usage instructions, the supplied example config and/or pc_query --help. Also
