@@ -338,6 +338,7 @@ class SQLiteDb(object):
         result = self.sql_ex(sql_s, (href, ))
         vcard = model.vcard_from_string(result[0][0])
         vcard.href = href
+        vcard.account = account_name
         return vcard
 
     def get_changed(self, account_name):

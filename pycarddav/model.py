@@ -157,7 +157,8 @@ class VCard(defaultdict):
     [('hanz@wurst.com', ['WORK', 'PREF']), ('hanz@wurst.net', ['HOME'])]
 
 
-    h_ref: unique id (really just the url) of the VCard
+    self.href: unique id (really just the url) of the VCard
+    self.account: account which this card is associated with
     db_path: database file from which to initialize the VCard
 
     self.edited:
@@ -173,6 +174,7 @@ class VCard(defaultdict):
         else:
             defaultdict.__init__(self, list, ddict)
         self.href = ''
+        self.account = ''
         self.edited = 0
 
     def serialize(self):
