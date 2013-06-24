@@ -243,7 +243,10 @@ class VCard(defaultdict):
 
     def _pretty_base(self, keylist):
         collector = list()
-        collector.append('\n' + BTEXT + 'Name: ' + self.fname + NTEXT)
+        if sys.stdout.isatty():
+            collector.append('\n' + BTEXT + 'Name: ' + self.fname + NTEXT)
+        else:
+            collector.append('\n' + 'Name: ' + self.fname)
         for key in keylist:
             for value in self[key]:
                 try:
