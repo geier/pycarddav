@@ -101,8 +101,8 @@ class SQLiteDb(object):
         result = list()
         for account in accounts:
             sql_s = 'SELECT href FROM {0} WHERE vcard LIKE (?)'.format(account)
-            vrefs = self.sql_ex(sql_s, stuple)
-            result = result + ([(vref[0], account) for vref in vrefs])
+            hrefs = self.sql_ex(sql_s, stuple)
+            result = result + ([(href[0], account) for href in hrefs])
         return result
 
     def _dump(self, account_name):
@@ -283,37 +283,37 @@ class SQLiteDb(object):
         etag = self.sql_ex(sql_s, (href,))[0][0]
         return etag
 
-    def delete_vcard_from_db(self, vref, account_name):
+    def delete_vcard_from_db(self, href, account_name):
         """
         removes the whole vcard,
         returns nothing
         """
-        stuple = (vref, )
-        logging.debug("locally deleting " + str(vref))
+        stuple = (href, )
+        logging.debug("locally deleting " + str(href))
         self.sql_ex('DELETE FROM {0} WHERE href=(?)'.format(account_name), stuple)
 
-    def get_all_vref_from_db(self, accounts):
-        """returns a list with all vrefs
+    def get_all_href_from_db(self, accounts):
+        """returns a list with all hrefs
         """
         result = list()
         for account in accounts:
-            vrefs = self.sql_ex('SELECT href FROM {0}'.format(account))
-            result = result + [(vref[0], account) for vref in vrefs]
+            hrefs = self.sql_ex('SELECT href FROM {0}'.format(account))
+            result = result + [(href[0], account) for href in hrefs]
         return result
 
-    def get_all_vref_from_db_not_new(self, accounts):
-        """returns list of all not new vrefs"""
+    def get_all_href_from_db_not_new(self, accounts):
+        """returns list of all not new hrefs"""
         result = list()
         for account in accounts:
             sql_s = 'SELECT href FROM {0} WHERE status != (?)'.format(account)
             stuple = (NEW,)
-            vrefs = self.sql_ex(sql_s, stuple)
-            result = result + [(vref[0], account) for vref in vrefs]
+            hrefs = self.sql_ex(sql_s, stuple)
+            result = result + [(href[0], account) for href in hrefs]
         return result
 
-#    def get_names_vref_from_db(self, searchstring=None):
+#    def get_names_href_from_db(self, searchstring=None):
 #        """
-#        :return: list of tuples(name, vref) of all entries from the db
+#        :return: list of tuples(name, href) of all entries from the db
 #        """
 #        if searchstring is None:
 #            return self.sql_ex('SELECT fname, href FROM {0} '
