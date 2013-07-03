@@ -71,8 +71,10 @@ class PyCardDAV(object):
 
     def __init__(self, resource, debug='', user='', passwd='',
                  verify=True, write_support=False, auth='basic'):
-        #shutup url3
+        #shutup urllib3
         urllog = logging.getLogger('requests.packages.urllib3.connectionpool')
+        urllog.setLevel(logging.CRITICAL)
+        urllog = logging.getLogger('urllib3.connectionpool')
         urllog.setLevel(logging.CRITICAL)
 
         split_url = urlparse.urlparse(resource)
