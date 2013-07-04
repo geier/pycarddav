@@ -93,10 +93,10 @@ class Namespace(dict):
 
 class Section(object):
 
-    READERS = { bool: ConfigParser.SafeConfigParser.getboolean,
-                float: ConfigParser.SafeConfigParser.getfloat,
-                int: ConfigParser.SafeConfigParser.getint,
-                str: ConfigParser.SafeConfigParser.get }
+    READERS = {bool: ConfigParser.SafeConfigParser.getboolean,
+               float: ConfigParser.SafeConfigParser.getfloat,
+               int: ConfigParser.SafeConfigParser.getint,
+               str: ConfigParser.SafeConfigParser.get}
 
     def __init__(self, parser, group):
         self._parser = parser
@@ -156,6 +156,7 @@ class Section(object):
         else:
             return False
 
+
 class AccountSection(Section):
     def __init__(self, parser):
         Section.__init__(self, parser, 'accounts')
@@ -200,7 +201,7 @@ class ConfigurationParser(object):
 
     def __init__(self, desc, check_accounts=True):
         # Set the configuration current schema.
-        self._sections = [ AccountSection, SQLiteSection ]
+        self._sections = [AccountSection, SQLiteSection]
 
         # Build parsers and set common options.
         self._check_accounts = check_accounts
@@ -343,9 +344,9 @@ class ConfigurationParser(object):
         for name, value in sorted(dict.copy(conf).iteritems()):
             if type(value) is list:
                 for o in value:
-                    self.dump(o, '\t'*tab + name + ':', tab + 1)
+                    self.dump(o, '\t' * tab + name + ':', tab + 1)
             elif type(value) is Namespace:
-                self.dump(value, '\t'*tab + name + ':', tab + 1)
+                self.dump(value, '\t' * tab + name + ':', tab + 1)
             elif name != 'passwd':
                 logging.debug('%s%s: %s', '\t'*tab, name, value)
 
@@ -415,7 +416,7 @@ class ConfigurationParser(object):
         resource = os.path.join(
             ConfigurationParser.DEFAULT_PATH, ConfigurationParser.DEFAULT_FILE)
         paths.extend([os.path.join(path, resource)
-            for path in xdg.BaseDirectory.xdg_config_dirs])
+                      for path in xdg.BaseDirectory.xdg_config_dirs])
 
         paths.append(os.path.expanduser(os.path.join('~', '.' + resource)))
         paths.append(os.path.expanduser(ConfigurationParser.DEFAULT_FILE))
@@ -425,6 +426,7 @@ class ConfigurationParser(object):
                 return path
 
         return None
+
 
 class SyncConfigurationParser(ConfigurationParser):
     """A specialized setup tool for synchronization."""
@@ -458,4 +460,3 @@ class SyncConfigurationParser(ConfigurationParser):
         ns.sync.accounts = set(ns.sync.accounts)
 
         return result
-

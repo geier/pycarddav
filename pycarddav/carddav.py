@@ -99,7 +99,7 @@ class PyCardDAV(object):
                                         self.url.resource,
                                         headers=headers,
                                         **self._settings)
-        response.raise_for_status()   #raises error on not 2XX HTTP status code
+        response.raise_for_status()   # raises error on not 2XX HTTP status code
         if response.headers['DAV'].count('addressbook') == 0:
             raise Exception("URL is not a CardDAV resource")
 
@@ -263,7 +263,7 @@ class PyCardDAV(object):
                             #  "text/directory"
                             #  "text/vcard; charset=utf-8"  CalendarServer
                             if (props.tag == namespace + "getcontenttype" and
-                                props.text.split(';')[0].strip() in ['text/vcard', 'text/x-vcard']):
+                                    props.text.split(';')[0].strip() in ['text/vcard', 'text/x-vcard']):
                                 insert = True
                             if (props.tag == namespace + "getetag"):
                                 etag = props.text
