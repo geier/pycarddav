@@ -122,11 +122,13 @@ class Section(object):
                 else:
                     reader = Section.READERS[type(default)]
                 self._parsed[option] = filter_(reader(self._parser, section, option))
-
                 # Remove option once handled (see the check function).
                 self._parser.remove_option(section, option)
             except ConfigParser.Error:
-                self._parsed[option] = default
+                if filter_ is None:
+                    self._parsed[option] = default
+                else:
+                    self._parsed[option] = filter_(default)
 
         return Namespace(self._parsed)
 
@@ -134,7 +136,7 @@ class Section(object):
     def group(self):
         return self._group
 
-    def _parse_bool_string(self, value):
+    def _parse_verify(self, value):
         """if value is either 'True' or 'False' it returns that value as a bool,
         otherwise it returns the value"""
         value = value.strip().lower()
@@ -162,7 +164,7 @@ class AccountSection(Section):
             ('passwd', '', None),
             ('resource', '', None),
             ('auth', 'basic', None),
-            ('verify', 'True', self._parse_bool_string),
+            ('verify', 'true', self._parse_verify),
             ('write_support', '', self._parse_write_support),
         ]
 
