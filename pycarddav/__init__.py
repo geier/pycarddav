@@ -162,7 +162,7 @@ class AccountSection(Section):
             ('passwd', '', None),
             ('resource', '', None),
             ('auth', 'basic', None),
-            ('verify', 'True', self._parse_bool_string),
+            ('verify', True, self._parse_bool_string),
             ('write_support', '', self._parse_write_support),
         ]
 
