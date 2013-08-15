@@ -229,27 +229,15 @@ class SQLiteDb(object):
             vcard = model.vcard_from_string(vcard)
         else:
             vcard_s = vcard.vcf
-
-        if self.href_exists(href, account_name):  # existing card
-            stuple = (etag, vcard.name, vcard.fname, vcard_s, status, href)
-            sql_s = 'UPDATE {0} SET etag = ?, name = ?, fname = ?, vcard = ?, \
-                    status = ? WHERE href = ?;'.format(account_name)
-            self.sql_ex(sql_s, stuple)
-
-        else:
-            if href == '':
-                for _ in range(10):
-                    href = get_random_href()
-                    if self.href_exists(href, account_name) is False:
-                        break
-                    # could not find a (random) href that's not yet in the db
-                    # broken random number generator?
-                    #TODO: what's happens now? exception?
-            stuple = (href, etag, vcard.name, vcard.fname, vcard_s, status)
-            sql_s = ('INSERT INTO {0} '
-                     '(href, etag, name, fname, vcard, status) '
-                     'VALUES (?,?,?,?,?,?);'.format(account_name))
-            self.sql_ex(sql_s, stuple)
+        if href == '':
+            href = get_random_href()
+        stuple = (etag, vcard.name, vcard.fname, vcard_s, status, href, href)
+        sql_s = ('INSERT OR REPLACE INTO {0} '
+                 '(etag, name, fname, vcard, status) '
+                 'VALUES (?, ?, ?, ?, '
+                 'COALESCE((SELECT href FROM {0} WHERE href = ?), ?)'
+                 ');'.format(account_name))
+        self.sql_ex(sql_s, stuple)
 
     def update_href(self, old_href, new_href, account_name, etag='', status=OK):
         """updates old_href to new_href, can also alter etag and status,
