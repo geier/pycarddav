@@ -233,8 +233,8 @@ class SQLiteDb(object):
             href = get_random_href()
         stuple = (etag, vcard.name, vcard.fname, vcard_s, status, href, href)
         sql_s = ('INSERT OR REPLACE INTO {0} '
-                 '(etag, name, fname, vcard, status) '
-                 'VALUES (?, ?, ?, ?, '
+                 '(etag, name, fname, vcard, status, href) '
+                 'VALUES (?, ?, ?, ?, ?, '
                  'COALESCE((SELECT href FROM {0} WHERE href = ?), ?)'
                  ');'.format(account_name))
         self.sql_ex(sql_s, stuple)
