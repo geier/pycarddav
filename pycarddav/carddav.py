@@ -265,6 +265,10 @@ class PyCardDAV(object):
                             if (props.tag == namespace + "getcontenttype" and
                                     props.text.split(';')[0].strip() in ['text/vcard', 'text/x-vcard']):
                                 insert = True
+                            if (props.tag == namespace + "resourcetype" and
+                                namespace + "collection" in [c.tag for c in props.iterchildren()]):
+                                insert = False
+                                break
                             if (props.tag == namespace + "getetag"):
                                 etag = props.text
                         if insert:
