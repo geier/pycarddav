@@ -85,6 +85,7 @@ def query(conf):
             sys.exit('Found no matching cards.')
         elif len(href_account_list) is 1:
             href, account = href_account_list[0]
+            card = my_dbtool.get_vcard_from_db(href, account)
         else:
             pane = ui.VCardChooserPane(my_dbtool,
                                        href_account_list=href_account_list)
