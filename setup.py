@@ -74,6 +74,7 @@ setup(
     packages=['pycarddav'],
     scripts=['bin/pycardsyncer', 'bin/pc_query', 'bin/pycard-import'],
     requires=requirements,
+    install_requires=requirements,
     classifiers=[
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: MIT License",
