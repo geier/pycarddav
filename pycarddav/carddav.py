@@ -71,8 +71,10 @@ class PyCardDAV(object):
 
     def __init__(self, resource, debug='', user='', passwd='',
                  verify=True, write_support=False, auth='basic'):
-        #shutup url3
+        #shutup urllib3
         urllog = logging.getLogger('requests.packages.urllib3.connectionpool')
+        urllog.setLevel(logging.CRITICAL)
+        urllog = logging.getLogger('urllib3.connectionpool')
         urllog.setLevel(logging.CRITICAL)
 
         split_url = urlparse.urlparse(resource)
@@ -97,7 +99,7 @@ class PyCardDAV(object):
                                         self.url.resource,
                                         headers=headers,
                                         **self._settings)
-        response.raise_for_status()   #raises error on not 2XX HTTP status code
+        response.raise_for_status()   # raises error on not 2XX HTTP status code
         if response.headers['DAV'].count('addressbook') == 0:
             raise Exception("URL is not a CardDAV resource")
 
@@ -205,8 +207,7 @@ class PyCardDAV(object):
                                     **self._settings)
             if response.ok:
                 parsed_url = urlparse.urlparse(remotepath)
-
-                if response.headers['etag'] is None:
+                if 'etag' not in response.headers.keys() or response.headers['etag'] is None:
                     etag = ''
                 else:
                     etag = response.headers['etag']
@@ -262,8 +263,12 @@ class PyCardDAV(object):
                             #  "text/directory"
                             #  "text/vcard; charset=utf-8"  CalendarServer
                             if (props.tag == namespace + "getcontenttype" and
-                                props.text.split(';')[0].strip() in ['text/vcard', 'text/x-vcard']):
+                                    props.text.split(';')[0].strip() in ['text/vcard', 'text/x-vcard']):
                                 insert = True
+                            if (props.tag == namespace + "resourcetype" and
+                                namespace + "collection" in [c.tag for c in props.iterchildren()]):
+                                insert = False
+                                break
                             if (props.tag == namespace + "getetag"):
                                 etag = props.text
                         if insert:

@@ -1,6 +1,7 @@
 *.pyc
 .*.swp
 *.tgz
+pycarddav/version.py
 dist/
 MANIFEST
 build/

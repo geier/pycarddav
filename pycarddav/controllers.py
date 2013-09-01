@@ -60,10 +60,12 @@ def query(conf):
     if conf.query.backup:
         with open(conf.query.backup, 'w') as vcf_file:
             if search_string == "":
-                hrefs_account_list = my_dbtool.get_all_vref_from_db(conf.sync.accounts)
+                href_account_list = my_dbtool.get_all_href_from_db(
+                    conf.sync.accounts)
             else:
-                hrefs_account_list = my_dbtool.search(search_string, conf.sync.accounts)
-            for href, account in hrefs_account_list:
+                href_account_list = my_dbtool.search(search_string,
+                                                     conf.sync.accounts)
+            for href, account in href_account_list:
                 vcard = my_dbtool.get_vcard_from_db(href, account)
                 vcf_file.write(vcard.vcf.encode('utf-8'))
         sys.exit()
@@ -77,32 +79,35 @@ def query(conf):
 
     # mark a card for deletion
     if conf.query.delete:
-        hrefs_account_list = my_dbtool.search(search_string, conf.sync.accounts)
-        if len(hrefs_account_list) is 0:
+        href_account_list = my_dbtool.search(search_string,
+                                             conf.sync.accounts)
+        if len(href_account_list) is 0:
             sys.exit('Found no matching cards.')
-        elif len(hrefs_account_list) is 1:
-            href, account = hrefs_account_list[0]
+        elif len(href_account_list) is 1:
+            href, account = href_account_list[0]
+            card = my_dbtool.get_vcard_from_db(href, account)
         else:
-            pane = ui.VCardChooserPane(my_dbtool, hrefs_account_list)
+            pane = ui.VCardChooserPane(my_dbtool,
+                                       href_account_list=href_account_list)
             ui.start_pane(pane)
             card = pane._walker.selected_vcard
-            href = card.href
-        if href in my_dbtool.get_new(account):
+        if card.href in my_dbtool.get_new(card.account):
             # cards not yet on the server get deleted directly, otherwise we
             # will try to delete them on the server later (where they don't
             # exist) and this will raise an exception
-            my_dbtool.delete_vcard_from_db(href, account)
+            my_dbtool.delete_vcard_from_db(card.href, card.account)
         else:
-            my_dbtool.mark_delete(href, account)
-            print('vcard "%s" deleted from local db, will be deleted ' % href +
-                  'on the server on the next sync')
+            my_dbtool.mark_delete(card.href, card.account)
+            print(u'vcard {0} - "{1}" deleted from local db, '
+                  'will be deleted on the server on the next '
+                  'sync'.format(card.href, card.fname))
         sys.exit()
 
     print("searching for " + conf.query.search_string + "...")
 
     result = my_dbtool.search(search_string, conf.sync.accounts)
-    for vref, account in result:
-        vcard = my_dbtool.get_vcard_from_db(vref, account)
+    for href, account in result:
+        vcard = my_dbtool.get_vcard_from_db(href, account)
         if conf.query.mutt_format:
             lines = vcard.print_email()
         elif conf.query.tel:
@@ -155,7 +160,9 @@ def sync(conf):
             my_dbtool.reset_flag(href, conf.account.name)
             remote_changed = True
         except carddav.NoWriteSupport:
-            logging.info('failed to upload changed card %s, you need to enable write support, see the documentation', href)
+            logging.info('failed to upload changed card {0}, '
+                         'you need to enable write support, '
+                         'see the documentation', href)
     # uploading
     hrefs = my_dbtool.get_new(conf.account.name)
     for href in hrefs:
@@ -163,10 +170,15 @@ def sync(conf):
             logging.debug("trying to upload new card %s", href)
             card = my_dbtool.get_vcard_from_db(href, conf.account.name)
             (href_new, etag_new) = syncer.upload_new_card(card.vcf)
-            my_dbtool.update_href(href, href_new, conf.account.name, status=backend.OK)
+            my_dbtool.update_href(href,
+                                  href_new,
+                                  conf.account.name,
+                                  status=backend.OK)
             remote_changed = True
         except carddav.NoWriteSupport:
-            logging.info('failed to upload card %s, you need to enable write support, see the documentation', href)
+            logging.info('failed to upload card %s, '
+                         'you need to enable write support, '
+                         'see the documentation', href)
 
     # deleting locally deleted cards on the server
     hrefs_etags = my_dbtool.get_marked_delete(conf.account.name)
@@ -178,7 +190,9 @@ def sync(conf):
             my_dbtool.delete_vcard_from_db(href, conf.account.name)
             remote_changed = True
         except carddav.NoWriteSupport:
-            logging.info('failed to delete card %s, you need to enable write support, see the documentation', href)
+            logging.info('failed to delete card {0}, '
+                         'you need to enable write support, '
+                         'see the documentation'.format(href))
 
     # detecting remote-deleted cards
     # is there a better way to compare a list of unicode() with a list of str()
@@ -186,7 +200,8 @@ def sync(conf):
 
     if remote_changed:
         abook = syncer.get_abook()  # type (abook): dict
-    r_href_account_list = my_dbtool.get_all_vref_from_db_not_new([conf.account.name])
+    r_href_account_list = my_dbtool.get_all_href_from_db_not_new(
+        [conf.account.name])
     delete = set([href for href, account in r_href_account_list]).difference(abook.keys())
     for href in delete:
         my_dbtool.delete_vcard_from_db(href, conf.account.name)

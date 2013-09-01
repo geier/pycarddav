@@ -134,6 +134,15 @@ In accordance with RFC 6352 all VCards that are imported or changed by pyCadDAV
 will automatically get a random UID (if they haven't one already), as some
 CardDAV servers, e.g. Owncloud require these.
 
+Debian Wheezy Quickstart
+------------------------
+
+apt-get install python-requests python-vobject python-pytest python-urwid python-lxml python-pyxdg
+sudo python setup.py install
+mkdir -p ~/.config/pycard
+chmod 700 ~/.config/pycard
+cp pycard.conf.sample ~/.config/pycard/pycard.conf
+
 License
 -------
 *pyCardDAV* is released under the Expat/MIT License:

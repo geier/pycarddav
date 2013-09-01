@@ -42,7 +42,7 @@ def test_basic_config():
     assert conf.sqlite.path == '/home/testman/.pycard/abook.db'
     assert conf.filename.endswith('tests//assets/configs/base.conf') == True
     def assert_work(accounts_conf):
-        assert accounts_conf.write_support == ''
+        assert accounts_conf.write_support == False
         assert accounts_conf.resource == 'http://test.com/abook/collection'
         assert accounts_conf.name == 'work'
         assert accounts_conf.passwd == 'foobar'
@@ -67,9 +67,12 @@ def test_basic_config():
         elif one.name == 'davical':
             assert_davical(one)
             count += 1
+        elif one.name == 'work_no_verify':
+            assert one.verify == True
+            count += 1
         else:
             assert True == 'this should not be reached'
-    assert count == 2
+    assert count == 3
 
 
 def test_basic_debug():
@@ -83,7 +86,7 @@ def test_basic_debug():
     assert conf.sqlite.path == '/home/testman/.pycard/abook.db'
     assert conf.filename.endswith('tests//assets/configs/base.conf') == True
     def assert_work(accounts_conf):
-        assert accounts_conf.write_support == ''
+        assert accounts_conf.write_support == False
         assert accounts_conf.resource == 'http://test.com/abook/collection'
         assert accounts_conf.name == 'work'
         assert accounts_conf.passwd == 'foobar'
@@ -108,9 +111,12 @@ def test_basic_debug():
         elif one.name == 'davical':
             assert_davical(one)
             count += 1
+        elif one.name == 'work_no_verify':
+            assert one.verify == True
+            count += 1
         else:
             assert True == 'this should not be reached'
-    assert count == 2
+    assert count == 3
 
 
 def test_sync_conf_parser():
@@ -125,7 +131,7 @@ def test_sync_conf_parser():
     assert conf.filename.endswith('tests//assets/configs/base.conf') == True
     assert conf.sync.accounts == set(['work'])
     def assert_work(accounts_conf):
-        assert accounts_conf.write_support == ''
+        assert accounts_conf.write_support == False
         assert accounts_conf.resource == 'http://test.com/abook/collection/'
         assert accounts_conf.name == 'work'
         assert accounts_conf.passwd == 'foobar'
@@ -150,6 +156,9 @@ def test_sync_conf_parser():
         elif one.name == 'davical':
             assert_davical(one)
             count += 1
+        elif one.name == 'work_no_verify':
+            assert one.verify == True
+            count += 1
         else:
             assert True == 'this should not be reached'
-    assert count == 2
+    assert count == 3

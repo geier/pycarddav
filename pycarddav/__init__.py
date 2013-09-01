@@ -31,11 +31,13 @@ import signal
 import sys
 import xdg.BaseDirectory
 
+import version
+
 from netrc import netrc
 from urlparse import urlsplit
 
 __productname__ = 'pyCardDAV'
-__version__ = '0.5.0'
+__version__ = version.__version__
 __author__ = 'Christian Geier'
 __copyright__ = 'Copyright 2011-2013 Christian Geier & contributors'
 __author_email__ = 'pycarddav@lostpackets.de'
@@ -91,10 +93,10 @@ class Namespace(dict):
 
 class Section(object):
 
-    READERS = { bool: ConfigParser.SafeConfigParser.getboolean,
-                float: ConfigParser.SafeConfigParser.getfloat,
-                int: ConfigParser.SafeConfigParser.getint,
-                str: ConfigParser.SafeConfigParser.get }
+    READERS = {bool: ConfigParser.SafeConfigParser.getboolean,
+               float: ConfigParser.SafeConfigParser.getfloat,
+               int: ConfigParser.SafeConfigParser.getint,
+               str: ConfigParser.SafeConfigParser.get}
 
     def __init__(self, parser, group):
         self._parser = parser
@@ -120,11 +122,13 @@ class Section(object):
                 else:
                     reader = Section.READERS[type(default)]
                 self._parsed[option] = filter_(reader(self._parser, section, option))
-
                 # Remove option once handled (see the check function).
                 self._parser.remove_option(section, option)
             except ConfigParser.Error:
-                self._parsed[option] = default
+                if filter_ is None:
+                    self._parsed[option] = default
+                else:
+                    self._parsed[option] = filter_(default)
 
         return Namespace(self._parsed)
 
@@ -132,7 +136,7 @@ class Section(object):
     def group(self):
         return self._group
 
-    def _parse_bool_string(self, value):
+    def _parse_verify(self, value):
         """if value is either 'True' or 'False' it returns that value as a bool,
         otherwise it returns the value"""
         value = value.strip().lower()
@@ -152,6 +156,7 @@ class Section(object):
         else:
             return False
 
+
 class AccountSection(Section):
     def __init__(self, parser):
         Section.__init__(self, parser, 'accounts')
@@ -160,7 +165,7 @@ class AccountSection(Section):
             ('passwd', '', None),
             ('resource', '', None),
             ('auth', 'basic', None),
-            ('verify', 'True', self._parse_bool_string),
+            ('verify', 'true', self._parse_verify),
             ('write_support', '', self._parse_write_support),
         ]
 
@@ -196,7 +201,7 @@ class ConfigurationParser(object):
 
     def __init__(self, desc, check_accounts=True):
         # Set the configuration current schema.
-        self._sections = [ AccountSection, SQLiteSection ]
+        self._sections = [AccountSection, SQLiteSection]
 
         # Build parsers and set common options.
         self._check_accounts = check_accounts
@@ -339,9 +344,9 @@ class ConfigurationParser(object):
         for name, value in sorted(dict.copy(conf).iteritems()):
             if type(value) is list:
                 for o in value:
-                    self.dump(o, '\t'*tab + name + ':', tab + 1)
+                    self.dump(o, '\t' * tab + name + ':', tab + 1)
             elif type(value) is Namespace:
-                self.dump(value, '\t'*tab + name + ':', tab + 1)
+                self.dump(value, '\t' * tab + name + ':', tab + 1)
             elif name != 'passwd':
                 logging.debug('%s%s: %s', '\t'*tab, name, value)
 
@@ -411,7 +416,7 @@ class ConfigurationParser(object):
         resource = os.path.join(
             ConfigurationParser.DEFAULT_PATH, ConfigurationParser.DEFAULT_FILE)
         paths.extend([os.path.join(path, resource)
-            for path in xdg.BaseDirectory.xdg_config_dirs])
+                      for path in xdg.BaseDirectory.xdg_config_dirs])
 
         paths.append(os.path.expanduser(os.path.join('~', '.' + resource)))
         paths.append(os.path.expanduser(ConfigurationParser.DEFAULT_FILE))
@@ -421,6 +426,7 @@ class ConfigurationParser(object):
                 return path
 
         return None
+
 
 class SyncConfigurationParser(ConfigurationParser):
     """A specialized setup tool for synchronization."""
@@ -439,7 +445,7 @@ class SyncConfigurationParser(ConfigurationParser):
         if ns.sync.accounts:
             for name in set(ns.sync.accounts):
                 if not name in [a.name for a in ns.accounts]:
-                    logging.warn('Uknown account %s', name)
+                    logging.warn('Unknown account %s', name)
                     ns.sync.accounts.remove(name)
             if len(ns.sync.accounts) == 0:
                 logging.error('No valid account selected')
@@ -454,4 +460,3 @@ class SyncConfigurationParser(ConfigurationParser):
         ns.sync.accounts = set(ns.sync.accounts)
 
         return result
-
