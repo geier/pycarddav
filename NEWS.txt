@@ -1,6 +1,12 @@
 News
 ====
 
+02.09.2013: pyCardDAV v.0.5.1 released
+
+  pyCardDAV v0.5.1 is released. This is a bugfix release, if everything works
+  fine for you, there is no need to upgrade. Database deletion should not be
+  necessary.
+
 15.06.2013: pyCardDAV v.0.5.0 released
 
  **New** This release brings support for multiple CardDAV accounts. See the
