@@ -322,11 +322,12 @@ class SQLiteDb(object):
     def get_vcard_from_db(self, href, account_name):
         """returns a VCard()
         """
-        sql_s = 'SELECT vcard FROM {0} WHERE href=(?)'.format(account_name)
+        sql_s = 'SELECT vcard, etag FROM {0} WHERE href=(?)'.format(account_name)
         result = self.sql_ex(sql_s, (href, ))
         vcard = model.vcard_from_string(result[0][0])
         vcard.href = href
         vcard.account = account_name
+        vcard.etag = result[0][1]
         return vcard
 
     def get_changed(self, account_name):

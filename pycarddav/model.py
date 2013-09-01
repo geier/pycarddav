@@ -175,6 +175,7 @@ class VCard(defaultdict):
             defaultdict.__init__(self, list, ddict)
         self.href = ''
         self.account = ''
+        self.etag = ''
         self.edited = 0
 
     def serialize(self):

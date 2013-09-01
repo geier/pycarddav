@@ -271,7 +271,11 @@ class EditorPane(Pane):
             [self._fname_edit.edit_text, self._lname_edit.edit_text])
         for i, edit in enumerate(self._email_edits):
             self._vcard['EMAIL'][i] = (edit.edit_text, self._vcard['EMAIL'][i][1])
-        self._db.update(self._vcard, self._account, self._vcard.href, status=pycarddav.backend.NEW)
+        self._db.update(self._vcard,
+                        self._account,
+                        self._vcard.href,
+                        etag=self._vcard.etag,
+                        status=pycarddav.backend.NEW)
 
 
 class Window(urwid.Frame):
