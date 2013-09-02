@@ -164,7 +164,8 @@ class SQLiteDb(object):
                 name TEXT,
                 fname TEXT,
                 vcard TEXT,
-                status INT NOT NULL
+                status INT NOT NULL,
+                PRIMARY KEY(href)
                 )""".format(account_name)
         self.sql_ex(sql_s)
         sql_s = 'INSERT INTO accounts (account, resource) VALUES (?, ?)'
