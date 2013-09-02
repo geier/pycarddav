@@ -158,6 +158,13 @@ class SQLiteDb(object):
         return result
 
     def check_account_table(self, account_name, resource):
+        count_sql_s = """SELECT count(*) FROM accounts
+                WHERE account = ? AND resource = ?"""
+        self.cursor.execute(count_sql_s, (account_name, resource))
+        result = self.cursor.fetchone()
+
+        if(result[0] != 0):
+            return
         sql_s = """CREATE TABLE IF NOT EXISTS {0} (
                 href TEXT,
                 etag TEXT,
