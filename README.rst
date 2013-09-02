@@ -104,6 +104,25 @@ three utilies. If no account is chosen all searching and syncing actions will
 use all configured accounts, while on adding cards the first configured account
 will be used.
 
+Keyring support
+---------------
+
+*pycarddav* supports keyring_, (version >=3.0). To use it, you need to add a
+password to the keyring via::
+
+    keyring set pycarddav:$account $username
+
+where $account is the name of an account as configured in your
+configuration
+file and $username is the corresponding username (and then have no
+password
+configured for that account). For more details on configuring keyring
+have a
+look at its documentation_.
+
+.. _keyring: https://pypi.python.org/pypi/keyring
+.. _documentation: https://pypi.python.org/pypi/keyring
+
 Import Addresses from Mutt
 --------------------------
 You can directly add sender addresses from mutt to *pyCardDAV*, either adding
