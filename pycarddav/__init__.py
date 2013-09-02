@@ -307,8 +307,14 @@ class ConfigurationParser(object):
                                   ns.user, hostname)
                     result = False
             elif ns.user:
+                try:
+                    import keyring
+                except ImportError:
+                    pass
+                else:
+                    ns.passwd = keyring.get_password('pycarddav:'+ns.name, ns.user)
                 # Do not ask for password if execution is already doomed.
-                if result:
+                if result and not ns.passwd:
                     prompt = 'CardDAV password (account ' + ns.name + '): '
                     ns.passwd = getpass.getpass(prompt=prompt)
             else:
