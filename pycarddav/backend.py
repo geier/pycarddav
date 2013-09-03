@@ -115,7 +115,7 @@ class SQLiteDb(object):
         """tests for curent db Version
         if the table is still empty, insert db_version
         """
-        database_version = 9  # the current db VERSION
+        database_version = 10  # the current db VERSION
         self.cursor.execute('SELECT version FROM version')
         result = self.cursor.fetchone()
         if result is None:
