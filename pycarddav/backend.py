@@ -112,7 +112,7 @@ class SQLiteDb(object):
         return result
 
     def _check_table_version(self):
-        """tests for curent db Version
+        """tests for current db Version
         if the table is still empty, insert db_version
         """
         database_version = 10  # the current db VERSION
@@ -120,7 +120,8 @@ class SQLiteDb(object):
         result = self.cursor.fetchone()
         if result is None:
             stuple = (database_version, )  # database version db Version
-            self.cursor.execute('INSERT INTO version (version) VALUES (?)', stuple)
+            self.cursor.execute('INSERT INTO version (version) VALUES (?)',
+                                stuple)
             self.conn.commit()
         elif not result[0] == database_version:
             raise Exception(str(self.db_path) +
@@ -129,11 +130,14 @@ class SQLiteDb(object):
                             "using pycardsyncer.\n")
 
     def _create_default_tables(self):
-        """creates version and account tables and instert table version number
+        """creates version and account tables and insert table version number
+
         """
+        # CREATE TABLE IF NOT EXISTS is faster than checking if it exists
         try:
-            self.cursor.execute('''CREATE TABLE IF NOT EXISTS version ( version INTEGER )''')
-            logging.debug("created version table")
+            self.cursor.execute('''CREATE TABLE IF NOT EXISTS version
+                                ( version INTEGER )''')
+            logging.debug("made sure version table exists")
         except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                              'Unknown Error: ' + str(error) + "\n")
@@ -143,7 +147,7 @@ class SQLiteDb(object):
                 account TEXT NOT NULL,
                 resource TEXT NOT NULL
                 )''')
-            logging.debug("created accounts table")
+            logging.debug("made sure accounts table exists ")
         except Exception as error:
             sys.stderr.write('Failed to connect to database,'
                              'Unknown Error: ' + str(error) + "\n")
@@ -177,7 +181,7 @@ class SQLiteDb(object):
         self.sql_ex(sql_s)
         sql_s = 'INSERT INTO accounts (account, resource) VALUES (?, ?)'
         self.sql_ex(sql_s, (account_name, resource))
-        logging.debug("created {0} table".format(account_name))
+        logging.debug("made sure {0} table exists".format(account_name))
 
     def needs_update(self, href, account_name, etag=''):
         """checks if we need to update this vcard
@@ -294,14 +298,16 @@ class SQLiteDb(object):
         """
         stuple = (href, )
         logging.debug("locally deleting " + str(href))
-        self.sql_ex('DELETE FROM {0} WHERE href=(?)'.format(account_name), stuple)
+        self.sql_ex('DELETE FROM {0} WHERE href=(?)'.format(account_name),
+                    stuple)
 
     def get_all_href_from_db(self, accounts):
         """returns a list with all hrefs
         """
         result = list()
         for account in accounts:
-            hrefs = self.sql_ex('SELECT href FROM {0} ORDER BY fname COLLATE NOCASE'.format(account))
+            hrefs = self.sql_ex('SELECT href FROM {0} ORDER BY fname '
+                                'COLLATE NOCASE'.format(account))
             result = result + [(href[0], account) for href in hrefs]
         return result
 
