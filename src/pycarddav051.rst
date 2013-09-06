@@ -5,7 +5,7 @@ pyCardDAV v0.5.1 released
 :tags: Releases
 
 *pyCardDAV* v0.5.1_ has been released. This is a bugfix release, if *pyCardDAV*
-is working fine for you, there is no reasen to upgrade.
+is working fine for you, there is no reason to upgrade.
 
 Also, *pyCardDAV* is also available on Debian_ now.
 
