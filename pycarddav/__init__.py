@@ -348,7 +348,7 @@ class ConfigurationParser(object):
         logging.debug(intro)
 
         for name, value in sorted(dict.copy(conf).iteritems()):
-            if type(value) is list and type(value[0]) != str:
+            if type(value) is list and not isinstance(value[0], basestring):
                 for o in value:
                     self.dump(o, '\t' * tab + name + ':', tab + 1)
             elif type(value) is Namespace:
