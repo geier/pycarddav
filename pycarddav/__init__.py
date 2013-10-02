@@ -195,7 +195,7 @@ class ConfigurationParser(object):
     output level using the debug flag read from the command-line or
     the configuration file.
     """
-    DEFAULT_DB_PATH = xdg.BaseDirectory.save_data_path('pycard') + 'abook.db'
+    DEFAULT_DB_PATH = xdg.BaseDirectory.save_data_path('pycard') + '/abook.db'
     DEFAULT_PATH = "pycard"
     DEFAULT_FILE = "pycard.conf"
 
