@@ -206,8 +206,9 @@ class ConfigurationParser(object):
         # Build parsers and set common options.
         self._check_accounts = check_accounts
         self._conf_parser = ConfigParser.SafeConfigParser()
-        self._arg_parser = argparse.ArgumentParser(
-            description=desc, version=__version__)
+        self._arg_parser = argparse.ArgumentParser(description=desc)
+        self._arg_parser.add_argument(
+            "-v", "--version", action="version", version=__version__)
         self._arg_parser.add_argument(
             "-c", "--config", action="store", dest="filename",
             default=self._get_default_configuration_file(), metavar="FILE",
