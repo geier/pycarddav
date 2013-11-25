@@ -104,6 +104,22 @@ three utilies. If no account is chosen all searching and syncing actions will
 use all configured accounts, while on adding cards the first configured account
 will be used.
 
+Keyring support
+---------------
+
+*pycarddav* supports keyring_, (version >=3.0). To use it, you need to add a
+password to the keyring via::
+
+    keyring set pycarddav:$account $username
+
+where $account is the name of an account as configured in your configuration
+file and $username is the corresponding username (and then have no password
+configured for that account). For more details on configuring keyring have a
+look at its documentation_.
+
+.. _keyring: https://pypi.python.org/pypi/keyring
+.. _documentation: https://pypi.python.org/pypi/keyring
+
 Import Addresses from Mutt
 --------------------------
 You can directly add sender addresses from mutt to *pyCardDAV*, either adding
@@ -122,6 +138,14 @@ self-signed certificate or one signed by CAcert) you can set *verify* to a path
 to the CA's root file (must be in pem format). If you don't want any certificate
 checking set *verify* to *false* to disable *any* ssl certificate checking (this
 is not recommended).
+
+Conflict Resolution
+-------------------
+
+In case of conflicting edits (local VCard changed while remote VCard also
+changed), are "resolved" by pycarddav through overwriting the local VCard with
+the remote one (meaning local edits are lost in this case). Syncing more
+frequently can prevent this.
 
 Additional Information
 ----------------------

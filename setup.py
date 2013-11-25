@@ -10,8 +10,8 @@ import warnings
 from setuptools import setup
 
 MAJOR = 0
-MINOR = 5
-PATCH = 1
+MINOR = 6
+PATCH = 0
 
 RELEASE = True
 

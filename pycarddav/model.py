@@ -75,6 +75,7 @@ RTEXT = '\x1b[7m'
 NTEXT = '\x1b[0m'
 BTEXT = '\x1b[1m'
 
+
 def get_names(display_name):
     first_name, last_name = '', display_name
 
@@ -278,6 +279,7 @@ class VCard(defaultdict):
         TODO make shure this random uid is unique"""
         import string
         import random
+
         def generate_random_uid():
             """generate a random uid, when random isn't broken, getting a
             random UID from a pool of roughly 10^56 should be good enough"""

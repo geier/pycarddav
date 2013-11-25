@@ -1,6 +1,12 @@
 News
 ====
 
+25.11.2013: pyCardDAV v0.6 released
+
+ This is mostly a bug fix release (thanks to Jamie McClelland for fixing
+ two bugs), but also introduces keyring support (thanks to Steven Allen).
+ Have a look at the README for further information on keyring support.
+
 02.09.2013: pyCardDAV v.0.5.1 released
 
   pyCardDAV v0.5.1 is released. This is a bugfix release, if everything works

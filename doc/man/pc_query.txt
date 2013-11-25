@@ -1,0 +1,97 @@
+PC_QUERY(1)
+===========
+:doctype: manpage
+
+NAME
+----
+pc_query - query the local address book
+
+
+SYNOPSIS
+--------
+*pc_query* ['OPTIONS'] [SEARCHSTRING]
+
+
+DESCRIPTION
+-----------
+pc_query(1) prints contacts from a local address book, synchronized with
+remote CardDAV resources with pycardsyncer(1). Contact information is
+kept in the 'vCard' format, one set of information, corresponding to a
+business card, is therefore often referred to as a 'card'. pc_query(1)
+can also import and export vcards from/to the database. pc_query(1) is
+part of the 'pycarddav' package.
+
+
+OPTIONS
+-------
+
+BASIC STARTUP OPTIONS
+~~~~~~~~~~~~~~~~~~~~~
+*-a, --account*='NAME'::
+    Only use the account/resource 'NAME' (this option can be used more than
+    once).
+*-c, --config*='CONFIG'::
+    Use the configuration file 'CONFIG', otherwise pc_query(1) will look in
+    '$HOME/.pycard/' and '$HOME/.config/pycard/' for files named 'pycard.conf'.
+*--debug*::
+     This option enables debugging output.
+*-h, --help*::
+     Print a small help text and exit.
+*-v, --version*::
+    Print pc_query's version number and exit.
+
+
+PRINTING OPTIONS
+~~~~~~~~~~~~~~~~
+These options can only be used with 'SEARCHSTRING' and determine the
+output format of pc_query(1). Without any options pc_query(1) will print
+the name, telephone numbers and email addresses of all matching contact
+cards.
+
+*-A*::
+    Prints the whole card.
+*-m*::
+    Only prints names and email addresses, in a mutt friendly format
+   (one line per email address).
+*-t*::
+    Only prints names and telephone numbers, analogue to -m (but in different
+    sequence)
+
+
+FILE INPUT AND OUTPUT OPTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*-b, --backup*'='FILE'::
+    Backup the local db to BACKUP, if a SEARCHSTRING is present, only
+    backup cards matching it.
+*--delete*::
+    Delete card matching 'SEARCHSTRING', if more than one matches, the
+    user has to choose one card in an interactive user interface.
+*-i, --import*='FILE'::
+    Import vCard from FILE or 'STDIN' into the first specified (or
+    default) account
+
+
+AUTHOR
+------
+pc_query was mostly written by Christian Geier, with a lot of help by
+others, see 'CONTRIBUTORS.txt' in the pycarddav distribution.
+
+
+RESOURCES
+---------
+Main web site: <http://lostpackets.de/pycarddav/>
+Please report bugs via the contact information at the above web site or
+via github: <http://github.com/geier/khal/>.
+
+
+SEE ALSO
+--------
+pycardsyncer(1), pycard-import(1)
+
+
+COPYING
+-------
+Copyright \(C) 2011-2013 Christian Geier and Contributors. pc_query and
+pycarddav are released under the terms of the Expat/MIT license, see the
+'COPYING' file distributed with pycarddav.

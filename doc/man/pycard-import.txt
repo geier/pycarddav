@@ -1,0 +1,81 @@
+PYCARD-IMPORT(1)
+================
+:doctype: manpage
+
+NAME
+----
+pycard-import - import email addresses from mails from stdin
+
+
+SYNOPSIS
+--------
+*pycard-import* ['OPTIONS']
+
+
+DESCRIPTION
+-----------
+pycard-import(1) imports email addresses from mails piped into its stdin
+and saves those addresses to the database used by pycardsyncer(1) and
+pc_query(1). During non-batch import a choice is given to merge the
+email address with a contact or to create a new one. pycard-import(1) is
+part of the 'pycarddav' package.
+
+
+OPTIONS
+-------
+
+BASIC STARTUP OPTIONS
+~~~~~~~~~~~~~~~~~~~~~
+*-a, --account*='NAME'::
+    Only use the account/resource 'NAME' (this option can be used more than
+    once).
+*-c, --config*='CONFIG'::
+    Use the configuration file 'CONFIG', otherwise pycard-import(1) will look in
+    '$HOME/.pycard/' and '$HOME/.config/pycard/' for files named 'pycard.conf'.
+*--debug*::
+     This option enables debugging output.
+*-h, --help*::
+     Print a small help text and exit.
+*-v, --version*::
+    Print pycard-import's version number and exit.
+
+
+IMPORTING OPTIONS
+~~~~~~~~~~~~~~~~
+*--batch*::
+    Do not open the editor.
+*--bcc*::
+    Import the content of the Bcc header.
+*--cc*::
+    Import the content of the Cc header.
+*-f, --from*::
+    Import the content of the From header.
+*-n, --dry-run*::
+    Do not actually update the database (implies --batch).
+*-t, --to*::
+    Import the content of the To header.
+
+
+AUTHOR
+------
+pycard-import was mostly written by Christian Geier, with a lot of help by
+others, see 'CONTRIBUTORS.txt' in the pycarddav distribution.
+
+
+RESOURCES
+---------
+Main web site: <http://lostpackets.de/pycarddav/>
+Please report bugs via the contact information at the above web site or
+via github: <http://github.com/geier/khal/>.
+
+
+SEE ALSO
+--------
+pycardsyncer(1), pc_query(1)
+
+
+COPYING
+-------
+Copyright \(C) 2011-2013 Christian Geier and Contributors. pycard-import and
+pycarddav are released under the terms of the Expat/MIT license, see the
+'COPYING' file distributed with pycarddav.

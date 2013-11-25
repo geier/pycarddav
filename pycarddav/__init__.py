@@ -195,7 +195,7 @@ class ConfigurationParser(object):
     output level using the debug flag read from the command-line or
     the configuration file.
     """
-    DEFAULT_DB_PATH = xdg.BaseDirectory.save_data_path('pycard') + 'abook.db'
+    DEFAULT_DB_PATH = xdg.BaseDirectory.save_data_path('pycard') + '/abook.db'
     DEFAULT_PATH = "pycard"
     DEFAULT_FILE = "pycard.conf"
 
@@ -206,8 +206,9 @@ class ConfigurationParser(object):
         # Build parsers and set common options.
         self._check_accounts = check_accounts
         self._conf_parser = ConfigParser.SafeConfigParser()
-        self._arg_parser = argparse.ArgumentParser(
-            description=desc, version=__version__)
+        self._arg_parser = argparse.ArgumentParser(description=desc)
+        self._arg_parser.add_argument(
+            "-v", "--version", action="version", version=__version__)
         self._arg_parser.add_argument(
             "-c", "--config", action="store", dest="filename",
             default=self._get_default_configuration_file(), metavar="FILE",
@@ -307,8 +308,14 @@ class ConfigurationParser(object):
                                   ns.user, hostname)
                     result = False
             elif ns.user:
+                try:
+                    import keyring
+                except ImportError:
+                    pass
+                else:
+                    ns.passwd = keyring.get_password('pycarddav:'+ns.name, ns.user)
                 # Do not ask for password if execution is already doomed.
-                if result:
+                if result and not ns.passwd:
                     prompt = 'CardDAV password (account ' + ns.name + '): '
                     ns.passwd = getpass.getpass(prompt=prompt)
             else:
@@ -342,7 +349,7 @@ class ConfigurationParser(object):
         logging.debug(intro)
 
         for name, value in sorted(dict.copy(conf).iteritems()):
-            if type(value) is list:
+            if type(value) is list and not isinstance(value[0], basestring):
                 for o in value:
                     self.dump(o, '\t' * tab + name + ':', tab + 1)
             elif type(value) is Namespace:
