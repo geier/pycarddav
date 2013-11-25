@@ -1,0 +1,83 @@
+'\" t
+.\"     Title: pycardsyncer
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 11/25/2013
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "PYCARDSYNCER" "1" "11/25/2013" "\ \&" "\ \&"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+pycardsyncer \- synchronizes CardDAV resources to local db
+.SH "SYNOPSIS"
+.sp
+\fBpycardsyncer\fR [\fIOPTIONS\fR]
+.SH "DESCRIPTION"
+.sp
+pycardsyncer(1) synchronizes remote CardDAV resources to a local database that can then be queried and modified with pc_query(1)\&.
+.SH "OPTIONS"
+.PP
+\fB\-a, \-\-account\fR=\fINAME\fR
+.RS 4
+Sync only the account/resource
+\fINAME\fR
+(this option can be used more than once)\&.
+.RE
+.PP
+\fB\-c, \-\-config\fR=\fICONFIG\fR
+.RS 4
+Use the configuration file
+\fICONFIG\fR, otherwise pycardsyncer will look in
+\fI$HOME/\&.pycard/\fR
+and
+\fI$HOME/\&.config/pycard/\fR
+for files named
+\fIpycard\&.conf\fR\&.
+.RE
+.PP
+\fB\-\-debug\fR
+.RS 4
+This option enables debugging output\&.
+.RE
+.PP
+\fB\-h, \-\-help\fR
+.RS 4
+Print a small help text and exit\&.
+.RE
+.PP
+\fB\-v, \-\-version\fR
+.RS 4
+Print pycardsyncer\(cqs version number and exit\&.
+.RE
+.SH "AUTHOR"
+.sp
+pycardsyncer was mostly written by Christian Geier, with a lot of help by others, see \fICONTRIBUTORS\&.txt\fR in the pycarddav distribution\&.
+.SH "RESOURCES"
+.sp
+Main web site: http://lostpackets\&.de/pycarddav/ Please report bugs via the contact information at the above web site or via github: http://github\&.com/geier/khal/\&.
+.SH "SEE ALSO"
+.sp
+pc_query(1), pycard\-import(1)
+.SH "COPYING"
+.sp
+Copyright (C) 2011\-2013 Christian Geier and Contributors\&. pycardsyncer and pycarddav are released under the terms of the Expat/MIT license, see the \fICOPYING\fR file distributed with pycarddav\&.

@@ -1,0 +1,59 @@
+PYCARDSYNCER(1)
+===============
+:doctype: manpage
+
+NAME
+----
+pycardsyncer - synchronizes CardDAV resources to local db
+
+
+SYNOPSIS
+--------
+*pycardsyncer* ['OPTIONS']
+
+
+DESCRIPTION
+-----------
+pycardsyncer(1) synchronizes remote CardDAV resources to a local database that can
+then be queried and modified with pc_query(1).
+
+
+OPTIONS
+-------
+*-a, --account*='NAME'::
+    Sync only the account/resource 'NAME' (this option can be used more than
+    once).
+*-c, --config*='CONFIG'::
+    Use the configuration file 'CONFIG', otherwise pycardsyncer will look in
+    '$HOME/.pycard/' and '$HOME/.config/pycard/' for files named 'pycard.conf'.
+*--debug*::
+     This option enables debugging output.
+*-h, --help*::
+     Print a small help text and exit.
+*-v, --version*::
+    Print pycardsyncer's version number and exit.
+
+
+AUTHOR
+------
+pycardsyncer was mostly written by Christian Geier, with a lot of help by
+others, see 'CONTRIBUTORS.txt' in the pycarddav distribution.
+
+
+RESOURCES
+---------
+Main web site: <http://lostpackets.de/pycarddav/>
+Please report bugs via the contact information at the above web site or
+via github: <http://github.com/geier/khal/>.
+
+
+SEE ALSO
+--------
+pc_query(1), pycard-import(1)
+
+
+COPYING
+-------
+Copyright \(C) 2011-2013 Christian Geier and Contributors. pycardsyncer
+and pycarddav are released under the terms of the Expat/MIT license, see
+the 'COPYING' file distributed with pycarddav.

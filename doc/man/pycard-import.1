@@ -1,0 +1,115 @@
+'\" t
+.\"     Title: pycard-import
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 11/25/2013
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "PYCARD\-IMPORT" "1" "11/25/2013" "\ \&" "\ \&"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+pycard-import \- import email addresses from mails from stdin
+.SH "SYNOPSIS"
+.sp
+\fBpycard\-import\fR [\fIOPTIONS\fR]
+.SH "DESCRIPTION"
+.sp
+pycard\-import(1) imports email addresses from mails piped into its stdin and saves those addresses to the database used by pycardsyncer(1) and pc_query(1)\&. pycard\-import(1) is part of the \fIpycarddav\fR package\&.
+.SH "OPTIONS"
+.SS "BASIC STARTUP OPTIONS"
+.PP
+\fB\-a, \-\-account\fR=\fINAME\fR
+.RS 4
+Only use the account/resource
+\fINAME\fR
+(this option can be used more than once)\&.
+.RE
+.PP
+\fB\-c, \-\-config\fR=\fICONFIG\fR
+.RS 4
+Use the configuration file
+\fICONFIG\fR, otherwise pycard\-import(1) will look in
+\fI$HOME/\&.pycard/\fR
+and
+\fI$HOME/\&.config/pycard/\fR
+for files named
+\fIpycard\&.conf\fR\&.
+.RE
+.PP
+\fB\-\-debug\fR
+.RS 4
+This option enables debugging output\&.
+.RE
+.PP
+\fB\-h, \-\-help\fR
+.RS 4
+Print a small help text and exit\&.
+.RE
+.PP
+\fB\-v, \-\-version\fR
+.RS 4
+Print pycard\-import\(cqs version number and exit\&.
+.RE
+.SS "IMPORTING OPTIONS"
+.PP
+\fB\-\-batch\fR
+.RS 4
+Do not open the editor\&.
+.RE
+.PP
+\fB\-\-bcc\fR
+.RS 4
+Import the content of the Bcc header\&.
+.RE
+.PP
+\fB\-\-cc\fR
+.RS 4
+Import the content of the Cc header\&.
+.RE
+.PP
+\fB\-f, \-\-from\fR
+.RS 4
+Import the content of the From header\&.
+.RE
+.PP
+\fB\-n, \-\-dry\-run\fR
+.RS 4
+Do not actually update the database (implies \-\-batch)\&.
+.RE
+.PP
+\fB\-t, \-\-to\fR
+.RS 4
+Import the content of the To header\&.
+.RE
+.SH "AUTHOR"
+.sp
+pycard\-import was mostly written by Christian Geier, with a lot of help by others, see \fICONTRIBUTORS\&.txt\fR in the pycarddav distribution\&.
+.SH "RESOURCES"
+.sp
+Main web site: http://lostpackets\&.de/pycarddav/ Please report bugs via the contact information at the above web site or via github: http://github\&.com/geier/khal/\&.
+.SH "SEE ALSO"
+.sp
+pycardsyncer(1), pc_query(1)
+.SH "COPYING"
+.sp
+Copyright (C) 2011\-2013 Christian Geier and Contributors\&. pycard\-import and pycarddav are released under the terms of the Expat/MIT license, see the \fICOPYING\fR file distributed with pycarddav\&.
