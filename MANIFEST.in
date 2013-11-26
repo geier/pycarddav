@@ -4,3 +4,4 @@ include CONTRIBUTING.txt
 include CONTRIBUTORS.txt
 include COPYING
 include NEWS.txt
+recursive-include doc/man *.1

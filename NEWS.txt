@@ -1,5 +1,8 @@
 News
 ====
+26.11.2013: pyCardDAV v0.6.1 released
+
+ The man pages should now be included in the release tarball.
 
 25.11.2013: pyCardDAV v0.6 released
 
