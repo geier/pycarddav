@@ -41,9 +41,9 @@ class VCardWalker(urwid.ListWalker):
     """A walker to browse a VCard list.
 
     This walker returns a selectable Text for each of the passed VCard
-    references. Either accounts or href_account_list needs to be supplied. If no
-    list of tuples of references are passed to the constructor, then all cards
-    from the specified accounts are browsed.
+    references. Either accounts or href_account_list needs to be supplied. If
+    no list of tuples of references are passed to the constructor, then all
+    cards from the specified accounts are browsed.
     """
 
     class Entry(urwid.Text):
@@ -53,20 +53,32 @@ class VCardWalker(urwid.ListWalker):
         def keypress(self, _, key):
             return key
 
-    def __init__(self, database, accounts=None, href_account_list=None):
+    class NoEntry(urwid.Text):
+        _selectable = False
+
+        def __init__(self):
+            urwid.Text.__init__(self, 'No matching entries found.')
+
+    def __init__(self, database, accounts=None, href_account_list=None,
+                 searchtext=''):
         urwid.ListWalker.__init__(self)
-        if accounts is None and href_account_list is None:
-            raise Exception
         self._db = database
-        self._href_account_list = href_account_list or database.get_all_href_from_db(accounts)
+        self.update(accounts, href_account_list, searchtext)
         self._current = 0
+
+    def update(self, accounts=None, href_account_list=None, searchtext=''):
+        if (accounts is None and href_account_list is None and
+                searchtext is None):
+            raise Exception
+        self._href_account_list = (href_account_list or
+                                   self._db.search(searchtext, accounts))
 
     @property
     def selected_vcard(self):
         """Return the focused VCard."""
-        return self._db.get_vcard_from_db(self._href_account_list[self._current][0],
-                                          self._href_account_list[self._current][1]
-                                          )
+        return self._db.get_vcard_from_db(
+            self._href_account_list[self._current][0],
+            self._href_account_list[self._current][1])
 
     def get_focus(self):
         """Return (focused widget, focused position)."""
@@ -91,6 +103,8 @@ class VCardWalker(urwid.ListWalker):
 
     def _get_at(self, pos):
         """Return a textual representation of the VCard at pos."""
+        if pos >= len(self._href_account_list):
+            return VCardWalker.NoEntry(), pos
         vcard = self._db.get_vcard_from_db(self._href_account_list[pos][0],
                                            self._href_account_list[pos][1]
                                            )
@@ -100,9 +114,39 @@ class VCardWalker(urwid.ListWalker):
         return urwid.AttrMap(VCardWalker.Entry(label), 'list', 'list focused'), pos
 
 
+class SearchField(urwid.WidgetWrap):
+    _selectable = True
+
+    def __init__(self, updatefunc, window):
+        self.updatefunc = updatefunc
+        self.window = window
+        self.edit = urwid.AttrWrap(urwid.Edit(caption=('', 'Search for: ')),
+                                   'edit', 'edit focused')
+        self.cancel = urwid.AttrWrap(
+            urwid.Button(label='Cancel', on_press=self.destroy),
+            'button', 'button focused')
+        self.search = urwid.AttrWrap(
+            urwid.Button(label='Search', on_press=self.search,
+                         user_data=self.edit), 'button', 'button focused')
+        buttons = urwid.GridFlow([self.cancel, self.search], 10, 3, 1, 'left')
+        widget = urwid.Pile([self.edit,
+                             urwid.Padding(buttons, 'right', 26, 1, 1, 1)])
+        urwid.WidgetWrap.__init__(self, urwid.Padding(widget, 'center', left=1,
+                                                      right=1))
+
+    def search(self, button, text_edit):
+        search_text = text_edit.get_edit_text()
+        self.updatefunc(search_text)
+        self.window.backtrack()
+
+    def destroy(self, button):
+        self.window.backtrack()
+
+
 class Pane(urwid.WidgetWrap):
     """An abstract Pane to be used in a Window object."""
     def __init__(self, widget, title=None, description=None):
+        self.widget = widget
         urwid.WidgetWrap.__init__(self, widget)
         self._title = title or ''
         self._description = description or ''
@@ -128,9 +172,10 @@ class Pane(urwid.WidgetWrap):
         window. Panes which do not override there keys should extend
         this list.
         """
-        return [(['up', 'down', 'pg.up', 'pg.down'], 'navigate through the fields.'),
-                (['esc'], 'backtrack to the previous pane of exit.'),
-                (['F1'], 'open this pane help.')]
+        return [(['up', 'down', 'pg.up', 'pg.down'],
+                 'navigate through the fields.'),
+                (['esc'], 'backtrack to the previous pane or exit.'),
+                (['F1', '?'], 'open this pane help.')]
 
 
 class HelpPane(Pane):
@@ -148,7 +193,8 @@ class HelpPane(Pane):
                     [urwid.Padding(urwid.Text(key_text), left=10),
                      urwid.Padding(urwid.Text(description), right=10)]))
 
-        Pane.__init__(self, urwid.ListBox(urwid.SimpleListWalker(content)), 'Help')
+        Pane.__init__(self, urwid.ListBox(urwid.SimpleListWalker(content)),
+                      'Help')
 
 
 class VCardChooserPane(Pane):
@@ -160,20 +206,36 @@ class VCardChooserPane(Pane):
     EditorPane.
     """
     def __init__(self, database, accounts=None, href_account_list=None):
-        self._walker = VCardWalker(database, accounts=accounts, href_account_list=href_account_list)
+        self.database = database
+        self.accounts = accounts
+        self._walker = VCardWalker(database,
+                                   accounts=accounts,
+                                   href_account_list=href_account_list)
         Pane.__init__(self, urwid.ListBox(self._walker), 'Browse...')
 
     def get_keys(self):
         keys = Pane.get_keys(self)
         keys.append(([' ', 'enter'], 'select a contact.'))
+        keys.append((['/'], 'search for contacts'))
         return keys
 
     def keypress(self, size, key):
         self._w.keypress(size, key)
         if key in ['space', 'enter']:
             self.window.backtrack(self._walker.selected_vcard)
+        if key in ['/']:
+            self.search()
         else:
             return key
+
+    def search(self):
+        search = SearchField(self.update, self.window)
+        self.window.overlay(search, 'Search')
+
+    def update(self, searchtext):
+        self._walker = VCardWalker(self.database, accounts=self.accounts,
+                                   searchtext=searchtext)
+        self._w = urwid.ListBox(self._walker)
 
 
 class EditorPane(Pane):
@@ -308,12 +370,17 @@ class Window(urwid.Frame):
 
     def __init__(self):
         self._track = []
-        self._title = u' %s v.%s' % (pycarddav.__productname__, pycarddav.__version__)
+        self._title = u' {0}s v.{1}s'.format(pycarddav.__productname__,
+                                             pycarddav.__version__)
 
         header = urwid.AttrWrap(urwid.Text(self._title), 'header')
         footer = urwid.AttrWrap(urwid.Text(
-            u' Use Up/Down/PgUp/PgDown to scroll. Esc to return. F1 for help'), 'footer')
-        urwid.Frame.__init__(self, urwid.Text(''), header=header, footer=footer)
+            u' Use Up/Down/PgUp/PgDown:scroll. Esc: return. ?: help'),
+            'footer')
+        urwid.Frame.__init__(self, urwid.Text(''),
+                             header=header,
+                             footer=footer)
+        self._original_w = None
 
     def open(self, pane, callback=None):
         """Open a new pane.
@@ -325,6 +392,15 @@ class Window(urwid.Frame):
         pane.window = self
         self._track.append((pane, callback))
         self._update(pane)
+
+    def overlay(self, overlay_w, title):
+        """put overlay_w as an overlay over the currently active pane
+        """
+        overlay = Pane(urwid.Overlay(urwid.Filler(overlay_w),
+                                     self._get_current_pane(),
+                                     'center', 60,
+                                     'middle', 5), title)
+        self.open(overlay)
 
     def backtrack(self, data=None):
         """Unstack the displayed pane.
@@ -347,7 +423,7 @@ class Window(urwid.Frame):
         """Handle application-wide key strokes."""
         if key == 'esc':
             self.backtrack()
-        elif key == 'f1':
+        elif key in ['f1', '?']:
             self.open(HelpPane(self._get_current_pane()))
 
     def _update(self, pane):
