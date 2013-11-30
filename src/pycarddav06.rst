@@ -18,6 +18,10 @@ As usual I didn't have time to implement any of the planned features for
 *pyCardDAV* (and as you can see most work was done by others) as khal_ has taken
 most of the free programming time I had.
 
+**Update** Since I forgot to include those man pages in the release, I have just
+released a new version v0.6.1_ that should include the man pages in *doc/man/*.
+
 
 .. _v0.6.0: http://lostpackets.de/pycarddav/downloads/pyCardDAV-0.6.0.tar.gz
+.. _v0.6.1: http://lostpackets.de/pycarddav/downloads/pyCardDAV-0.6.1.tar.gz
 .. _khal: https://github.com/geier/khal
