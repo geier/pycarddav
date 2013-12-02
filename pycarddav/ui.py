@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# vim: set ts=4 sw=4 expandtab sts=4:
+# vim: set ts=4 sw=4 expandtab sts=4 fileencoding=utf-8:
 # Copyright (c) 2011-2013 Christian Geier & contributors
 #
 # Permission is hereby granted, free of charge, to any person obtaining
@@ -54,6 +54,7 @@ class VCardWalker(urwid.ListWalker):
             return key
 
     class NoEntry(urwid.Text):
+        """used as an indicator that no match was found"""
         _selectable = False
 
         def __init__(self):
@@ -115,6 +116,7 @@ class VCardWalker(urwid.ListWalker):
 
 
 class SearchField(urwid.WidgetWrap):
+    """a search widget"""
     _selectable = True
 
     def __init__(self, updatefunc, window):
@@ -141,6 +143,32 @@ class SearchField(urwid.WidgetWrap):
 
     def destroy(self, button):
         self.window.backtrack()
+
+
+class PrettyFrame(urwid.WidgetWrap):
+    """
+    wraps `widget` with a frame on all sides
+
+    it would be nicer if this would actually figure out its own height
+    (even better: change it dynamicall)
+    """
+    topleft = urwid.Text(u'┌')
+    bottomright = urwid.Text(u'┘')
+    topright = urwid.Text(u'┐')
+    bottomleft = urwid.Text(u'└')
+
+    def __init__(self, widget, height):
+
+        widget = widget
+
+        horizontal = u'─'
+        vertical = urwid.Text(u'\n'.join(height * [u'│']))
+        divider = urwid.Divider(horizontal)
+        top = urwid.Columns([(1, self.topleft), divider, (1, self.topright)])
+        bottom = urwid.Columns([(1, self.bottomleft), divider, (1, self.bottomright)])
+        middle = urwid.Columns([(1, vertical), widget, (1, vertical)])
+        pile = urwid.Pile([top, middle, bottom])
+        urwid.WidgetWrap.__init__(self, pile)
 
 
 class Pane(urwid.WidgetWrap):
@@ -229,7 +257,7 @@ class VCardChooserPane(Pane):
             return key
 
     def search(self):
-        search = SearchField(self.update, self.window)
+        search = PrettyFrame(SearchField(self.update, self.window), 3)
         self.window.overlay(search, 'Search')
 
     def update(self, searchtext):
@@ -267,7 +295,9 @@ class EditorPane(Pane):
 
     def on_button_press(self, button):
         if button.get_label() == 'Merge':
-            self.window.open(VCardChooserPane(self._db, accounts=[self._account]), self.on_merge_vcard)
+            self.window.open(VCardChooserPane(self._db,
+                                              accounts=[self._account]),
+                             self.on_merge_vcard)
         else:
             if button.get_label() == 'Store':
                 self._validate()
@@ -370,8 +400,8 @@ class Window(urwid.Frame):
 
     def __init__(self):
         self._track = []
-        self._title = u' {0}s v.{1}s'.format(pycarddav.__productname__,
-                                             pycarddav.__version__)
+        self._title = u' {0} v{1}'.format(pycarddav.__productname__,
+                                          pycarddav.__version__)
 
         header = urwid.AttrWrap(urwid.Text(self._title), 'header')
         footer = urwid.AttrWrap(urwid.Text(
