@@ -145,32 +145,6 @@ class SearchField(urwid.WidgetWrap):
         self.window.backtrack()
 
 
-class PrettyFrame(urwid.WidgetWrap):
-    """
-    wraps `widget` with a frame on all sides
-
-    it would be nicer if this would actually figure out its own height
-    (even better: change it dynamicall)
-    """
-    topleft = urwid.Text(u'┌')
-    bottomright = urwid.Text(u'┘')
-    topright = urwid.Text(u'┐')
-    bottomleft = urwid.Text(u'└')
-
-    def __init__(self, widget, height):
-
-        widget = widget
-
-        horizontal = u'─'
-        vertical = urwid.Text(u'\n'.join(height * [u'│']))
-        divider = urwid.Divider(horizontal)
-        top = urwid.Columns([(1, self.topleft), divider, (1, self.topright)])
-        bottom = urwid.Columns([(1, self.bottomleft), divider, (1, self.bottomright)])
-        middle = urwid.Columns([(1, vertical), widget, (1, vertical)])
-        pile = urwid.Pile([top, middle, bottom])
-        urwid.WidgetWrap.__init__(self, pile)
-
-
 class Pane(urwid.WidgetWrap):
     """An abstract Pane to be used in a Window object."""
     def __init__(self, widget, title=None, description=None):
@@ -257,7 +231,7 @@ class VCardChooserPane(Pane):
             return key
 
     def search(self):
-        search = PrettyFrame(SearchField(self.update, self.window), 3)
+        search = urwid.LineBox(SearchField(self.update, self.window))
         self.window.overlay(search, 'Search')
 
     def update(self, searchtext):
