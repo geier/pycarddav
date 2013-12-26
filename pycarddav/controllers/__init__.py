@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# coding: utf-8
 # vim: set ts=4 sw=4 expandtab sts=4:
 # Copyright (c) 2011-2013 Christian Geier & contributors
 #
@@ -20,43 +21,7 @@
 # LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+controllers for the different tools
+"""
 
-try:
-    import logging
-    import sys
-
-    from pycarddav import SyncConfigurationParser
-    from pycarddav import capture_user_interruption
-    from pycarddav.controllers.sync import sync
-
-except ImportError as error:
-    sys.stderr.write(str(error))
-    sys.exit(1)
-
-
-
-capture_user_interruption()
-
-# Read configuration.
-conf_parser = SyncConfigurationParser()
-conf = conf_parser.parse()
-if conf is None:
-    sys.exit(1)
-
-if conf.debug:
-    conf_parser.dump(conf)
-
-rvalue = 0
-for one in conf.accounts:
-    if one.name in conf.sync.accounts:
-        logging.debug('start syncing account {0}'.format(one.name))
-        conf.account = one
-        try:
-            sync(conf)
-        except Exception as error:
-            if conf.debug:
-                raise
-            logging.critical('While syncing account "{0}" an error occured:\n  '.format(one.name) + str(error))
-            rvalue = 1
-
-sys.exit(rvalue)

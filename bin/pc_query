@@ -27,8 +27,8 @@ try:
     import sys
 
     from pycarddav import ConfigurationParser
-    from pycarddav import controllers
     from pycarddav import capture_user_interruption
+    from pycarddav.controllers.query import query
 
 except ImportError as error:
     sys.stderr.write(str(error))
@@ -108,4 +108,4 @@ if conf is None:
 if conf.debug:
     conf_parser.dump(conf)
 
-controllers.query(conf)
+query(conf)
