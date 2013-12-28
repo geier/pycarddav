@@ -71,13 +71,10 @@ def importing(my_dbtool, search_string, conf):
 def backup(my_dbtool, search_string, conf):
     with open(conf.query.backup, 'w') as vcf_file:
         if search_string == "":
-            href_account_list = my_dbtool.get_all_href_from_db(
-                conf.sync.accounts)
+            vcards = my_dbtool.get_all_href_from_db(conf.sync.accounts)
         else:
-            href_account_list = my_dbtool.search(search_string,
-                                                 conf.sync.accounts)
-        for href, account in href_account_list:
-            vcard = my_dbtool.get_vcard_from_db(href, account)
+            vcards = my_dbtool.search(search_string, conf.sync.accounts)
+        for vcard in vcards:
             vcf_file.write(vcard.vcf.encode('utf-8'))
 
 def edit(my_dbtool, search_string, conf):
@@ -88,15 +85,14 @@ def edit(my_dbtool, search_string, conf):
         sys.exit("Found no matching cards.")
 
 def delete(my_dbtool, search_string, conf):
-    href_account_list = my_dbtool.search(search_string,
-                                         conf.sync.accounts)
-    if len(href_account_list) is 0:
+    vcards = my_dbtool.search(search_string, conf.sync.accounts)
+    if len(vcards) is 0:
         sys.exit('Found no matching cards.')
-    elif len(href_account_list) is 1:
-        href, account = href_account_list[0]
-        card = my_dbtool.get_vcard_from_db(href, account)
+    elif len(vcards) is 1:
+        card = vcards[0]
     else:
         from pycarddav import ui
+        href_account_list = [(c.href, c.account) for c in vcards]
         pane = ui.VCardChooserPane(my_dbtool,
                                    href_account_list=href_account_list)
         ui.start_pane(pane)
@@ -115,9 +111,7 @@ def delete(my_dbtool, search_string, conf):
 def search(my_dbtool, search_string, conf):
     print("searching for " + conf.query.search_string + "...")
 
-    result = my_dbtool.search(search_string, conf.sync.accounts)
-    for href, account in result:
-        vcard = my_dbtool.get_vcard_from_db(href, account)
+    for vcard in my_dbtool.search(search_string, conf.sync.accounts):
         if conf.query.mutt_format:
             lines = vcard.print_email()
         elif conf.query.tel:
