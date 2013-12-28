@@ -29,5 +29,11 @@ resource: https://domain.tld/contacts/addressbook/
 # Defaults to $XDG_DATA_HOME/pycard/abook.db
 #path: ~/.pycard/abook.db
 
+[query]
+# select where to search when querying, possible values are:
+# vcard, name, fname or allnames (which includes both the name and the full
+# name). Default is vcard, which search in all the fields but is slower.
+where: vcard
+
 [default]
 debug: False

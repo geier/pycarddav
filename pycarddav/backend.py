@@ -95,13 +95,27 @@ class SQLiteDb(object):
     def __del__(self):
         self.conn.close()
 
-    def search(self, search_string, accounts):
-        """returns list of parsed vcards from db matching search_string"""
-        stuple = ('%' + search_string + '%', )
+    def search(self, search_string, accounts, where='vcard'):
+        """returns list of parsed vcards from db matching search_string
+        where can be any of 'vcard', 'name', 'fname' or 'allnames' (meaning is
+        searched for both 'name' or 'fname' for matches)
+        """
+        if where not in ('vcard', 'name', 'fname', 'allnames'):
+            raise ValueError("Invalid 'where' argument")
+
+        search_str = '%' + search_string + '%'
+        sql_fmt = 'SELECT href, vcard, etag FROM {0} WHERE '
+
+        if where == 'allnames':
+            sql_fmt += 'name LIKE (?) OR fname LIKE (?)'
+            sql_args = (search_str, search_str)
+        else:
+            sql_fmt += where + ' LIKE (?)'
+            sql_args = (search_str,)
+
         result = list()
         for account in accounts:
-            sql_fmt = 'SELECT href, vcard, etag FROM {0} WHERE vcard LIKE (?)'
-            rows = self.sql_ex(sql_fmt.format(account), stuple)
+            rows = self.sql_ex(sql_fmt.format(account), sql_args)
             result.extend((self.get_vcard_from_data(account, *r) for r in rows))
         return result
 

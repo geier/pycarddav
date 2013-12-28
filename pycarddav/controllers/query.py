@@ -73,7 +73,8 @@ def backup(my_dbtool, search_string, conf):
         if search_string == "":
             vcards = my_dbtool.get_all_href_from_db(conf.sync.accounts)
         else:
-            vcards = my_dbtool.search(search_string, conf.sync.accounts)
+            vcards = my_dbtool.search(search_string, conf.sync.accounts,
+                    conf.query.where)
         for vcard in vcards:
             vcf_file.write(vcard.vcf.encode('utf-8'))
 
@@ -85,7 +86,8 @@ def edit(my_dbtool, search_string, conf):
         sys.exit("Found no matching cards.")
 
 def delete(my_dbtool, search_string, conf):
-    vcards = my_dbtool.search(search_string, conf.sync.accounts)
+    vcards = my_dbtool.search(search_string, conf.sync.accounts,
+            conf.query.where)
     if len(vcards) is 0:
         sys.exit('Found no matching cards.')
     elif len(vcards) is 1:
@@ -111,7 +113,8 @@ def delete(my_dbtool, search_string, conf):
 def search(my_dbtool, search_string, conf):
     print("searching for " + conf.query.search_string + "...")
 
-    for vcard in my_dbtool.search(search_string, conf.sync.accounts):
+    for vcard in my_dbtool.search(search_string, conf.sync.accounts,
+            conf.query.where):
         if conf.query.mutt_format:
             lines = vcard.print_email()
         elif conf.query.tel:
