@@ -78,8 +78,8 @@ class VCardWalker(urwid.ListWalker):
     def selected_vcard(self):
         """Return the focused VCard."""
         return self._db.get_vcard_from_db(
-            self._href_account_list[self._current][0],
-            self._href_account_list[self._current][1])
+            self._href_account_list[self._current].href,
+            self._href_account_list[self._current].account)
 
     def get_focus(self):
         """Return (focused widget, focused position)."""
@@ -106,8 +106,8 @@ class VCardWalker(urwid.ListWalker):
         """Return a textual representation of the VCard at pos."""
         if pos >= len(self._href_account_list):
             return VCardWalker.NoEntry(), pos
-        vcard = self._db.get_vcard_from_db(self._href_account_list[pos][0],
-                                           self._href_account_list[pos][1]
+        vcard = self._db.get_vcard_from_db(self._href_account_list[pos].href,
+                                           self._href_account_list[pos].account
                                            )
         label = vcard.fname
         if vcard['EMAIL']:
