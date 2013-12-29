@@ -26,9 +26,11 @@ try:
     import logging
     import sys
 
+    from ConfigParser import NoSectionError
+
     from pycarddav import ConfigurationParser
-    from pycarddav import controllers
     from pycarddav import capture_user_interruption
+    from pycarddav.controllers.query import query
 
 except ImportError as error:
     sys.stderr.write(str(error))
@@ -37,6 +39,7 @@ except ImportError as error:
 
 class QueryConfigurationParser(ConfigurationParser):
     """A specialized setup tool for cards query."""
+    where_options = ('vcard', 'name', 'fname', 'allnames')
     def __init__(self):
         ConfigurationParser.__init__(self, "prints contacts cards matching a search string",
                                      check_accounts=False)
@@ -74,11 +77,21 @@ class QueryConfigurationParser(ConfigurationParser):
             "--delete", dest="query__delete", action="store_true",
             help="delete card matching SEARCHSTRING")
         self._arg_parser.add_argument(
+            "-w", "--where", dest="query__where", metavar="WHERE",
+            choices=self.where_options,
+            help="Query for matches in the WHERE field(s)")
+        self._arg_parser.add_argument(
             "-a", "--account", action="append", dest="sync__accounts",
             metavar="NAME", help="use only the NAME account (can be used more than once)")
 
     def check(self, ns):
         result = ConfigurationParser.check(self, ns)
+
+        if ns.query.where not in self.where_options:
+            logging.error("Invalid 'where' option '%s', should be one of %s",
+                    ns.query.where,
+                    ', '.join(repr(o) for o in self.where_options))
+            result = False
 
         accounts = [account.name for account in ns.accounts]
         if ns.sync.accounts:
@@ -96,6 +109,20 @@ class QueryConfigurationParser(ConfigurationParser):
 
         return result
 
+    def _read_configuration(self, overrides):
+        """Build the configuration holder."""
+        ns = ConfigurationParser._read_configuration(self, overrides)
+
+        if ns.query.where is None:
+            ns.query.where = 'vcard'
+            try:
+                where = self._conf_parser.get('query', 'where')
+                ns.query.where = where
+            except (ValueError, NoSectionError):
+                pass
+
+        return ns
+
 
 capture_user_interruption()
 
@@ -108,4 +135,4 @@ if conf is None:
 if conf.debug:
     conf_parser.dump(conf)
 
-controllers.query(conf)
+query(conf)

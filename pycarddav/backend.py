@@ -95,14 +95,28 @@ class SQLiteDb(object):
     def __del__(self):
         self.conn.close()
 
-    def search(self, search_string, accounts):
-        """returns list of ids from db matching search_string"""
-        stuple = ('%' + search_string + '%', )
+    def search(self, search_string, accounts, where='vcard'):
+        """returns list of parsed vcards from db matching search_string
+        where can be any of 'vcard', 'name', 'fname' or 'allnames' (meaning is
+        searched for both 'name' or 'fname' for matches)
+        """
+        if where not in ('vcard', 'name', 'fname', 'allnames'):
+            raise ValueError("Invalid 'where' argument")
+
+        search_str = '%' + search_string + '%'
+        sql_fmt = 'SELECT href, vcard, etag FROM {0} WHERE '
+
+        if where == 'allnames':
+            sql_fmt += 'name LIKE (?) OR fname LIKE (?)'
+            sql_args = (search_str, search_str)
+        else:
+            sql_fmt += where + ' LIKE (?)'
+            sql_args = (search_str,)
+
         result = list()
         for account in accounts:
-            sql_s = 'SELECT href FROM {0} WHERE vcard LIKE (?)'.format(account)
-            hrefs = self.sql_ex(sql_s, stuple)
-            result = result + ([(href[0], account) for href in hrefs])
+            rows = self.sql_ex(sql_fmt.format(account), sql_args)
+            result.extend((self.get_vcard_from_data(account, *r) for r in rows))
         return result
 
     def _dump(self, account_name):
@@ -302,13 +316,13 @@ class SQLiteDb(object):
                     stuple)
 
     def get_all_href_from_db(self, accounts):
-        """returns a list with all hrefs
+        """returns a list with all parsed vcards
         """
         result = list()
         for account in accounts:
-            hrefs = self.sql_ex('SELECT href FROM {0} ORDER BY fname '
-                                'COLLATE NOCASE'.format(account))
-            result = result + [(href[0], account) for href in hrefs]
+            rows = self.sql_ex('SELECT href, vcard, etag FROM {0} '
+                                'ORDER BY fname COLLATE NOCASE'.format(account))
+            result.extend((self.get_vcard_from_data(account, *r) for r in rows))
         return result
 
     def get_all_href_from_db_not_new(self, accounts):
@@ -329,28 +343,23 @@ class SQLiteDb(object):
 #            return self.sql_ex('SELECT fname, href FROM {0} '
 #                               'ORDER BY name'.format(self.account))
 #        else:
-#            hrefs = self.search(searchstring)
-#            temp = list()
-#            for href in hrefs:
-#                try:
-#                    sql_s = 'SELECT fname, href FROM {0} WHERE href =(?)'.format(self.account)
-#                    result = self.sql_ex(sql_s, (href, ))
-#                    temp.append(result[0])
-#                except IndexError as error:
-#                    print(href)
-#                    print(error)
-#            return temp
+#            return [(c.fname, c.href) for c in self.search(searchstring)]
+
+    def get_vcard_from_data(self, account_name, href, vcard, etag):
+        """returns a VCard()
+        """
+        vcard = model.vcard_from_string(vcard)
+        vcard.href = href
+        vcard.account = account_name
+        vcard.etag = etag
+        return vcard
 
     def get_vcard_from_db(self, href, account_name):
         """returns a VCard()
         """
         sql_s = 'SELECT vcard, etag FROM {0} WHERE href=(?)'.format(account_name)
         result = self.sql_ex(sql_s, (href, ))
-        vcard = model.vcard_from_string(result[0][0])
-        vcard.href = href
-        vcard.account = account_name
-        vcard.etag = result[0][1]
-        return vcard
+        return self.get_vcard_from_data(account_name, href, *result[0])
 
     def get_changed(self, account_name):
         """returns list of hrefs of locally edited vcards

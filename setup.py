@@ -71,7 +71,7 @@ setup(
     author_email='pycarddav@lostpackets.de',
     url='http://lostpackets.de/pycarddav/',
     license='Expat/MIT',
-    packages=['pycarddav'],
+    packages=['pycarddav', 'pycarddav.controllers'],
     scripts=['bin/pycardsyncer', 'bin/pc_query', 'bin/pycard-import'],
     requires=requirements,
     install_requires=requirements,
