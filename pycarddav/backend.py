@@ -35,8 +35,9 @@ version:
 account:
     account (TEXT): name of the account
     resource (TEXT)
+    ctag (TEXT) ctag of the collection
 
-account_$ACCOUNTNAME:
+$ACCOUNTNAME_r:   # as in resource
     href (TEXT)
     etag (TEXT)
     name (TEXT): name as in vcard, seperated by ';'
@@ -45,6 +46,8 @@ account_$ACCOUNTNAME:
     vcard (TEXT): the actual vcard
 
 """
+
+# TODO rename account to resource or similar
 
 from __future__ import print_function
 
@@ -115,13 +118,13 @@ class SQLiteDb(object):
 
         result = list()
         for account in accounts:
-            rows = self.sql_ex(sql_fmt.format(account), sql_args)
+            rows = self.sql_ex(sql_fmt.format(account + '_r'), sql_args)
             result.extend((self.get_vcard_from_data(account, *r) for r in rows))
         return result
 
     def _dump(self, account_name):
         """return table self.account, used for testing"""
-        sql_s = 'SELECT * FROM {0}'.format(account_name)
+        sql_s = 'SELECT * FROM {0}'.format(account_name + '_r')
         result = self.sql_ex(sql_s)
         return result
 
@@ -129,7 +132,7 @@ class SQLiteDb(object):
         """tests for current db Version
         if the table is still empty, insert db_version
         """
-        database_version = 10  # the current db VERSION
+        database_version = 11  # the current db VERSION
         self.cursor.execute('SELECT version FROM version')
         result = self.cursor.fetchone()
         if result is None:
@@ -159,7 +162,8 @@ class SQLiteDb(object):
         try:
             self.cursor.execute('''CREATE TABLE IF NOT EXISTS accounts (
                 account TEXT NOT NULL,
-                resource TEXT NOT NULL
+                resource TEXT NOT NULL,
+                ctag TEXT
                 )''')
             logging.debug("made sure accounts table exists ")
         except Exception as error:
@@ -191,10 +195,10 @@ class SQLiteDb(object):
                 vcard TEXT,
                 status INT NOT NULL,
                 PRIMARY KEY(href)
-                )""".format(account_name)
+                )""".format(account_name + '_r')
         self.sql_ex(sql_s)
         sql_s = 'INSERT INTO accounts (account, resource) VALUES (?, ?)'
-        self.sql_ex(sql_s, (account_name, resource))
+        self.sql_ex(sql_s, (account_name + '_r', resource))
         logging.debug("made sure {0} table exists".format(account_name))
 
     def needs_update(self, href, account_name, etag=''):
@@ -208,7 +212,7 @@ class SQLiteDb(object):
         :return: True or False
         """
         stuple = (href,)
-        sql_s = 'SELECT etag FROM {0} WHERE href = ?'.format(account_name)
+        sql_s = 'SELECT etag FROM {0} WHERE href = ?'.format(account_name + '_r')
         result = self.sql_ex(sql_s, stuple)
         if len(result) is 0:
             return True
@@ -270,7 +274,7 @@ class SQLiteDb(object):
                  '(etag, name, fname, vcard, status, href) '
                  'VALUES (?, ?, ?, ?, ?, '
                  'COALESCE((SELECT href FROM {0} WHERE href = ?), ?)'
-                 ');'.format(account_name))
+                 ');'.format(account_name + '_r'))
         self.sql_ex(sql_s, stuple)
 
     def update_href(self, old_href, new_href, account_name, etag='', status=OK):
@@ -278,7 +282,7 @@ class SQLiteDb(object):
         see update() for an explanation of these parameters"""
         stuple = (new_href, etag, status, old_href)
         sql_s = 'UPDATE {0} SET href = ?, etag = ?, status = ? \
-             WHERE href = ?;'.format(account_name)
+             WHERE href = ?;'.format(account_name + '_r')
         self.sql_ex(sql_s, stuple)
 
     def href_exists(self, href, account_name):
@@ -288,7 +292,7 @@ class SQLiteDb(object):
         :type href: str()
         :returns: True or False
         """
-        sql_s = 'SELECT href FROM {0} WHERE href = ?;'.format(account_name)
+        sql_s = 'SELECT href FROM {0} WHERE href = ?;'.format(account_name + '_r')
         if len(self.sql_ex(sql_s, (href, ))) == 0:
             return False
         else:
@@ -301,7 +305,7 @@ class SQLiteDb(object):
         return: etag
         rtype: str()
         """
-        sql_s = 'SELECT etag FROM {0} WHERE href=(?);'.format(account_name)
+        sql_s = 'SELECT etag FROM {0} WHERE href=(?);'.format(account_name + '_r')
         etag = self.sql_ex(sql_s, (href,))[0][0]
         return etag
 
@@ -312,7 +316,7 @@ class SQLiteDb(object):
         """
         stuple = (href, )
         logging.debug("locally deleting " + str(href))
-        self.sql_ex('DELETE FROM {0} WHERE href=(?)'.format(account_name),
+        self.sql_ex('DELETE FROM {0} WHERE href=(?)'.format(account_name + '_r'),
                     stuple)
 
     def get_all_href_from_db(self, accounts):
@@ -320,8 +324,9 @@ class SQLiteDb(object):
         """
         result = list()
         for account in accounts:
-            rows = self.sql_ex('SELECT href, vcard, etag FROM {0} '
-                                'ORDER BY fname COLLATE NOCASE'.format(account))
+            rows = self.sql_ex(
+                'SELECT href, vcard, etag FROM {0} ORDER BY fname'
+                ' COLLATE NOCASE'.format(account + '_r'))
             result.extend((self.get_vcard_from_data(account, *r) for r in rows))
         return result
 
@@ -329,7 +334,7 @@ class SQLiteDb(object):
         """returns list of all not new hrefs"""
         result = list()
         for account in accounts:
-            sql_s = 'SELECT href FROM {0} WHERE status != (?)'.format(account)
+            sql_s = 'SELECT href FROM {0} WHERE status != (?)'.format(account + '_r')
             stuple = (NEW,)
             hrefs = self.sql_ex(sql_s, stuple)
             result = result + [(href[0], account) for href in hrefs]
@@ -357,42 +362,42 @@ class SQLiteDb(object):
     def get_vcard_from_db(self, href, account_name):
         """returns a VCard()
         """
-        sql_s = 'SELECT vcard, etag FROM {0} WHERE href=(?)'.format(account_name)
+        sql_s = 'SELECT vcard, etag FROM {0} WHERE href=(?)'.format(account_name + '_r')
         result = self.sql_ex(sql_s, (href, ))
         return self.get_vcard_from_data(account_name, href, *result[0])
 
     def get_changed(self, account_name):
         """returns list of hrefs of locally edited vcards
         """
-        sql_s = 'SELECT href FROM {0} WHERE status == (?)'.format(account_name)
+        sql_s = 'SELECT href FROM {0} WHERE status == (?)'.format(account_name + '_r')
         result = self.sql_ex(sql_s, (CHANGED, ))
         return [row[0] for row in result]
 
     def get_new(self, account_name):
         """returns list of hrefs of locally added vcards
         """
-        sql_s = 'SELECT href FROM {0} WHERE status == (?)'.format(account_name)
+        sql_s = 'SELECT href FROM {0} WHERE status == (?)'.format(account_name + '_r')
         result = self.sql_ex(sql_s, (NEW, ))
         return [row[0] for row in result]
 
     def get_marked_delete(self, account_name):
         """returns list of tuples (hrefs, etags) of locally deleted vcards
         """
-        sql_s = 'SELECT href, etag FROM {0} WHERE status == (?)'.format(account_name)
+        sql_s = 'SELECT href, etag FROM {0} WHERE status == (?)'.format(account_name + '_r')
         result = self.sql_ex(sql_s, (DELETED, ))
         return result
 
     def mark_delete(self, href, account_name):
         """marks the entry as to be deleted on server on next sync
         """
-        sql_s = 'UPDATE {0} SET STATUS = ? WHERE href = ?'.format(account_name)
+        sql_s = 'UPDATE {0} SET STATUS = ? WHERE href = ?'.format(account_name + '_r')
         self.sql_ex(sql_s, (DELETED, href, ))
 
     def reset_flag(self, href, account_name):
         """
         resets the status for a given href to 0 (=not edited locally)
         """
-        sql_s = 'UPDATE {0} SET status = ? WHERE href = ?'.format(account_name)
+        sql_s = 'UPDATE {0} SET status = ? WHERE href = ?'.format(account_name + '_r')
         self.sql_ex(sql_s, (OK, href, ))
 
 
