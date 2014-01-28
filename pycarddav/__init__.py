@@ -302,6 +302,10 @@ class ConfigurationParser(object):
         if not self.check_property(ns, 'resource', 'Account %s:resource' % ns.name):
             return False
 
+        if ns.resource[-1] != '/':
+            ns.resource = ns.resource + '/'
+
+
         if not len(ns.passwd):
             hostname = urlsplit(ns.resource).hostname
             try:
@@ -344,7 +348,7 @@ class ConfigurationParser(object):
             if not obj:
                 raise AttributeError()
         except AttributeError:
-            logging.error('Mandatory option %s is missing',
+            logging.fatal('Mandatory option %s is missing',
                           display_name if display_name else property_)
             return False
 
@@ -470,10 +474,6 @@ class SyncConfigurationParser(ConfigurationParser):
                 result = False
         else:
             ns.sync.accounts = accounts
-
-        for account in ns.accounts:
-            if account.resource[-1] != '/':
-                account.resource = account.resource + '/'
 
         ns.sync.accounts = set(ns.sync.accounts)
 
