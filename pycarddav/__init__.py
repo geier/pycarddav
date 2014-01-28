@@ -278,6 +278,17 @@ class ConfigurationParser(object):
                 logging.error("No account found")
                 result = False
 
+        # create the db dir if it doesn't exist
+        dbdir = ns.sqlite.path.rsplit('/', 1)[0]
+        if not os.path.isdir(dbdir):
+            try:
+                logging.debug('trying to create the directory for the db')
+                os.makedirs(dbdir, mode=0770)
+                logging.debug('success')
+            except OSError as error:
+                logging.fatal('failed to create {0}: {1}'.format(dbdir, error))
+                return False
+
         return result
 
     def check_account(self, ns):
