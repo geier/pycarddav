@@ -122,6 +122,14 @@ def vcard_from_string(vcard_string):
         vcard = vobject.readOne(vcard_string)
     except vobject.base.ParseError as error:
         raise Exception(error)  # TODO proper exception
+
+    if 'fn' not in vcard.contents:  # broken vcard (no FN)
+        logging.debug('vcard has no formatted name, reconstructing...')
+        name = vcard.contents['n'][0].split(';')
+        fname = name[2] + ' ' + name[1] + ' ' + name[0] + ' ' + name[3]
+        fname = fname.strip()
+        vcard.add('fn')
+        vcard.fn.value = fname
     return vcard_from_vobject(vcard)
 
 
@@ -288,7 +296,10 @@ class VCard(defaultdict):
         collector.append('BEGIN:VCARD')
         collector.append('VERSION:3.0')
         for key in ['FN', 'N']:
-            collector.append(key + ':' + self[key][0][0])
+            try:
+                collector.append(key + ':' + self[key][0][0])
+            except IndexError:  # broken vcard without FN or N
+                collector.append(key + ':')
         for prop in self.alt_keys():
             for line in self[prop]:
 
