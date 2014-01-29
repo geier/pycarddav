@@ -26,15 +26,12 @@ The pycarddav abstract model and tools for VCard handling.
 
 from __future__ import print_function
 
-try:
-    import base64
-    import sys
-    import vobject
-    from collections import defaultdict
+import base64
+import logging
+import sys
+from collections import defaultdict
 
-except ImportError, error:
-    print(error)
-    sys.exit(1)
+import vobject
 
 
 def list_clean(string):

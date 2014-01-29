@@ -28,11 +28,10 @@ syncs the remote database to the local db
 from pycarddav import carddav
 from pycarddav import backend
 
-from os import path
-
 import logging
 
-__all__ = [ 'sync' ]
+__all__ = ['sync']
+
 
 def sync(conf):
     """this should probably be seperated from the class definitions"""
@@ -117,4 +116,3 @@ def sync(conf):
     delete = set([href for href, account in r_href_account_list]).difference(abook.keys())
     for href in delete:
         my_dbtool.delete_vcard_from_db(href, conf.account.name)
-
