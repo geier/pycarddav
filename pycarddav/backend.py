@@ -258,12 +258,11 @@ class SQLiteDb(object):
                 vcard_s = vcard  # incase it's already unicode and py2
             try:
                 vcard = model.vcard_from_string(vcard)
-            except:
+            except Exception as error:
                 logging.error('VCard {0} could not be inserted into the '
                               'db'.format(href))
-                if self.debug:
-                    logging.error('could not be converted to vcard')
-                    logging.error(vcard)
+                logging.debug(error)
+                logging.info(vcard)
                 return
         else:
             vcard_s = vcard.vcf
