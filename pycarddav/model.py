@@ -90,7 +90,23 @@ def get_names(display_name):
     return first_name.strip().capitalize(), last_name.strip().capitalize()
 
 
+def fix_vobject(vcard):
+    """trying to fix some more or less common errors in vcards
+
+    for now only missing FN properties are handled (and reconstructed from N)
+    :type vcard: vobject.base.Component (vobject based vcard)
+
+    """
+    if 'fn' not in vcard.contents:
+        logging.debug('vcard has no formatted name, reconstructing...')
+        fname = vcard.contents['n'][0].valueRepr()
+        fname = fname.strip()
+        vcard.add('fn')
+        vcard.fn.value = fname
+    return vcard
+
 def vcard_from_vobject(vcard):
+    vcard = fix_vobject(vcard)
     vdict = VCard()
     if vcard.name != "VCARD":
         raise Exception  # TODO proper Exception type
@@ -122,14 +138,6 @@ def vcard_from_string(vcard_string):
         vcard = vobject.readOne(vcard_string)
     except vobject.base.ParseError as error:
         raise Exception(error)  # TODO proper exception
-
-    if 'fn' not in vcard.contents:  # broken vcard (no FN)
-        logging.debug('vcard has no formatted name, reconstructing...')
-        name = vcard.contents['n'][0].split(';')
-        fname = name[2] + ' ' + name[1] + ' ' + name[0] + ' ' + name[3]
-        fname = fname.strip()
-        vcard.add('fn')
-        vcard.fn.value = fname
     return vcard_from_vobject(vcard)
 
 
