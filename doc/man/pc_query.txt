@@ -71,6 +71,17 @@ FILE INPUT AND OUTPUT OPTIONS
     Import vCard from FILE or 'STDIN' into the first specified (or
     default) account
 
+OTHER OPTIONS
+~~~~~~~~~~~~~
+
+*--where*='MODE'::
+    Decides which part of the contact cards are matched against the
+    searchterm. 'MODE' is one of 'vcard', 'name' (the structured name,
+    as used in the vcard specification), 'fname' (the formated name, meaning
+    as is printed by pc_query) and 'allnames' ('allnames' means search
+    'fname' as well as 'name'). While only search through the names might
+    not find what you are looking for, it will considerably speed up your
+    query.
 
 AUTHOR
 ------

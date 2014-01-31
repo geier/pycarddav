@@ -2,12 +2,12 @@
 .\"     Title: pc_query
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 11/25/2013
+.\"      Date: 01/31/2014
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "PC_QUERY" "1" "11/25/2013" "\ \&" "\ \&"
+.TH "PC_QUERY" "1" "01/31/2014" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -106,6 +106,25 @@ Delete card matching
 Import vCard from FILE or
 \fISTDIN\fR
 into the first specified (or default) account
+.RE
+.SS "OTHER OPTIONS"
+.PP
+\fB\-\-where\fR=\fIMODE\fR
+.RS 4
+Decides which part of the contact cards are matched against the searchterm\&.
+\fIMODE\fR
+is one of
+\fIvcard\fR,
+\fIname\fR
+(the structured name, as used in the vcard specification),
+\fIfname\fR
+(the formated name, meaning as is printed by pc_query) and
+\fIallnames\fR
+(\fIallnames\fR
+means search
+\fIfname\fR
+as well as
+\fIname\fR)\&. While only search through the names might not find what you are looking for, it will considerably speed up your query\&.
 .RE
 .SH "AUTHOR"
 .sp
