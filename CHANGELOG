@@ -1,3 +1,10 @@
+0.7
+searching in the vcard chooser when merging addresses (press '/')
+nice speedup in pc_query, thanks to Leandro Lucarella
+better support for broken vcards
+auto creating missing db directories
+more bugfixes
+
 0.6
 assorted bugfixes, see git log
 keyring support
