@@ -6,17 +6,17 @@ expected, please check if that bug is either already reported at
 
 https://github.com/geier/pycarddav/issues?state=open
 
-or is already fixed in the development branch.
+or is already fixed on github.
 
 You can check it out and install via:
 
- git clone -b develop https://github.com/geier/pycarddav 
+ git clone https://github.com/geier/pycarddav
  cd pycarddav
  python setup.py install
 
 If the bug persists, always run the command again with the --debug option
 and paste the output of that (of course you can edit out any private
-details like your username and resource). 
+details like your username and resource).
 
 Also, it is often helpful if you include which OS you are on, which
 version of python and, in the case the problems occur during sync, which
@@ -32,14 +32,8 @@ CardDAV server (which server and version).
 Hacking
 =======
 
-The *master* branch on github should always contain the latest released
-stable version. Development mostly happens in feature branches (only for
-major new features), the *develop* branch, or in the next point release
-*dev*-branch (e.g. *4.2-dev*). So please check out the *develop* branch
-before starting to hack on pycarddav.
-
 Before submitting your first patch, please add yourself to
 *CONTRIBUTORS.txt*.
 
-You can submit patches either via email (pycarddav at lostpackets dot de
-)or via github pull requests.
+You can submit patches either via email (pycarddav at lostpackets dot de)
+or via github pull requests.
