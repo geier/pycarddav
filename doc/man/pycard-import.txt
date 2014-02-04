@@ -76,6 +76,6 @@ pycardsyncer(1), pc_query(1)
 
 COPYING
 -------
-Copyright \(C) 2011-2013 Christian Geier and Contributors. pycard-import and
-pycarddav are released under the terms of the Expat/MIT license, see the
-'COPYING' file distributed with pycarddav.
+Copyright \(C) 2011-2014 Christian Geier and Contributors.
+pycard-import and pycarddav are released under the terms of the
+Expat/MIT license, see the 'COPYING' file distributed with pycarddav.

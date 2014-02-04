@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 # vim: set fileencoding=utf-8 :
-# Copyright (c) 2011-2013 Christian Geier & contributors
+# Copyright (c) 2011-2014 Christian Geier & contributors
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
