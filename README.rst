@@ -159,6 +159,8 @@ CardDAV servers, e.g. Owncloud require these.
 Debian Wheezy Quickstart
 ------------------------
 
+On Debian based Linuxes this will set you up::
+
         apt-get install python-requests python-vobject python-pytest python-urwid python-lxml python-pyxdg
         sudo python setup.py install
         mkdir -p ~/.config/pycard
