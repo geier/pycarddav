@@ -159,11 +159,11 @@ CardDAV servers, e.g. Owncloud require these.
 Debian Wheezy Quickstart
 ------------------------
 
-apt-get install python-requests python-vobject python-pytest python-urwid python-lxml python-pyxdg
-sudo python setup.py install
-mkdir -p ~/.config/pycard
-chmod 700 ~/.config/pycard
-cp pycard.conf.sample ~/.config/pycard/pycard.conf
+        apt-get install python-requests python-vobject python-pytest python-urwid python-lxml python-pyxdg
+        sudo python setup.py install
+        mkdir -p ~/.config/pycard
+        chmod 700 ~/.config/pycard
+        cp pycard.conf.sample ~/.config/pycard/pycard.conf
 
 License
 -------
