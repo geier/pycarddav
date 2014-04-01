@@ -13,4 +13,3 @@ script:  py.test tests/local/
 branches:
   except:
     - webpage
-    - master
