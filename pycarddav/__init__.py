@@ -139,10 +139,10 @@ class Section(object):
     def _parse_verify(self, value):
         """if value is either 'True' or 'False' it returns that value as a bool,
         otherwise it returns the value"""
-        value = value.strip().lower()
-        if value == 'true':
+        boolvalue = value.strip().lower()
+        if boolvalue == 'true':
             return True
-        elif value == 'false':
+        elif boolvalue == 'false':
             return False
         else:
             return os.path.expanduser(value)
