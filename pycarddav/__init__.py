@@ -331,8 +331,11 @@ class ConfigurationParser(object):
                     ns.passwd = keyring.get_password('pycarddav:'+ns.name, ns.user)
                 # Do not ask for password if execution is already doomed.
                 if result and not ns.passwd:
-                    prompt = 'CardDAV password (account ' + ns.name + '): '
-                    ns.passwd = getpass.getpass(prompt=prompt)
+                    if sys.stdin.isatty():
+                        prompt = 'CardDAV password (account ' + ns.name + '): '
+                        ns.passwd = getpass.getpass(prompt=prompt)
+                    else:
+                        ns.passwd = sys.stdin.readline().rstrip()
             else:
                 logging.error("Missing credentials for %s", hostname)
                 result = False
