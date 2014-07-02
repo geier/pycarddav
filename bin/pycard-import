@@ -54,7 +54,7 @@ class ImportConfigurationParser(pycarddav.ConfigurationParser):
             help='do not actually update the database (implies --batch)')
         self._arg_parser.add_argument(
             "-a", "--account", action="store", dest="sync__account",
-            metavar="NAME", help="add to NAME account (can be used only once), if no valid acconut name is given, the first one from the config will be used")
+            metavar="NAME", help="add to NAME account (can be used only once), if no valid account name is given, the first one from the config will be used")
         # Headers selection. To: is the default.
         self._arg_parser.add_argument(
             '-f', '--from', action='append_const', dest='headers', const='From',
