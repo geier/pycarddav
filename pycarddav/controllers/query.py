@@ -77,6 +77,7 @@ def backup(my_dbtool, search_string, conf):
                     conf.query.where)
         for vcard in vcards:
             vcf_file.write(vcard.vcf.encode('utf-8'))
+            vcf_file.write('\n')
 
 def edit(my_dbtool, search_string, conf):
     from pycarddav import ui

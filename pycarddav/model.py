@@ -117,7 +117,7 @@ def vcard_from_vobject(vcard):
         property_value = line.value
 
         try:
-            if line.ENCODING_paramlist == [u'b']:
+            if line.ENCODING_paramlist == [u'b'] or line.ENCODING_paramlist == [u'B']:
                 property_value = base64.b64encode(line.value)
 
         except AttributeError:
@@ -268,10 +268,7 @@ class VCard(defaultdict):
                     types = ' (' + ', '.join(value[1]['TYPE']) + ')'
                 except KeyError:
                     types = ''
-                try:
-                    line = key + types + ': ' + value[0]
-                except UnicodeDecodeError:
-                    line = key + types + ': ' + '<BINARY DATA>'
+                line = key + types + ': ' + value[0]
                 collector.append(line)
         return '\n'.join(collector)
 
@@ -286,9 +283,9 @@ class VCard(defaultdict):
 
     @property
     def vcf(self):
-        """serialize to VCARD as specified in RFC2624,
+        """serialize to VCARD as specified in RFC2426,
         if no UID is specified yet, one will be added (as a UID is mandatory
-        for carddav as specified in RF6352
+        for carddav as specified in RFC6352
         TODO make shure this random uid is unique"""
         import string
         import random
@@ -298,6 +295,7 @@ class VCard(defaultdict):
             random UID from a pool of roughly 10^56 should be good enough"""
             choice = string.ascii_uppercase + string.digits
             return ''.join([random.choice(choice) for _ in range(36)])
+
         if 'UID' not in self.keys():
             self['UID'] = [(generate_random_uid(), dict())]
         collector = list()
@@ -310,7 +308,6 @@ class VCard(defaultdict):
                 collector.append(key + ':')
         for prop in self.alt_keys():
             for line in self[prop]:
-
                 types = self._line_helper(line)
                 collector.append(prop + types + ':' + line[0])
         collector.append('END:VCARD')
