@@ -116,7 +116,10 @@ class MailParser(object):
             try:
                 string = string.decode(enc)
             except TypeError:
-                string = unicode(string)
+                try:
+                    string = unicode(string)
+                except UnicodeDecodeError:
+                    string = string.decode('ascii', 'replace')
             address_string.append(string)
 
         address_string = ' '.join(address_string)
