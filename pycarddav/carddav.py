@@ -70,7 +70,7 @@ class PyCardDAV(object):
     """
 
     def __init__(self, resource, debug='', user='', passwd='',
-                 verify=True, write_support=False, auth='basic'):
+                 verify=True, write_support=False, auth='basic', proxies=None):
         #shutup urllib3
         urllog = logging.getLogger('requests.packages.urllib3.connectionpool')
         urllog.setLevel(logging.CRITICAL)
@@ -91,6 +91,8 @@ class PyCardDAV(object):
         if auth == 'digest':
             from requests.auth import HTTPDigestAuth
             self._settings['auth'] = HTTPDigestAuth(user, passwd)
+        if proxies:
+            self._settings['proxies'] = proxies
         self._default_headers = {"User-Agent": "pyCardDAV"}
 
         headers = self.headers
