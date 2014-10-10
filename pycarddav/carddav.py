@@ -130,7 +130,7 @@ class PyCardDAV(object):
 
         :rtype: list of hrefs to vcards
         """
-        xml = self._get_xml_props()
+        xml = self._get_xml_props(['getcontenttype', 'getetag', 'resourcetype'])
         abook = self._process_xml_props(xml)
         return abook
 
@@ -217,7 +217,7 @@ class PyCardDAV(object):
                 return (parsed_url.path, etag)
         response.raise_for_status()
 
-    def _get_xml_props(self):
+    def _get_xml_props(self, props=[]):
         """PROPFIND method
 
         gets the xml file with all vcard hrefs
@@ -226,9 +226,19 @@ class PyCardDAV(object):
         """
         headers = self.headers
         headers['Depth'] = '1'
+
+        root = ET.Element('{DAV:}propfind')
+        proplist = ET.SubElement(root, 'prop')
+
+        for prop in props:
+            ET.SubElement(proplist, prop)
+
+        data = ET.tostring(root, encoding="utf-8", xml_declaration=True, pretty_print=True)
+
         response = self.session.request('PROPFIND',
                                         self.url.resource,
                                         headers=headers,
+                                        data=data,
                                         **self._settings)
         response.raise_for_status()
 
