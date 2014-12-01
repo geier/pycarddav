@@ -77,6 +77,14 @@ class PyCardDAV(object):
         urllog = logging.getLogger('urllib3.connectionpool')
         urllog.setLevel(logging.CRITICAL)
 
+        # activate pyopenssl if available
+        try:
+            import urllib3.contrib.pyopenssl
+        except ImportError:
+            pass
+        else:
+            urllib3.contrib.pyopenssl.inject_into_urllib3()
+
         split_url = urlparse.urlparse(resource)
         url_tuple = namedtuple('url', 'resource base path')
         self.url = url_tuple(resource,
