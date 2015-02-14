@@ -105,6 +105,7 @@ def fix_vobject(vcard):
         vcard.fn.value = fname
     return vcard
 
+
 def vcard_from_vobject(vcard):
     vcard = fix_vobject(vcard)
     vdict = VCard()
@@ -169,7 +170,6 @@ class VCard(defaultdict):
     i.e.:
     >>> vcard['EMAIL']
     [('hanz@wurst.com', ['WORK', 'PREF']), ('hanz@wurst.net', ['HOME'])]
-
 
     self.href: unique id (really just the url) of the VCard
     self.account: account which this card is associated with

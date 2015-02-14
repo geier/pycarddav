@@ -86,46 +86,27 @@ class ImportConfigurationParser(pycarddav.ConfigurationParser):
         return pycarddav.ConfigurationParser.check(self, conf)
 
 
-class MailParser(object):
-    def __init__(self, conf, pipe):
-        self._conf = conf
-        self._db = pycarddav.backend.SQLiteDb(
-            conf.sqlite.path, "utf-8", "stricts", False)
-        self._msg = email.message_from_string(pipe.read())
+def parse_address(header):
+    """split a header line (To, From, CC) into email address and display name"""
+    if header is None:
+        return None, ''
 
-    def process_addresses(self, headers):
-        for header in headers:
-            address, display_name = self.parse_address(self._msg[header])
-            if address is None:
-                continue
-            vcard = pycarddav.model.vcard_from_email(display_name, address)
-            if self._conf.batch:
-                if not self._conf.dry_run:
-
-                    self._db.update(vcard, self._conf.sync.account, vcard.href, status=pycarddav.backend.NEW)
-            else:
-                pycarddav.ui.start_pane(pycarddav.ui.EditorPane(self._db, self._conf.sync.account, vcard))
-
-    def parse_address(self, header):
-        if header is None:
-            return None, ''
-
-        address_string = []
-        addresses = email.header.decode_header(header)
-        for string, enc in addresses:
+    address_string = []
+    addresses = email.header.decode_header(header)
+    for string, enc in addresses:
+        try:
+            string = string.decode(enc)
+        except TypeError:
             try:
-                string = string.decode(enc)
-            except TypeError:
-                try:
-                    string = unicode(string)
-                except UnicodeDecodeError:
-                    string = string.decode('ascii', 'replace')
-            address_string.append(string)
+                string = unicode(string)
+            except UnicodeDecodeError:
+                string = string.decode('ascii', 'replace')
+        address_string.append(string)
 
-        address_string = ' '.join(address_string)
-        display_name, address = email.utils.parseaddr(address_string)
+    address_string = ' '.join(address_string)
+    display_name, address = email.utils.parseaddr(address_string)
 
-        return address, display_name
+    return address, display_name
 
 
 def capture_tty():
@@ -152,13 +133,23 @@ def do_import():
     conf = ImportConfigurationParser().parse()
     if conf is None:
         sys.exit(1)
+    db = pycarddav.backend.SQLiteDb(conf.sqlite.path, "utf-8", "stricts", False)
 
-    parser = MailParser(conf, sys.stdin)
+    msg = email.message_from_string(sys.stdin.read())
 
     if not conf.batch:
         capture_tty()
     try:
-        parser.process_addresses(conf.headers)
+        for header in conf.headers:
+            address, display_name = parse_address(msg[header])
+            if address is None:
+                continue
+            vcard = pycarddav.model.vcard_from_email(display_name, address)
+            if conf.batch:
+                if not conf.dry_run:
+                    db.update(vcard, conf.sync.account, vcard.href, status=pycarddav.backend.NEW)
+            else:
+                pycarddav.ui.start_pane(pycarddav.ui.EditorPane(db, conf.sync.account, vcard))
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
