@@ -28,6 +28,7 @@ import re
 import logging
 import os
 import signal
+import subprocess
 import sys
 import xdg.BaseDirectory
 
@@ -163,6 +164,7 @@ class AccountSection(Section):
         self._schema = [
             ('user', '', None),
             ('passwd', '', None),
+            ('passwd_cmd', '', None),
             ('resource', '', None),
             ('auth', 'basic', None),
             ('verify', 'true', self._parse_verify),
@@ -321,6 +323,14 @@ class ConfigurationParser(object):
                 else:
                     logging.error("User %s not found for %s in .netrc",
                                   ns.user, hostname)
+                    result = False
+            elif ns.user and ns.passwd_cmd:
+                try:
+                    ns.passwd = subprocess.check_output(ns.passwd_cmd.split())
+                    ns.passwd = ns.passwd.strip() # strip trailing newline
+                except (OSError, subprocess.CalledProcessError) as e:
+                    logging.error("Failed to execute passwd command '%s'. Reason: %s",
+                            ns.passwd_cmd, e)
                     result = False
             elif ns.user:
                 try:
