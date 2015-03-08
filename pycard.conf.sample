@@ -5,6 +5,11 @@
 user: username
 passwd: yourpassword
 
+# A shell command line to read the password.
+# This can be used in instead of passwd to read a password from the standard output
+# of another program (e.g. a password manager). If passwd is set, this is ignored.
+#passwd_cmd: pass show carddav
+
 # The path to the CardDAV resource.
 #resource: https://[server]/owncloud/apps/contacts/carddav.php/addressbooks/[user]/[addressbook name]/
 resource: https://carddav.server.tld:443/davical/caldav.php/username/addresses/
