@@ -119,6 +119,11 @@ look at its documentation_.
 .. _keyring: https://pypi.python.org/pypi/keyring
 .. _documentation: https://pypi.python.org/pypi/keyring
 
+External Password Manager Support
+---------------------------------
+Pycarddav can read passwords from the standard output of another programe (e.g. a password manager).
+Set `passwd_cmd` in the configuration file (and see the example there).
+
 Import Addresses from Mutt
 --------------------------
 You can directly add sender addresses from mutt to *pyCardDAV*, either adding
