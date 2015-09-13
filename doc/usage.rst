@@ -20,7 +20,7 @@ that query_command uses pc_query:
 
 Example from .muttrc::
 
-        set query_command="/home/username/bin/pc_query -m '%s'"
+        set query_command="/home/username/bin/pc_query -m %s"
 
 The current version features experimental write support. If you want to
 test this, first make sure **you have a backup of your data** (but please do
