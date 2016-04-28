@@ -70,7 +70,7 @@ class PyCardDAV(object):
     """
 
     def __init__(self, resource, debug='', user='', passwd='',
-                 verify=True, write_support=False, auth='basic'):
+                 verify=True, write_support=False, auth='basic', proxies=None):
         #shutup urllib3
         urllog = logging.getLogger('requests.packages.urllib3.connectionpool')
         urllog.setLevel(logging.CRITICAL)
@@ -99,6 +99,8 @@ class PyCardDAV(object):
         if auth == 'digest':
             from requests.auth import HTTPDigestAuth
             self._settings['auth'] = HTTPDigestAuth(user, passwd)
+        if proxies:
+            self._settings['proxies'] = proxies
         self._default_headers = {"User-Agent": "pyCardDAV"}
 
         headers = self.headers
@@ -136,7 +138,7 @@ class PyCardDAV(object):
 
         :rtype: list of hrefs to vcards
         """
-        xml = self._get_xml_props()
+        xml = self._get_xml_props(['getcontenttype', 'getetag', 'resourcetype'])
         abook = self._process_xml_props(xml)
         return abook
 
@@ -223,7 +225,7 @@ class PyCardDAV(object):
                 return (parsed_url.path, etag)
         response.raise_for_status()
 
-    def _get_xml_props(self):
+    def _get_xml_props(self, props=[]):
         """PROPFIND method
 
         gets the xml file with all vcard hrefs
@@ -232,9 +234,19 @@ class PyCardDAV(object):
         """
         headers = self.headers
         headers['Depth'] = '1'
+
+        root = ET.Element('{DAV:}propfind')
+        proplist = ET.SubElement(root, 'prop')
+
+        for prop in props:
+            ET.SubElement(proplist, prop)
+
+        data = ET.tostring(root, encoding="utf-8", xml_declaration=True, pretty_print=True)
+
         response = self.session.request('PROPFIND',
                                         self.url.resource,
                                         headers=headers,
+                                        data=data,
                                         **self._settings)
         response.raise_for_status()
 
