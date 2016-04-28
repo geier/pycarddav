@@ -1,3 +1,13 @@
+This project is dead
+====================
+
+pyCardDAV is deprecated. See `the relevant issue
+<https://github.com/geier/pycarddav/issues/92>`_. A good alternative is `khard
+<https://github.com/scheibler/khard>`_.
+
+I will still fix bugs against Davical for the foreseeable future, but don't
+expect anything else.
+
 About
 =====
 *pyCardDAV* is a simple to use CardDAV_ CLI client. It has built in support for
