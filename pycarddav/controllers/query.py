@@ -112,7 +112,8 @@ def delete(my_dbtool, search_string, conf):
               'sync'.format(card.href, card.fname))
 
 def search(my_dbtool, search_string, conf):
-    print("searching for " + conf.query.search_string + "...")
+    if not conf.query.mutt_format:
+        print("searching for " + conf.query.search_string + "...")
 
     for vcard in my_dbtool.search(search_string, conf.sync.accounts,
             conf.query.where):
