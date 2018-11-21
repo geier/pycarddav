@@ -197,7 +197,7 @@ class VCard(defaultdict):
 
     @property
     def name(self):
-        return unicode(self['N'][0][0]) if self['N'] else ''
+        return unicode(self['N'][0][0].decode('utf8')) if self['N'] else ''
 
     @name.setter
     def name(self, value):
@@ -207,7 +207,7 @@ class VCard(defaultdict):
 
     @property
     def fname(self):
-        return unicode(self['FN'][0][0]) if self['FN'] else ''
+        return unicode(self['FN'][0][0].decode('utf8')) if self['FN'] else ''
 
     @fname.setter
     def fname(self, value):
