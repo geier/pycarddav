@@ -38,7 +38,7 @@ for how to use these and for some more options.
 
 *pycarddav* can be configured to use different CardDAV accounts, see the example
 config for details. An account can be specified with *-a account_name* with all
-three utilies. If no account is chosen all searching and syncing actions will
+three utilities. If no account is chosen all searching and syncing actions will
 use all configured accounts, while on adding cards the first configured account
 will be used.
 

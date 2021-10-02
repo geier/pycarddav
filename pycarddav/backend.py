@@ -40,8 +40,8 @@ account:
 $ACCOUNTNAME_r:   # as in resource
     href (TEXT)
     etag (TEXT)
-    name (TEXT): name as in vcard, seperated by ';'
-    fname (TEXT): formated name
+    name (TEXT): name as in vcard, separated by ';'
+    fname (TEXT): formatted name
     status (INT): status of this card, see below for meaning
     vcard (TEXT): the actual vcard
 

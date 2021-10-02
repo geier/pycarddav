@@ -35,10 +35,10 @@ import vobject
 
 
 def list_clean(string):
-    """ transforms a comma seperated string to a list, stripping whitespaces
+    """ transforms a comma separated string to a list, stripping whitespaces
     "HOME, WORK,pref" -> ['HOME', 'WORK', 'pref']
 
-    string: string of comma seperated elements
+    string: string of comma separated elements
     returns: list()
     """
 
@@ -286,7 +286,7 @@ class VCard(defaultdict):
         """serialize to VCARD as specified in RFC2426,
         if no UID is specified yet, one will be added (as a UID is mandatory
         for carddav as specified in RFC6352
-        TODO make shure this random uid is unique"""
+        TODO make sure this random uid is unique"""
         import string
         import random
 
