@@ -262,7 +262,7 @@ class ConfigurationParser(object):
         validity of the common configuration values. It returns True
         on success, False otherwise.
 
-        This function can be overriden to augment the checks or the
+        This function can be overridden to augment the checks or the
         configuration tweaks achieved before the parsing function
         returns.
         """
@@ -397,7 +397,7 @@ class ConfigurationParser(object):
 
         First, data declared in the configuration schema are extracted
         from the configuration file, with type checking and possibly
-        through a filter. Then these data are completed or overriden
+        through a filter. Then these data are completed or overridden
         using the values read from the command line.
         """
         items = {}

@@ -34,7 +34,7 @@ __all__ = ['sync']
 
 
 def sync(conf):
-    """this should probably be seperated from the class definitions"""
+    """this should probably be separated from the class definitions"""
 
     syncer = carddav.PyCardDAV(conf.account.resource,
                                user=conf.account.user,
